@@ -1,0 +1,44 @@
+{
+  "name": "ripe",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "run-p -r dev:backend dev:frontend",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "fixtures:mock": "tsx scripts/make-mock-recording.ts",
+    "dev:frontend": "next dev",
+    "dev:backend": "convex dev",
+    "probe": "tsx scripts/probe.ts",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@meta-sam/parser": "^0.1.0",
+    "convex": "^1.48.0",
+    "motion": "^14.6.0",
+    "next": "16.4.3",
+    "openai": "^7.45.0",
+    "qrcode": "^1.5.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "dotenv": "^18.0.9",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "npm-run-all2": "^8.0.4",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  }
+}

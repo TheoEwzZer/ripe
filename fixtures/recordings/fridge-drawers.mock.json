@@ -1,0 +1,124 @@
+{
+  "id": "fridge-drawers.mock",
+  "source": "mock",
+  "createdAt": "2026-10-26T21:58:23.333Z",
+  "image": {
+    "src": "/fixtures/photos/fridge-drawers.jpg",
+    "width": 1920,
+    "height": 1280
+  },
+  "perception": {
+    "model": "mock",
+    "rawText": "{\"scene\":\"fridge\",\"ingredients\":[{\"name\":\"spinach\",\"samPrompt\":\"baby spinach in a plastic box\",\"category\":\"produce\",\"quantity\":\"1 box, half full\",\"daysLeft\":1,\"freshnessCues\":\"leaves starting to darken at the edges\",\"dateRead\":null,\"bbox\":{\"x_min\":131,\"y_min\":266,\"x_max\":423,\"y_max\":438}},{\"name\":\"broccoli\",\"samPrompt\":\"broccoli\",\"category\":\"produce\",\"quantity\":\"1 head\",\"daysLeft\":1,\"freshnessCues\":\"florets beginning to yellow\",\"dateRead\":null,\"bbox\":{\"x_min\":194,\"y_min\":519,\"x_max\":356,\"y_max\":666}},{\"name\":\"cherry tomato\",\"samPrompt\":\"cherry tomatoes in a punnet\",\"category\":\"produce\",\"quantity\":\"~250 g\",\"daysLeft\":2,\"freshnessCues\":\"a few soft, wrinkled skins\",\"dateRead\":null,\"bbox\":{\"x_min\":188,\"y_min\":163,\"x_max\":373,\"y_max\":300}},{\"name\":\"zucchini\",\"samPrompt\":\"green zucchini\",\"category\":\"produce\",\"quantity\":\"2\",\"daysLeft\":2,\"freshnessCues\":\"firm, small soft spot near the stem\",\"dateRead\":null,\"bbox\":{\"x_min\":106,\"y_min\":622,\"x_max\":292,\"y_max\":999}},{\"name\":\"mozzarella\",\"samPrompt\":\"mozzarella balls\",\"category\":\"dairy\",\"quantity\":\"2 balls\",\"daysLeft\":2,\"freshnessCues\":\"opened pack\",\"dateRead\":null,\"bbox\":{\"x_min\":151,\"y_min\":0,\"x_max\":263,\"y_max\":117}},{\"name\":\"eggplant\",\"samPrompt\":\"eggplant\",\"category\":\"produce\",\"quantity\":\"1\",\"daysLeft\":3,\"freshnessCues\":\"skin still glossy, stem slightly dry\",\"dateRead\":null,\"bbox\":{\"x_min\":25,\"y_min\":538,\"x_max\":169,\"y_max\":994}},{\"name\":\"tomato\",\"samPrompt\":\"red tomatoes on the vine\",\"category\":\"produce\",\"quantity\":\"4\",\"daysLeft\":3,\"freshnessCues\":\"deep red, ripe\",\"dateRead\":null,\"bbox\":{\"x_min\":285,\"y_min\":575,\"x_max\":450,\"y_max\":784}},{\"name\":\"milk\",\"samPrompt\":\"milk carton\",\"category\":\"dairy\",\"quantity\":\"1 carton\",\"daysLeft\":3,\"freshnessCues\":\"carton opened\",\"dateRead\":null,\"bbox\":{\"x_min\":581,\"y_min\":0,\"x_max\":681,\"y_max\":328}},{\"name\":\"kiwi\",\"samPrompt\":\"kiwi fruit\",\"category\":\"fruit\",\"quantity\":\"1\",\"daysLeft\":4,\"freshnessCues\":\"slightly soft\",\"dateRead\":null,\"bbox\":{\"x_min\":631,\"y_min\":738,\"x_max\":715,\"y_max\":828}},{\"name\":\"peach juice\",\"samPrompt\":\"bottle of peach juice\",\"category\":\"drink\",\"quantity\":\"1 bottle, two thirds\",\"daysLeft\":4,\"freshnessCues\":\"opened bottle\",\"dateRead\":null,\"bbox\":{\"x_min\":650,\"y_min\":0,\"x_max\":850,\"y_max\":544}},{\"name\":\"baby carrot\",\"samPrompt\":\"bag of baby carrots\",\"category\":\"produce\",\"quantity\":\"1 bag\",\"daysLeft\":6,\"freshnessCues\":\"bright, no slime\",\"dateRead\":null,\"bbox\":{\"x_min\":306,\"y_min\":300,\"x_max\":650,\"y_max\":559}},{\"name\":\"orange juice\",\"samPrompt\":\"bottle of orange juice\",\"category\":\"drink\",\"quantity\":\"1 bottle\",\"daysLeft\":6,\"freshnessCues\":\"sealed\",\"dateRead\":null,\"bbox\":{\"x_min\":813,\"y_min\":0,\"x_max\":999,\"y_max\":591}},{\"name\":\"lime\",\"samPrompt\":\"lime\",\"category\":\"fruit\",\"quantity\":\"3\",\"daysLeft\":10,\"freshnessCues\":\"firm, green\",\"dateRead\":null,\"bbox\":{\"x_min\":825,\"y_min\":797,\"x_max\":913,\"y_max\":999}},{\"name\":\"orange\",\"samPrompt\":\"orange\",\"category\":\"fruit\",\"quantity\":\"2\",\"daysLeft\":12,\"freshnessCues\":\"firm, glossy peel\",\"dateRead\":null,\"bbox\":{\"x_min\":546,\"y_min\":778,\"x_max\":863,\"y_max\":999}},{\"name\":\"lemon\",\"samPrompt\":\"lemon\",\"category\":\"fruit\",\"quantity\":\"1\",\"daysLeft\":14,\"freshnessCues\":\"firm, bright yellow\",\"dateRead\":null,\"bbox\":{\"x_min\":523,\"y_min\":694,\"x_max\":615,\"y_max\":825}}]}",
+    "ms": 2400,
+    "costUsd": 0
+  },
+  "segments": [
+    {
+      "ingredientIndex": 0,
+      "prompt": "baby spinach in a plastic box",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=252;y1=340;x2=812;y2=560;w=1920;h=1280;c=0.93|><|mask;x=0;y=0;c=0.93;data=221,561,!!!!#{BP@rew2*tTgY8SV.BY4^6h/na`6)8_EwNfXY9F?Fqr^%LiZqQGUcgLPdRn5HunpY%h^JqeVfP['?eMSCeyiZEc25/B/-Zt_8upQGS9894wQtr-m*n]qG/VYlkH]kh`x:u3WqnXj)Va*jxtYD.%pVLjtkN!%ddz=GY(CIAoKww2%IHkll7-Zi.[RqTXRzoAIfGdv__Ad0np=rfn@xJt!!|>\n",
+      "ms": 600
+    },
+    {
+      "ingredientIndex": 1,
+      "prompt": "broccoli",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=372;y1=664;x2=684;y2=852;w=1920;h=1280;c=0.88|><|mask;x=0;y=0;c=0.88;data=189,313,!!!!#a0Mu8WFDx^9CaFdP_3pSA%a_K!En#g'fFH'=.#/hN[XJ{vw_TfogK:aHwKZ91&^mr57Zz!0/H'K'?H-SxeQc'MQ?OTdh?U3ut47&cm&A^HE.$Qz/$U_3/0ZS-$xLU)esG]impdFU#`nnRvbKuz)qM6mAYO8IK79az2.%5DHM+tRT^sotO.2/|>\n",
+      "ms": 690
+    },
+    {
+      "ingredientIndex": 2,
+      "prompt": "cherry tomatoes in a punnet",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=360;y1=208;x2=716;y2=384;w=1920;h=1280;c=0.95|><|mask;x=0;y=0;c=0.95;data=177,357,!!!!#A7-sFs[!qCC4#ZOlDmH$cIoU79opW_TCC]uAQS'eW[S?fMd6LvviQTiw9MLNIx526'QwtWA=6%rY9qJ!`VJUf-:22)RlapF:/$fN1.t@jnWb&Yc9_ePjE[{RDYeM_+/8YXI-k=YC8HL3b|>\n",
+      "ms": 780
+    },
+    {
+      "ingredientIndex": 3,
+      "prompt": "green zucchini",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=204;y1=796;x2=560;y2=1279;w=1920;h=1280;c=0.90|><|mask;x=0;y=0;c=0.90;data=484,357,!!!!$Z%NstxE!g(df6+ikI?gq.UX{Dyc=B0M7V5@o`wmb6n(g4p.5IGiiqJ7KC#$kxjDD^@D_a^E2lkkItU'jb3_w1)2a8LhJ&q(WF=AbxUt_P#_aghOj3nyV3i.Mbx?[?0/.k&H8Q6&Texpt'^uLfxXw*yG'l6!Z4R8hg.Bg4AP]ly)@Dl_v^q$3!CE_yW!p{Gkw[0h@xTZ6vYT*whsEX0eud[BpUp0:f^%U?]4e/3esBtd6n8NHVp*-)F/MDodX!R#3OM!)6'CA*aV1KLWJ`mZW(fb|>\n",
+      "ms": 870
+    },
+    {
+      "ingredientIndex": 4,
+      "prompt": "mozzarella balls",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=290;y1=0;x2=504;y2=150;w=1920;h=1280;c=0.97|><|mask;x=0;y=0;c=0.97;data=151,215,!!!!#:@-%y6^{sC&)R(3L+RK#u]qWa(B5!A_xANmplS8y=QEur5)4{aU)9wI&C1/[CN6c.t$*5yh3vN1V/OgDXx{r-11+.xX2fb_PLnTShJZYTK@7Bq4?lJasD=B'k+&!CpL)XDJZz_qQ|>\n",
+      "ms": 960
+    },
+    {
+      "ingredientIndex": 5,
+      "prompt": "eggplant",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=48;y1=688;x2=324;y2=1272;w=1920;h=1280;c=0.92|><|mask;x=0;y=0;c=0.92;data=585,277,!!!!$LBA[2#du)7@`*!LpPZTdRFWNA!`V%R3d*T]`k8eta=HOmk'ebh:@y$5NZ?B{O8.AJz1sG43kJik?wTO)T'H.(.2_-buP5?Z_voW'k?Gcv#v/(C[bt_545=HuJ&C8#=O4]dU=iI/Wp8?!csC:1()HlOvy+g?A/?zcT3^#%=bl0k8mY7YejzoWl$ENwN_Gnl$B$U1luG2Ec6@IEz_$vna+VL+?KwbG{Ia9p0cNUjp/X`bs)YHSaQ'xsQ+${[2f^V*]Yzm^0|>\n",
+      "ms": 1050
+    },
+    {
+      "ingredientIndex": 6,
+      "prompt": "red tomatoes on the vine",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=548;y1=736;x2=864;y2=1004;w=1920;h=1280;c=0.87|><|mask;x=0;y=0;c=0.87;data=269,317,!!!!#oBM8='6XNtRuAYV!JB]^(9V:d/T:LL]=j):lE$JiAs_Jym?jh7tO.cDe%.S{]h)w:aamQvTFCYy'*)*O.YMt3[Wy#ZFa@w%fTe@mNbYJneqr8nMRxRiyk`]G1rV8Wj1qTBL63iin)N{9{ZUCGZ?rW?S_/13Fk'cdm[LP]4x:HDX#rHp&@/[a30f!OlH4'%@!W)SI!!|>\n",
+      "ms": 1140
+    },
+    {
+      "ingredientIndex": 7,
+      "prompt": "milk carton",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1116;y1=0;x2=1308;y2=420;w=1920;h=1280;c=0.94|><|mask;x=0;y=0;c=0.94;data=421,193,!!!!#VEwP1T:lxhM^'02HsCMq{![y89u^mNa1ZUmd:]`:`LDx_7R{tX{/GJijhJ`2qL*?e!C1-T1bI-WeDW6#[UKo!@y3D)PxUOg@/BJtC:t?!4ec?f/ftf8kBM$4Zp.ds:$%+[#l6i*07u[=wdWSW8O$ycV=vrLo8ivnL+h7PNgY|>\n",
+      "ms": 1230
+    },
+    {
+      "ingredientIndex": 8,
+      "prompt": "kiwi fruit",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1212;y1=944;x2=1372;y2=1060;w=1920;h=1280;c=0.89|><|mask;x=0;y=0;c=0.89;data=117,161,!!!!#!:!IDa8*zJnX!z*js:]#F:@_l]j]Q1G*h'{z5b[XY8qrNHhqR)pPOlx)gn$sWJ_@y7VGKsh#v'%:r)hjhP)qp?')4Pba--WgnBAYqN1p8N!!|>\n",
+      "ms": 1320
+    },
+    {
+      "ingredientIndex": 9,
+      "prompt": "bottle of peach juice",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1248;y1=0;x2=1632;y2=696;w=1920;h=1280;c=0.96|><|mask;x=0;y=0;c=0.96;data=697,385,!!!!$e@HR5cVA3eJ]8bRJ&r0AtEIFvqsB&K.r[d27_=b.2Pe{3upeW7sR#Gc8E%=*g-o%qaHbO]ra]hdbU'a0G2[f-F1{0Wy#@ThIK*I6nO4JXXM{@9)5dhHeZpXK.[aW/RHv]64bQMh?egD3-[!1_ih%6Tm6Z8m+q@S*#XKdDd?4VNCk480DWCXLQ%HXIbs/L'MVMQ7(.Jsp6T?9qjiZryc0Ku!^2MgjkjHI3{cjEXA+Qo{veb)esa!#$3tm/:yjS3be`-MCkYV/JMKz!Hq'?{BvwD7hupKt][x@Or^|>\n",
+      "ms": 1410
+    },
+    {
+      "ingredientIndex": 10,
+      "prompt": "bag of baby carrots",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=588;y1=384;x2=1248;y2=716;w=1920;h=1280;c=0.91|><|mask;x=0;y=0;c=0.91;data=333,661,!!!!$S?Vi+{X{[Au&$Xc?75rpqoe*C{Ae?@L/k0oMwnjMIaz0QovX4D^s%E)347!j[/G5@KMLbHKHnyisOT^ME%)qUU8I/{d_D&GCsZT70E+(IInR(5d0-_Dxm:QN'7_dgz4+(X`h2^@0[*:1?^0Pl@C!YGmF]Tlm%lsG5Ch'6m1F'3k1^QuXfT%Y@IN)jvCz{8mCikVA'RRJ*n3.z)cP94K?X%{b-=]X2!$y*i#6K[tIEtb:kL91Q[d#5&_e2G$n0_WZlnpv@$B/7vEvP(|>\n",
+      "ms": 1500
+    },
+    {
+      "ingredientIndex": 11,
+      "prompt": "bottle of orange juice",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1560;y1=0;x2=1919;y2=756;w=1920;h=1280;c=0.86|><|mask;x=0;y=0;c=0.86;data=757,360,!!!!$sAeQ[Lhft?/6VIByqHr#+j/i9*]T2@mcsI/dU0pXggllA8dA0e/Dzmg'4XmKy!^W$]htQL`HgQXe/4tjN#o-{B*$]frsKs.WFIlZmbRmmQoL&@2QuYAitj=Xase]d^t.Dm&1xkk5CZ+HQN8N9*I+mMEO'[M&oqKAxfQ4'G[984{qw/QYKpC[0cYw54a?&cgw])ySAQNt.jz^Qw3`9$sLKpL:xa$n-Z3{HVkq?9JoeK1(wvw4.s4&wkrf!HJmG+-0O@1F056vs=C@B7^!U{v_:*NTdu'yk]*O^=IqxE=bjTE%Eg'lOC'MI|>\n",
+      "ms": 1590
+    },
+    {
+      "ingredientIndex": 12,
+      "prompt": "lime",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1584;y1=1020;x2=1752;y2=1279;w=1920;h=1280;c=0.93|><|mask;x=0;y=0;c=0.93;data=260,169,!!!!#KC`yYiJtHMh1SSQ3E+2TI54m{*#s'ib.XcrbhU`/nFHHH`J*uc6LDA[t@)8bWO][j{FD&s:237zmX2!8@U7(Zl&FuOHSl]fr]F7_Yww)383eA&65N?$Y4qPdAeF.Cbvfhd]d=O3ongBqq.'PB8rlFP`!!!|>\n",
+      "ms": 1680
+    },
+    {
+      "ingredientIndex": 13,
+      "prompt": "orange",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1048;y1=1000;x2=1328;y2=1279;w=1920;h=1280;c=0.88|><|mask;x=0;y=0;c=0.88;data=280,281,!!!!#n8:F75PTa2TqXwGZNF9=o@xa/aK`7:XflJP]]#*_'r&m68Wf]nne5VeRb]Mk'i0KEj*q4bC[?Lg@C:]J8O^%EpD2{h]1`cckA:S=d'._YnuB*hrnvoxCw$fC``qIssaBd%_wxVW%GhLLX-EbSO9ClGG^2aF@'G'W5m73hcx&(gpuH=na=avT3NPd(Y[vO!darKJm|>,1<|box;x1=1296;y1=996;x2=1656;y2=1279;w=1920;h=1280;c=0.89|><|mask;x=0;y=0;c=0.89;data=284,361,!!!!$#*(!GsC#%q2&l&QCX_WVWS[76S/*mKBBPFhjffqnAH&z1+_pMzZ=?jS4C&!`Rt=++^LFcD^XIZ#FuiNtW5NOeRha'Dwp){xb/W[UoSGKtNajJ{K^3u..Q/ktTc3Ds73C1dqYm[uXFo{CUF2TU@g=+Hk@F(F-xtyFnrgb6!VBg2`jsliC2aRYc&4Ln(-3sf93Or@tsiRsI?0+aI//oX'!!!!|>\n",
+      "ms": 1770
+    },
+    {
+      "ingredientIndex": 14,
+      "prompt": "lemon",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1004;y1=888;x2=1180;y2=1056;w=1920;h=1280;c=0.95|><|mask;x=0;y=0;c=0.95;data=169,177,!!!!#46pMeN0dNAfPpL^dH7)s7XdBBB.w?o*epF6EgW6&4K[X@$okz{!wzoWMQ[fy]bU4hTf1j(9sG:1$$2rrT%jrc9cU]f#*ZsmO$7&fp9ja'V?@e'@W0gE#^g69/dX%GO!!!|>\n",
+      "ms": 1860
+    }
+  ],
+  "totalCostUsd": 0
+}

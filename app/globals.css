@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/*
+ * Ripe design tokens.
+ * The ripeness scale (pousse → safran → kaki → betterave) is reserved for
+ * freshness and always ships with a "D-x" label and a draining pip, so it never
+ * relies on colour alone.
+ */
+@theme {
+  --color-porcelaine: #f4f7f3;
+  --color-aubergine: #2a1630;
+  --color-nuit: #160d18;
+  --color-brume: #6b5f6d;
+  --color-filet: #d9dfd8;
+
+  --color-pousse: #46b162;
+  --color-safran: #f2b92f;
+  --color-kaki: #ee7b30;
+  --color-betterave: #c42a5c;
+  --color-feuille: #2f9a52;
+
+  --font-display: var(--font-funnel), ui-sans-serif, sans-serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+:root {
+  --surface: var(--color-porcelaine);
+  --ink: var(--color-aubergine);
+  --ink-soft: var(--color-brume);
+  --hairline: var(--color-filet);
+  --glass: rgb(255 255 255 / 0.6);
+  --glass-edge: rgb(255 255 255 / 0.75);
+  --scene: var(--color-nuit);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #1c121f;
+    --ink: var(--color-porcelaine);
+    --ink-soft: #b9adbb;
+    --hairline: #3a2c3e;
+    --glass: rgb(42 22 48 / 0.55);
+    --glass-edge: rgb(244 247 243 / 0.12);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-hairline: var(--hairline);
+  --color-glass: var(--glass);
+  --color-glass-edge: var(--glass-edge);
+  --color-scene: var(--scene);
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-kaki);
+  outline-offset: 3px;
+}
+
+@utility glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+
+/* Cold light sweeping the photo while the models work; replaces any spinner. */
+.scan-beam {
+  background: linear-gradient(
+    to bottom,
+    transparent 78%,
+    rgb(124 195 91 / 0.2) 94%,
+    rgb(244 247 243 / 0.7) 99.5%,
+    transparent
+  );
+  animation: scan 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes scan {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
