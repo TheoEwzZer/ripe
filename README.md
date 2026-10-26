@@ -6,17 +6,20 @@ Snap your fridge. Ripe outlines every ingredient with SAM 3.1, reads how fresh i
 
 ```bash
 npm install
-npm run dev          # Convex (local, no account) + Next.js
+npm run dev          # Convex dev deployment + Next.js
 ```
 
-Open the URL Next prints (`/en` or `/fr`). The first `npm run dev` downloads the local Convex backend; no sign-up and no card needed.
+Open the URL Next prints (`/en` or `/fr`). Without a Convex account, `CONVEX_AGENT_MODE=anonymous npm run dev` runs a local backend instead.
+
+Production: Vercel runs `npx convex deploy --cmd 'npm run build'` when `CONVEX_DEPLOY_KEY` is set (see `vercel.json`).
 
 ## $0 by default
 
 | Piece | Cost |
 | --- | --- |
 | Next.js, Tailwind, Motion | free |
-| Convex, local deployment (`CONVEX_AGENT_MODE=anonymous`) | free, nothing leaves the machine |
+| Convex, free plan (or local anonymous deployment) | free |
+| Vercel, Hobby plan | free |
 | Meta Model API | pay-as-you-go, **not called** unless `MODEL_API_KEY` is set |
 
 Without a key, everything runs on **recordings** in `fixtures/recordings/`: raw model outputs replayed through the same parser as live calls.
