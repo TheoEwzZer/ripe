@@ -1,0 +1,157 @@
+{
+  "id": "fridge-drawers.live",
+  "source": "live",
+  "createdAt": "2026-10-27T20:56:45.614Z",
+  "image": {
+    "src": "/fixtures/photos/fridge-drawers.jpg",
+    "height": 1280,
+    "width": 1920
+  },
+  "perception": {
+    "model": "muse-spark-1.3",
+    "rawText": "{\"ingredients\": [{\"bbox\": {\"x_max\": 270, \"x_min\": 115, \"y_max\": 130, \"y_min\": 0}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 5, \"freshnessCues\": \"white balls, sealed packaging\", \"name\": \"mozzarella\", \"quantity\": \"2\", \"samPrompt\": \"mozzarella\"}, {\"bbox\": {\"x_max\": 600, \"x_min\": 270, \"y_max\": 142, \"y_min\": 0}, \"category\": \"egg\", \"dateRead\": null, \"daysLeft\": 14, \"freshnessCues\": \"in carton in door, no cracks seen\", \"name\": \"egg\", \"quantity\": \"1 dozen\", \"samPrompt\": \"eggs\"}, {\"bbox\": {\"x_max\": 382, \"x_min\": 184, \"y_max\": 305, \"y_min\": 148}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 5, \"freshnessCues\": \"bright red, firm, in clamshell\", \"name\": \"cherry tomato\", \"quantity\": \"1 box\", \"samPrompt\": \"cherry tomatoes\"}, {\"bbox\": {\"x_max\": 410, \"x_min\": 112, \"y_max\": 450, \"y_min\": 260}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 3, \"freshnessCues\": \"green leaves, no wilting visible\", \"name\": \"spinach\", \"quantity\": \"1 box\", \"samPrompt\": \"spinach\"}, {\"bbox\": {\"x_max\": 651, \"x_min\": 304, \"y_max\": 532, \"y_min\": 301}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"bright orange, sealed bag\", \"name\": \"carrot\", \"quantity\": \"~20 baby carrots\", \"samPrompt\": \"baby carrots\"}, {\"bbox\": {\"x_max\": 686, \"x_min\": 597, \"y_max\": 345, \"y_min\": 0}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 6, \"freshnessCues\": \"closed carton in fridge\", \"name\": \"milk\", \"quantity\": \"1 carton\", \"samPrompt\": \"milk carton\"}, {\"bbox\": {\"x_max\": 848, \"x_min\": 647, \"y_max\": 525, \"y_min\": 0}, \"category\": \"drink\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"sealed plastic bottle, fresh color\", \"name\": \"grapefruit juice\", \"quantity\": \"1 bottle\", \"samPrompt\": \"grapefruit juice\"}, {\"bbox\": {\"x_max\": 1000, \"x_min\": 808, \"y_max\": 573, \"y_min\": 0}, \"category\": \"drink\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"full yellow bottle, sealed look\", \"name\": \"orange juice\", \"quantity\": \"2 bottles\", \"samPrompt\": \"orange juice\"}, {\"bbox\": {\"x_max\": 300, \"x_min\": 55, \"y_max\": 976, \"y_min\": 536}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"dark glossy skin, intact stem\", \"name\": \"eggplant\", \"quantity\": \"2\", \"samPrompt\": \"eggplant\"}, {\"bbox\": {\"x_max\": 293, \"x_min\": 138, \"y_max\": 997, \"y_min\": 601}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"firm green skin, no soft spots\", \"name\": \"zucchini\", \"quantity\": \"2\", \"samPrompt\": \"zucchini\"}, {\"bbox\": {\"x_max\": 359, \"x_min\": 195, \"y_max\": 670, \"y_min\": 513}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 3, \"freshnessCues\": \"green florets, no yellowing\", \"name\": \"broccoli\", \"quantity\": \"1 head\", \"samPrompt\": \"broccoli\"}, {\"bbox\": {\"x_max\": 431, \"x_min\": 286, \"y_max\": 780, \"y_min\": 547}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 3, \"freshnessCues\": \"red ripe, on vine\", \"name\": \"tomato\", \"quantity\": \"4\", \"samPrompt\": \"tomato\"}, {\"bbox\": {\"x_max\": 601, \"x_min\": 508, \"y_max\": 807, \"y_min\": 677}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"bright yellow, firm\", \"name\": \"lemon\", \"quantity\": \"1\", \"samPrompt\": \"lemon\"}, {\"bbox\": {\"x_max\": 694, \"x_min\": 618, \"y_max\": 814, \"y_min\": 730}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"brown fuzzy skin intact\", \"name\": \"kiwi\", \"quantity\": \"1\", \"samPrompt\": \"kiwi\"}, {\"bbox\": {\"x_max\": 849, \"x_min\": 530, \"y_max\": 1000, \"y_min\": 753}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 8, \"freshnessCues\": \"firm orange peel, no blemish\", \"name\": \"orange\", \"quantity\": \"2\", \"samPrompt\": \"orange\"}, {\"bbox\": {\"x_max\": 892, \"x_min\": 802, \"y_max\": 1000, \"y_min\": 771}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"green firm skins\", \"name\": \"lime\", \"quantity\": \"4\", \"samPrompt\": \"lime\"}], \"scene\": \"fridge\"}",
+    "ms": 11706,
+    "costUsd": 0.017427
+  },
+  "segments": [
+    {
+      "ingredientIndex": 2,
+      "prompt": "cherry tomatoes",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=659;y1=255;x2=704;y2=308;w=1920;h=1280;c=0.5857605338096619|><|mask;x=0;y=0;c=0.5857605338096619;data=54,46,!!!!!OFw4?Zi7NxAbtq5=r%&[t+.KsNkjpWXK/S^#rWOM@@J#'iZ_`Xq!!|>,1<|box;x1=645;y1=880;x2=803;y2=1022;w=1920;h=1280;c=0.7419355511665344|><|mask;x=0;y=0;c=0.7419355511665344;data=143,159,!!!!!vBw+fl^roJ_a^(MU4]KWI=R=qH)R8cU+DTu0tt:Nd(Dvj58K?bH@F+r`VZgUp:p?6o2-Rx7k&UTDPAWP`/wo3mCY5uW(Qf91JA$z|>,2<|box;x1=778;y1=845;x2=852;y2=977;w=1920;h=1280;c=0.7229437232017517|><|mask;x=0;y=0;c=0.7229437232017517;data=133,75,!!!!!fDq'-mmHe7Bgj`y1vX^U]6.ZkBLG$aVjo.^Jn1!vPvO45T.P%$6t2`[4pB)tu&T402#%@#*7IRX$h_O5|>,3<|box;x1=549;y1=824;x2=663;y2=958;w=1920;h=1280;c=0.7037037014961243|><|mask;x=0;y=0;c=0.7037037014961243;data=135,115,!!!!!vD?PCNqO_YB7)hdUMg(WzHii#JE-Kd:v+-#3WP&XW3XeFog#]3CA5z[(ek1]Kb&JPvx'rp8OX3nvoy_4f?J@1`E)jtKf4tU@YLe@|>,4<|box;x1=661;y1=729;x2=806;y2=837;w=1920;h=1280;c=0.6167664527893066|><|mask;x=0;y=0;c=0.6167664527893066;data=109,146,!!!!#_D1C`?D/zubVL@fUP8Z1{Q&^hqFb:3h%P.6*Lw6nN)Cd%vfpR]-$wR4aPC]vJ.V6KIxJGy.R7E@?OU2cR2Mnaa98yQ#EuiGq`4b8)'oS5[W+X0J&wy1sR?.Tl'xI7yN?v(FV_S`9fkmn@R[fQbUzUf/XgKxWD!'E#`6Zx?Zg[-KR/3XCO.|>\n",
+      "ms": 1045
+    },
+    {
+      "ingredientIndex": 9,
+      "prompt": "zucchini",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=110;y1=766;x2=213;y2=855;w=1920;h=1280;c=0.5775577425956726|><|mask;x=0;y=0;c=0.5775577425956726;data=90,104,!!!!![F]o8.MT*hjmUQ][gYbHa7/pT9T_L18:M9wC:T3K%A4=9`1E8`PV?mITj(PMfC'NveR{|>,1<|box;x1=311;y1=797;x2=571;y2=1160;w=1920;h=1280;c=0.7575758099555969|><|mask;x=0;y=0;c=0.7575758099555969;data=364,261,!!!!$)DX9o/Y'u#QgoMuLFXp-%U1(.Wh^[8xTZuWtGXdx5A.@1yi6t7*0K-rpfbIyku`sYGQDSNbShjH54yck$O*#zwEn])lLGN9`M0)GvBf#Y[VrOoZ+s_f2dx4AV_.YjE#o#`j+x9$p@VLoSwj?ehMXm6G=:9`jXJ'GrGA(uzFWH:q-G9R9QbB0Q)t@rh.r-Aq0vy.LZ4F05y4.X]t4_LYe)6']C]Sq(!!|>,2<|box;x1=410;y1=804;x2=578;y2=970;w=1920;h=1280;c=0.6332378387451172|><|mask;x=0;y=0;c=0.6332378387451172;data=167,169,!!!!#%EW/5^7{qhZrEyiUk3z*V[*lf:T9'pA?TLt0Wt0O[w)c$9q1-oZBLJ?IZY${n]{8/mki16G2!uKm/MR6qg!JPqTekqZkTwg@s[yI]abzTW.zb0@|>,3<|box;x1=176;y1=992;x2=562;y2=1279;w=1920;h=1280;c=0.6363636255264282|><|mask;x=0;y=0;c=0.6363636255264282;data=288,387,!!!!#kIa_]GK/apOeW`H{.r&2^Ngt8Er:&@zleB6vTi.u9`5NfASk?uiEKTB-_kAi4tp_r&@':jG('@0R7_iMYLt?WzlAizZX^4K$o87O?gDGS#mX6v`wCGfJCn%Z-IMf6ssJq9.i%mUjsie/RNFfR)xGO`Lq5$q2#a`n4Ckz:3476uOkTq9G=bbR=KfMQBK_luF:i|>\n",
+      "ms": 1391
+    },
+    {
+      "ingredientIndex": 3,
+      "prompt": "spinach",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=305;y1=367;x2=804;y2=572;w=1920;h=1280;c=0.5508772134780884|><|mask;x=0;y=0;c=0.5508772134780884;data=206,500,!!!!$S=p2bTQEk8xk&-Ev3Qv*iZFu=8kiGscM=@{p/C$o/'qtI%0c8ITMgP30BD]shvEl]cJMe1ZwSIcUKRzmq4k'7!AlnVxQz]je@VrHh=w$U!F$uP1o]cjLd!F*MxT-pnO[uY^]]0Hbr[&P5AD[6axFpF7.w(h$=D70k:f0E#3#oiAmwk:LfWw:'(IT+FPcdf0viSAi4{M6=bD&fsC3IHOhkEZtkKd'Qmm`w_mT5?B'M%[BWfD{PVxYbN*m29yfT{%s]WWUABmFlS78)`|>\n",
+      "ms": 1509
+    },
+    {
+      "ingredientIndex": 0,
+      "prompt": "mozzarella",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1611
+    },
+    {
+      "ingredientIndex": 10,
+      "prompt": "broccoli",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=375;y1=649;x2=692;y2=861;w=1920;h=1280;c=0.8987342119216919|><|mask;x=0;y=0;c=0.8987342119216919;data=213,318,!!!!#mF/tk#i98+c`8iNIVv`HWA0M?ec]N)HAW[99-G7o{e]ld`mHBE.'?=&8u#uGkt(!*Ay)y9OwSR9Z^x4bfgj3lfa{Mb'I1f7zsJ=d&k{WkS:)zDvqjotSlRaVI5iR''C6FS7CYZbjGLqNDYM$`@6LB^&Z=Y{.]Fms99:aQ:6XD5uX3)Kdmrr7od&.Hfxb+B#Rz_g|>\n",
+      "ms": 1720
+    },
+    {
+      "ingredientIndex": 8,
+      "prompt": "eggplant",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=617;y1=1088;x2=696;y2=1279;w=1920;h=1280;c=0.5345454812049866|><|mask;x=0;y=0;c=0.5345454812049866;data=192,80,!!!!!oF9dh0_bIe{)')00M&&?^o!'ir8+`eB=3!O^h?y%2VHK1iFEK`3bmDP0r9niHOk`ZfWD+qv+?$mt5'b`QNv`._a^Ou[|>,1<|box;x1=127;y1=689;x2=320;y2=892;w=1920;h=1280;c=0.8865247964859009|><|mask;x=0;y=0;c=0.8865247964859009;data=204,194,!!!!#EBV-J!l_ZpLeEbNh_x9qvErv(WIXbdaCLsvVc[^zV?X[Q{FBHTec^u%IfRvqGiof8vS+p^cRXRHIYJHs*op=Z3a%N)1FN'&Fkhu1FKgZ`N-!L35vTP+^?1u*3xP$?Fa^[(GnssJyKj6dV?ordA|>,2<|box;x1=411;y1=804;x2=578;y2=970;w=1920;h=1280;c=0.8476190567016602|><|mask;x=0;y=0;c=0.8476190567016602;data=167,168,!!!!#%E/+?&p:Eqs=J11#5p[hE(ar1dV2Z6!oPoP!xbwG.!{rWUtmaK[#MS&Z)8xAFbS$5)--o^f2Rfx1y4{I&91NWj9-w!8c1=cxf:_:AHLB]aQ0`ap|>,3<|box;x1=47;y1=952;x2=309;y2=1276;w=1920;h=1280;c=0.7538461089134216|><|mask;x=0;y=0;c=0.7538461089134216;data=325,263,!!!!#mE-cLJ#3aY]jKAWH-I&[k'jsJ$$y&{brXzULgXlpYB+_@W3sg'eMbo`(O4l{xy$R4kE:UQrlpE`TLR+bufo^$*_ev[[6+*xsM3FdXXMWa$jOwmNJL25wmcwB&0b_#5R1zPtX&]TmtkZ!kgKn]m$':cbG(=Wz5433-oL%SzT:%UN6VmFJ6pYu3t__Xo#plDtdfAH|>\n",
+      "ms": 1735
+    },
+    {
+      "ingredientIndex": 13,
+      "prompt": "kiwi",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1994
+    },
+    {
+      "ingredientIndex": 11,
+      "prompt": "tomato",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=659;y1=255;x2=704;y2=308;w=1920;h=1280;c=0.7037037014961243|><|mask;x=0;y=0;c=0.7037037014961243;data=54,46,!!!!!OG+9C1YDcG$*GeRm){S:EZ#7nV9v@E`2AH#^Od[Z4M/0hW::ci+!!|>,1<|box;x1=429;y1=334;x2=464;y2=373;w=1920;h=1280;c=0.5345454812049866|><|mask;x=0;y=0;c=0.5345454812049866;data=40,36,!!!!!EHm-!9ZMHP5$KQ'070$C8VkBvolq0E5?N{gpeCpV|>,2<|box;x1=457;y1=338;x2=508;y2=381;w=1920;h=1280;c=0.5151515007019043|><|mask;x=0;y=0;c=0.5151515007019043;data=44,52,!!!!!OH3=0MhIW_*RdUIi'xd#&9MkumOfrv!:0]W9QJ&d]o*IB.j@W!o!!|>,3<|box;x1=551;y1=273;x2=605;y2=348;w=1920;h=1280;c=0.5395683646202087|><|mask;x=0;y=0;c=0.5395683646202087;data=76,55,!!!!!ZDg-VwmP8X*krMm=b@'d!l/7EohZ?k2.8os/1COS[TbZ/7N`+4UXb=Vn:xKBp1@UbX|>,4<|box;x1=387;y1=254;x2=445;y2=333;w=1920;h=1280;c=0.5816993117332458|><|mask;x=0;y=0;c=0.5816993117332458;data=80,59,!!!!!VHO56y%1gcU!mqu&u9up((wr]+ZN-kb1M[9!X^N^I:`bH.hHU:]#MF)[)(#B9|>,5<|box;x1=645;y1=879;x2=803;y2=1022;w=1920;h=1280;c=0.8552036285400391|><|mask;x=0;y=0;c=0.8552036285400391;data=144,159,!!!!!{Bhnmjp.H5(X$`?ujiCb1g6&2i[o1P1dkw]yXR-pa_gJ.nhFZC-VR![Wf`MekTiivL:*QMN?MR/Z4:r(UD91bQhu%KIBVE@!8vn2Sj0aRD|>,6<|box;x1=778;y1=845;x2=852;y2=977;w=1920;h=1280;c=0.8324607610702515|><|mask;x=0;y=0;c=0.8324607610702515;data=133,75,!!!!!hDv7$gFAKD7]XexP?kf'N%-RkqnJJq.r6cZM.s99/chNP)AI`jnQZP`HULp[u]bJ+QUg@-$3p%.3XWVaE!!|>,7<|box;x1=584;y1=335;x2=645;y2=382;w=1920;h=1280;c=0.5508772134780884|><|mask;x=0;y=0;c=0.5508772134780884;data=48,62,!!!!!SDJD/(q$d[-+2zwbS8bQ%:+$:gMr]t)VSNIEDjv`3R$[HOnKqGa$P_EpAA|>,8<|box;x1=549;y1=824;x2=663;y2=958;w=1920;h=1280;c=0.8012422323226929|><|mask;x=0;y=0;c=0.8012422323226929;data=135,115,!!!!!{D8a:zBTPG=pZ[EN3SSiZB1.J3SW/S_8Gw#1v2gfPmfn=zE0/(tk#U`h68#+[wtLal/cJqg+@)B[f{tT]s&O-5O1I2^J#oD'4kW[57GzVy|>,9<|box;x1=661;y1=728;x2=806;y2=821;w=1920;h=1280;c=0.6908212304115295|><|mask;x=0;y=0;c=0.6908212304115295;data=94,146,!!!!#@D!Gg(SPCgCm@8NMt&?epp1S)J^ktbPeB?@v%E%`=?=D4PW!BHo+eF9d!DPP29)SNED{i?a[7{{$uuXpuBQ{kBhC{u3=]l6RBEm/WG!7==]WV5f3dg.DLbOL0Yw'8{bx$c:Yto='52u(|>,10<|box;x1=662;y1=314;x2=697;y2=358;w=1920;h=1280;c=0.5428571701049805|><|mask;x=0;y=0;c=0.5428571701049805;data=45,36,!!!!!EFFU'^%gll6Y$AoF3fhs!1Hkjnoz6hk06fa*9l]R|>\n",
+      "ms": 2212
+    },
+    {
+      "ingredientIndex": 5,
+      "prompt": "milk carton",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1188
+    },
+    {
+      "ingredientIndex": 7,
+      "prompt": "orange juice",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1560;y1=0;x2=1919;y2=757;w=1920;h=1280;c=0.7142857313156128|><|mask;x=0;y=0;c=0.7142857313156128;data=758,360,!!!!$7BPD)?eggY37@[alndb[EnE`TA[ZHOn@K*91$!?S*RCt5Part.B(WGJJ1JVVK2tVItf::46ld2U/`TCWI?m{n{83am2AJh_*A[n[Au(`Ye5Sde@iuw&9H:I?{g!G!HfefRWibzae3^MAOr*`fwZ0)&&*_'`RR[!NNChB.7M4G`kxC2bCm?RP8)'3C!jcnfYYo$^p$IqjVhEz8j_uJTE*Oc9xbPt`wjG1v*JC`SL3Q=uD!!!|>,1<|box;x1=1249;y1=0;x2=1626;y2=696;w=1920;h=1280;c=0.7387754917144775|><|mask;x=0;y=0;c=0.7387754917144775;data=697,378,!!!!$[C0[#l[OX]?Q6_v5gnJA+/'R/sRx[@NeOuyt('`kse9#XhpUwF/&g?qhK0RfCp1^n0]ai(wb/n_V@w]MY4Y&&o^lx(-m_(X3bIv$?Gz/3J0VE&8qEMJGX))c]?x?xXk+A*VM3bEA==2QE2I%eM9MAtzO:edG:2V5^hqD:b_D{svjQMwJUpcec`XW*s^0rsLosA&LvCwh#%Xqc?]VWsnLa_2Vg*!ZsxYC{Sw(AO%Rfy%w?N5:AvsQmp##FGFiNzc)7Wqn!8o@QF*ToIeV-B3^?G3E|>\n",
+      "ms": 1368
+    },
+    {
+      "ingredientIndex": 1,
+      "prompt": "eggs",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 805
+    },
+    {
+      "ingredientIndex": 4,
+      "prompt": "baby carrots",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=625;y1=393;x2=1245;y2=665;w=1920;h=1280;c=0.6289855241775513|><|mask;x=0;y=0;c=0.6289855241775513;data=273,621,!!!!%q?kO`bb(CRtlRo2{KBmZo7M]D!Ib1[keR7?AJug1QY[t-W$%1q5oiq3^n.fC1.:9eBd1)b1$-I$8dCw3co_y?[Iu'MegEd8I(gO&p(unzHOA$b`W!X*T0T80w[lHnI$`KwIjWP#`JTd)'a8p5!x%'1YrFT(DV2)5br0WSgVPT&Kf2fT15B3=HaU8S)lU(VhX%8Jax7atLm%GBts8NJCI/MTID3v7i3vDdB)dIGI`!^/Cfxa.L.fC%EA!K(q:%izf`(F!lh]fMlsX'rt-uG*U2.M?%jAo1XWu=3gOzQwn&5JYtUOTDwBb{:rInMqHRd.tD:P$BuoZu^eK5-lVBp=$VE`'kM*jRa4vh&r8qQ5z/*&6!VaPWOdumI5Mn9%dd:aY8jND1S7cB)k-2'GJdYJ3*`Q4o@=!!|>\n",
+      "ms": 1663
+    },
+    {
+      "ingredientIndex": 14,
+      "prompt": "orange",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1294;y1=995;x2=1654;y2=1279;w=1920;h=1280;c=0.941605806350708|><|mask;x=0;y=0;c=0.941605806350708;data=285,361,!!!!#cBqHL#Eldtl9J^Uf!p'&$de[wyw@bP)5(+XGTKWI!-1?4/8Kj?lT$%Nxe9z[nJq59kR`e/^dVF!J#r.GV^5dU&$(45Ho(W?RU`FT'IB0WaK?Mzq$eyxnkrJjeX:O:+L[`I!93pkUXA?vnPcJ#vNzRbBk83ziO^f2qBj&+VcyP#`Y)E#dUWoZ'2f|>,1<|box;x1=1046;y1=1031;x2=1329;y2=1279;w=1920;h=1280;c=0.941605806350708|><|mask;x=0;y=0;c=0.941605806350708;data=249,284,!!!!#RB3g6165Ng+o0Y#oD*Fx`[8-P'G`6?c.e/Y?m%by6KXElxMPu.:Nh{RiN!LiO)Q$v!tdPnLDM-2{Bv^mtDt#bnm:=nRKr%Zk`tngO2{PULRYo?GF'7OP@M`PRpS3Jf-NKcBLBX2p2kN1^$!OysC).uuw@6_cHd{2V!!|>\n",
+      "ms": 1507
+    },
+    {
+      "ingredientIndex": 6,
+      "prompt": "grapefruit juice",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1802
+    },
+    {
+      "ingredientIndex": 15,
+      "prompt": "lime",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1005;y1=898;x2=1179;y2=1059;w=1920;h=1280;c=0.8241757750511169|><|mask;x=0;y=0;c=0.8241757750511169;data=162,175,!!!!#/A@tO6'aYMCQKDn!3D{A(q_/iesJ3-BpVPw%qQzDe&zcoDl{]e5$vB^12WrPgNOEvPLMs-v%Coj:s8fzDO[7((wQBbp:cE1a_$40Z:7xlsoHki[[`8c!Qw?-y!!|>,1<|box;x1=1592;y1=1212;x2=1691;y2=1279;w=1920;h=1280;c=0.8400000333786011|><|mask;x=0;y=0;c=0.8400000333786011;data=68,100,!!!!!GCumu!XK^gl!xVQ65B#YhxUX(^@yB[mcR1'/cTgQ_qr|>,2<|box;x1=1581;y1=1021;x2=1737;y2=1096;w=1920;h=1280;c=0.8476190567016602|><|mask;x=0;y=0;c=0.8476190567016602;data=76,157,!!!!!ZGas2IqhUmA`*&![tRrJ{W98HuYjw'GuFD0HN#w2]qjuCo$F[t:hsqsiD7US4997.x|>,3<|box;x1=1642;y1=1098;x2=1708;y2=1222;w=1920;h=1280;c=0.8518518805503845|><|mask;x=0;y=0;c=0.8518518805503845;data=125,67,!!!!!cN^M8DPbuBdX9Xa.**2`Z3v.4wa!kSAJuKrd`.FBmDpi{/%2-#wV%32kK#GS*EG[vSVFD64br$%L|>\n",
+      "ms": 1714
+    },
+    {
+      "ingredientIndex": 12,
+      "prompt": "lemon",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1592;y1=1212;x2=1691;y2=1279;w=1920;h=1280;c=0.5775577425956726|><|mask;x=0;y=0;c=0.5775577425956726;data=68,100,!!!!!ICu*R)MVys6I8$R)]M$Z*q*2zIxZ:=ot8n{KleOgK:U^^|>,1<|box;x1=1581;y1=1021;x2=1738;y2=1096;w=1920;h=1280;c=0.507692277431488|><|mask;x=0;y=0;c=0.507692277431488;data=76,158,!!!!!ZH3:xzWBMjW9^b^z1s'j^-1IA=k{{#Jv!BudN67Ylp7x7STFfD=3hUz*rS`E6)Fi7Y|>,2<|box;x1=1642;y1=1098;x2=1708;y2=1222;w=1920;h=1280;c=0.5775577425956726|><|mask;x=0;y=0;c=0.5775577425956726;data=125,67,!!!!!aLA[oige[UAjiE)S7Bq#/J)#r:]V_/3AbjYWWzRo9_de%C+frj_L-=`R/)00(!s-Q59_L8)ElV|>,3<|box;x1=1006;y1=898;x2=1179;y2=1059;w=1920;h=1280;c=0.9139785170555115|><|mask;x=0;y=0;c=0.9139785170555115;data=162,174,!!!!#-EA/F4@D:`lZuTEpK5y8yP-)@8XeuK+S4a`VT8n.kf:*uMb[fV@8^Z`9Z9Zhlg(1vU1U1ypaKP5LAM^(JsVsZn!q3.{/uzgb/?6.R#LWOwRgh7g!![s(ro9#|>\n",
+      "ms": 2256
+    },
+    {
+      "ingredientIndex": 5,
+      "prompt": "milk",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1871
+    },
+    {
+      "ingredientIndex": 1,
+      "prompt": "egg",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1720
+    }
+  ],
+  "totalCostUsd": 0.06492700000000003,
+  "boxFallback": {
+    "ingredientIndexes": [
+      0,
+      13,
+      6,
+      5,
+      1
+    ],
+    "prompt": "<0f>0<|box;x1=221;y1=0;x2=517;y2=165;w=1920;h=1280|>,13<|box;x1=1187;y1=934;x2=1331;y2=1041;w=1920;h=1280|>,6<|box;x1=1242;y1=0;x2=1627;y2=671;w=1920;h=1280|>,5<|box;x1=1146;y1=0;x2=1316;y2=441;w=1920;h=1280|>,1<|box;x1=518;y1=0;x2=1151;y2=181;w=1920;h=1280|>",
+    "rawText": "<0f>0<|box;x1=280;y1=0;x2=545;y2=164;w=1920;h=1280;c=0.95703125|><|mask;x=0;y=0;c=0.95703125;data=165,266,!!!!#`pL@b.hstiTk*JsXoPa1(#O-X*aY6L^RHOF:%?)[GVr+j/g![j&V6+cm&_#0_G1*f/iYf7v7OgAuQ!aF?I)E$Sv(H@sAq+M-Bnk4WSKGKQ_m:/7/76lZArjAAYFKZkKX(vj4J!tU5ou^HRQhM-:ecz(A4x)%mFd{Ns:kFmy*@_F_a.*I!!!|>,1<|box;x1=496;y1=0;x2=1124;y2=203;w=1920;h=1280;c=0.96484375|><|mask;x=0;y=0;c=0.96484375;data=204,629,!!!!$kF&d&cHlUD8=$qrs&d%)m%tQ_F7$u`?MvROArjyyblxEJCDh0J5A=C:=^:ni3`ZIuA'QBV*Gq!xB3/R6UW&J4gaZFlA*X3ZWDk$d_tC`gbWrT-#_m^i2inLv-Z0!ZBoH:?D[Et/Zm#1]IudxtTl=5DK`q&yH`ErVc_n=?!E?7W#':9eG([%pTdmM+3k.9!zOb0x7(v!`WZ=Tm1jqocoU&#^hKymW_9)`S#SmTdcdnW1)Hs3BDkexs_!c'%Rn?T+MLTL+U&xIvhaHvu{b)SLNQ$Z(B-m?8z])3IAf:g3J!!!|>,5<|box;x1=1119;y1=0;x2=1322;y2=434;w=1920;h=1280;c=0.8046875|><|mask;x=0;y=0;c=0.8046875;data=435,204,!!!!(UEwl'h_dogw$#k]s##LG@R%Dtd#3ORL*P:ELxw.FRW%_e(V_W8sABYn.%h61d@pMFuDo:`[YhwJJQaqK$YdeBC=.&)JnYL?kSf7geF[`KB0vD:ke`*1^N#th!Ib0+x3n?1ZVAD*hB]nAr'k)hlts@x(3Y?xRu`^6R:.KsydEFJ(7zkEa3HdJ/M%(m?g53*mv1B]mMjP(RoX[3B6pC@QR1+J_xREnH?!N9:3+ocZK#KM^Fof%uL!fNbmy'e^w$90(6WviF8=*f@]@Xr(('euyJ:YWSLaaW%X63Sqc8`nQ@Mm$YMY3K$]m1I(bNLN-x:fwSjjLvys=rISwZ8K7iB)l`3G5:si&Lplc{MdTilK]9nqbi:a27pOqZwTgS/DbgfuK52b@A_k$#seKX@:^)BJS^mGCtuvp5W&C*0K2*(U?miHJ0N&&:2=1lsqd`+A54cr3)*%^F/S?#$0-e`zN*9j&yq/a?9^5)(]Zxs6%S)(0BXp1+@Fkw4zn?Ex.IH(E2Xj#^]-jb{e[Lh4aWabfjBlbWR/=7u-fnZ3b!aI`D/wb.{cJNIJjG+f/P1CaS5RNubN4:e-D57ejGLkpnp4D(OKn`@@fZ[qBHaLOX4kNbjOsPqu1.5ElAwvC/[-nt=yU.%!C84sMB$/!F_+Q9K.t$WE?@i5BIy@QUvqIMIHyQp-O]^B6U_XIqrNnAJV!!!|>,6<|box;x1=1246;y1=0;x2=1627;y2=697;w=1920;h=1280;c=0.9921875|><|mask;x=0;y=0;c=0.9921875;data=698,382,!!!!$yC9Ra^q2!RvM@-F&7B6TOJ*:+m-.=[3GU3^U&4P/*@U$[iG&sPJO5bqDo*t?&h3d_(Y6Edk#vPwyIR8fCIf&-UDe4!7Ym/$3hFnC4ahgg5o8P5MsEGK&hLIYzXWiLuC{9#A.DCtcQL`EVESg^/p]b%j9*?xF0hq7Pt6Q@0-4N&A@IyA0PQSa#Ssw'&(bcL2H/:#P8mN@kci6]D@@!J`G8JC.Z1DkxLZi2aaXP*2+!h1jL8t2vUnL{ajojR17*4'E]S*?$KcDdM?L/[GmAN+ylA{C3^7VtBCv`Om3Gi)6ZBpXxs%iGpDJ(_Yh=8oi|>,13<|box;x1=1180;y1=943;x2=1316;y2=1038;w=1920;h=1280;c=0.52734375|><|mask;x=0;y=0;c=0.52734375;data=96,137,!!!!#1L?)q*DD3R6t+iebXmXjGKDn=PueZcB`4$J00Qi=?R63BdEEXt0?6dqB%1$c/UKnuPEYXNMkT=:9]K?%jn*UR!`Nc5c^HQ4'ueC9e8MT`5wSq4AI])+)Ek(f-88$z|>\n",
+    "ms": 1726
+  }
+}

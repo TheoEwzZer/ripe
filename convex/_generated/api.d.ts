@@ -9,7 +9,10 @@
  */
 
 import type * as crons from "../crons.js";
+import type * as pipeline from "../pipeline.js";
+import type * as scans from "../scans.js";
 import type * as sessions from "../sessions.js";
+import type * as spend from "../spend.js";
 
 import type {
   ApiFromModules,
@@ -19,7 +22,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
+  pipeline: typeof pipeline;
+  scans: typeof scans;
   sessions: typeof sessions;
+  spend: typeof spend;
 }>;
 
 /**

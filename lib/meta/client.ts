@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 
-export const META_BASE_URL = "https://api.meta.ai/v1";
+/** Read lazily and overridable, so tests can point the SDK at scripts/fake-meta.ts. */
+export function metaBaseUrl(): string {
+  return process.env.META_BASE_URL ?? "https://api.meta.ai/v1";
+}
 
 export function hasMetaKey(): boolean {
   return Boolean(process.env.MODEL_API_KEY);
@@ -14,6 +17,6 @@ export function metaClient(): OpenAI {
   if (!apiKey) {
     throw new Error("MODEL_API_KEY is not set. Use the recorded fixtures (RIPE_REPLAY=1) until a key is available.");
   }
-  cached ??= new OpenAI({ apiKey, baseURL: META_BASE_URL, maxRetries: 2, timeout: 90_000 });
+  cached ??= new OpenAI({ apiKey, baseURL: metaBaseUrl(), maxRetries: 2, timeout: 90_000 });
   return cached;
 }

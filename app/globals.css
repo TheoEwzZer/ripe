@@ -103,6 +103,17 @@ body {
   }
 }
 
+/* Muse Spark's box breathing while SAM outlines the item. */
+.ghost-pulse {
+  animation: ghost-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ghost-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

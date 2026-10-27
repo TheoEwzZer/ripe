@@ -1,7 +1,7 @@
 {
   "id": "fridge-drawers.mock",
   "source": "mock",
-  "createdAt": "2026-10-26T21:58:23.333Z",
+  "createdAt": "2026-10-27T20:56:38.461Z",
   "image": {
     "src": "/fixtures/photos/fridge-drawers.jpg",
     "width": 1920,
@@ -60,7 +60,7 @@
       "ingredientIndex": 6,
       "prompt": "red tomatoes on the vine",
       "encoding": "one_bit",
-      "rawText": "<0f>0<|box;x1=548;y1=736;x2=864;y2=1004;w=1920;h=1280;c=0.87|><|mask;x=0;y=0;c=0.87;data=269,317,!!!!#oBM8='6XNtRuAYV!JB]^(9V:d/T:LL]=j):lE$JiAs_Jym?jh7tO.cDe%.S{]h)w:aamQvTFCYy'*)*O.YMt3[Wy#ZFa@w%fTe@mNbYJneqr8nMRxRiyk`]G1rV8Wj1qTBL63iin)N{9{ZUCGZ?rW?S_/13Fk'cdm[LP]4x:HDX#rHp&@/[a30f!OlH4'%@!W)SI!!|>\n",
+      "rawText": "<0f>0<|box;x1=548;y1=736;x2=864;y2=1004;w=1920;h=1280;c=0.87|><|mask;x=0;y=0;c=0.87;data=269,317,!!!!#oBM8='6XNtRuAYV!JB]^(9V:d/T:LL]=j):lE$JiAs_Jym?jh7tO.cDe%.S{]h)w:aamQvTFCYy'*)*O.YMt3[Wy#ZFa@w%fTe@mNbYJneqr8nMRxRiyk`]G1rV8Wj1qTBL63iin)N{9{ZUCGZ?rW?S_/13Fk'cdm[LP]4x:HDX#rHp&@/[a30f!OlH4'%@!W)SI!!|>,1<|box;x1=360;y1=208;x2=716;y2=384;w=1920;h=1280;c=0.92|><|mask;x=0;y=0;c=0.92;data=177,357,!!!!#FA!$F/4-/V(7)]U.L6z$Lw]{Nu0pXEO'O8#d[JNNHs:blESoHG!Xx&t(riiaJrdg42nfd_A]yi::AW'C$g3C139^]Oo6$k?.wSlgea*9'hI&CCfL)=Iw6&CzERxUvP9'*]h:75f3l1msqpWtFF!!|>\n",
       "ms": 1140
     },
     {
@@ -74,7 +74,7 @@
       "ingredientIndex": 8,
       "prompt": "kiwi fruit",
       "encoding": "one_bit",
-      "rawText": "<0f>0<|box;x1=1212;y1=944;x2=1372;y2=1060;w=1920;h=1280;c=0.89|><|mask;x=0;y=0;c=0.89;data=117,161,!!!!#!:!IDa8*zJnX!z*js:]#F:@_l]j]Q1G*h'{z5b[XY8qrNHhqR)pPOlx)gn$sWJ_@y7VGKsh#v'%:r)hjhP)qp?')4Pba--WgnBAYqN1p8N!!|>\n",
+      "rawText": "<0f>0<|box;x1=1584;y1=1020;x2=1752;y2=1279;w=1920;h=1280;c=0.97|><|mask;x=0;y=0;c=0.97;data=260,169,!!!!#H5$pO=5KG*`n5s=WH=6a9N7?F??dnvM3_!IAcK**ZrJ1d.O#a6@X4jx.)_t2I!MMo1JzOxCqgXog-jgl9af!b6S6yP$fF[@D0&RDmOcK`bEQ{)nGHXO{6_-oQ3i/*[uCm$snVUQalzR'DhDiP@!!!!|>\n",
       "ms": 1320
     },
     {
@@ -109,7 +109,7 @@
       "ingredientIndex": 13,
       "prompt": "orange",
       "encoding": "one_bit",
-      "rawText": "<0f>0<|box;x1=1048;y1=1000;x2=1328;y2=1279;w=1920;h=1280;c=0.88|><|mask;x=0;y=0;c=0.88;data=280,281,!!!!#n8:F75PTa2TqXwGZNF9=o@xa/aK`7:XflJP]]#*_'r&m68Wf]nne5VeRb]Mk'i0KEj*q4bC[?Lg@C:]J8O^%EpD2{h]1`cckA:S=d'._YnuB*hrnvoxCw$fC``qIssaBd%_wxVW%GhLLX-EbSO9ClGG^2aF@'G'W5m73hcx&(gpuH=na=avT3NPd(Y[vO!darKJm|>,1<|box;x1=1296;y1=996;x2=1656;y2=1279;w=1920;h=1280;c=0.89|><|mask;x=0;y=0;c=0.89;data=284,361,!!!!$#*(!GsC#%q2&l&QCX_WVWS[76S/*mKBBPFhjffqnAH&z1+_pMzZ=?jS4C&!`Rt=++^LFcD^XIZ#FuiNtW5NOeRha'Dwp){xb/W[UoSGKtNajJ{K^3u..Q/ktTc3Ds73C1dqYm[uXFo{CUF2TU@g=+Hk@F(F-xtyFnrgb6!VBg2`jsliC2aRYc&4Ln(-3sf93Or@tsiRsI?0+aI//oX'!!!!|>\n",
+      "rawText": "<0f>0<|box;x1=1048;y1=1000;x2=1328;y2=1279;w=1920;h=1280;c=0.88|><|mask;x=0;y=0;c=0.88;data=280,281,!!!!#n8:F75PTa2TqXwGZNF9=o@xa/aK`7:XflJP]]#*_'r&m68Wf]nne5VeRb]Mk'i0KEj*q4bC[?Lg@C:]J8O^%EpD2{h]1`cckA:S=d'._YnuB*hrnvoxCw$fC``qIssaBd%_wxVW%GhLLX-EbSO9ClGG^2aF@'G'W5m73hcx&(gpuH=na=avT3NPd(Y[vO!darKJm|>,1<|box;x1=1296;y1=996;x2=1656;y2=1279;w=1920;h=1280;c=0.95|><|mask;x=0;y=0;c=0.95;data=284,361,!!!!$#*(!GsC#%q2&l&QCX_WVWS[76S/*mKBBPFhjffqnAH&z1+_pMzZ=?jS4C&!`Rt=++^LFcD^XIZ#FuiNtW5NOeRha'Dwp){xb/W[UoSGKtNajJ{K^3u..Q/ktTc3Ds73C1dqYm[uXFo{CUF2TU@g=+Hk@F(F-xtyFnrgb6!VBg2`jsliC2aRYc&4Ln(-3sf93Or@tsiRsI?0+aI//oX'!!!!|>\n",
       "ms": 1770
     },
     {
@@ -120,5 +120,13 @@
       "ms": 1860
     }
   ],
+  "boxFallback": {
+    "ingredientIndexes": [
+      8
+    ],
+    "prompt": "<0f>8<|box;x1=1212;y1=945;x2=1372;y2=1059;w=1920;h=1280|>",
+    "rawText": "<0f>8<|box;x1=1212;y1=944;x2=1372;y2=1060;w=1920;h=1280;c=0.87|><|mask;x=0;y=0;c=0.87;data=117,161,!!!!##C)2?Cw!1d8-@]l3n!LA3bM5V=*%Q.WEWS@HnV3{CQ6+.c&TauwKgr`WE/X[!a_2R)KKz{G50S'iKpP$cWw#v1cgiJO_{9CMXT/M6B#E'M!!!|>\n",
+    "ms": 700
+  },
   "totalCostUsd": 0
 }

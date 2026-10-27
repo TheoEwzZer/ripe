@@ -1,4 +1,4 @@
-import { META_BASE_URL } from "./client";
+import { metaBaseUrl } from "./client";
 import { MODELS } from "./models";
 
 /**
@@ -10,7 +10,7 @@ export async function plate(sourceImageUrl: string, recipeTitle: string, ingredi
   if (!apiKey) throw new Error("MODEL_API_KEY is not set.");
   const started = Date.now();
 
-  const res = await fetch(`${META_BASE_URL}/images/edits`, {
+  const res = await fetch(`${metaBaseUrl()}/images/edits`, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({

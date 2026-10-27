@@ -11,9 +11,12 @@
     "dev:frontend": "next dev",
     "dev:backend": "convex dev",
     "probe": "tsx scripts/probe.ts",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "check:pipeline": "tsx scripts/check-pipeline.ts",
+    "fake-meta": "tsx scripts/fake-meta.ts"
   },
   "dependencies": {
+    "@meta-sam/graphics": "^0.1.13",
     "@meta-sam/parser": "^0.1.0",
     "convex": "^1.48.0",
     "motion": "^14.6.0",

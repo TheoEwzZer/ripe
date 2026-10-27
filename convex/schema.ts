@@ -1,6 +1,8 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+export const locale = v.union(v.literal("en"), v.literal("fr"));
+
 export const sessionStatus = v.union(
   v.literal("waiting"),
   v.literal("analyzing"),
@@ -9,11 +11,16 @@ export const sessionStatus = v.union(
 );
 
 export const scanStatus = v.union(
-  v.literal("uploading"),
   v.literal("perceiving"),
   v.literal("segmenting"),
   v.literal("done"),
   v.literal("error"),
+);
+
+/** A demo scan replays a bundled recording; an upload goes through the Meta Model API. */
+export const scanSource = v.union(
+  v.object({ kind: v.literal("replay"), recordingId: v.string(), imageSrc: v.string() }),
+  v.object({ kind: v.literal("upload"), storageId: v.id("_storage") }),
 );
 
 export const category = v.union(
@@ -31,14 +38,44 @@ export const category = v.union(
   v.literal("other"),
 );
 
-const box = v.object({ left: v.number(), top: v.number(), right: v.number(), bottom: v.number() });
+/** How an ingredient got its outline: still waiting, by its name, by Muse Spark's box, or not at all. */
+export const segmentation = v.union(v.literal("pending"), v.literal("concept"), v.literal("box"), v.literal("none"));
+
+export const maskVia = v.union(v.literal("concept"), v.literal("box"), v.literal("point"));
+
+export const gridBox = v.object({ x_min: v.number(), y_min: v.number(), x_max: v.number(), y_max: v.number() });
+export const pixelBox = v.object({ left: v.number(), top: v.number(), right: v.number(), bottom: v.number() });
+
+/** Fields Muse Spark produces for one ingredient (lib/pantry/schema.ts). */
+export const perceivedFields = {
+  name: v.string(),
+  samPrompt: v.string(),
+  category,
+  quantity: v.string(),
+  daysLeft: v.number(),
+  freshnessCues: v.string(),
+  dateRead: v.union(v.string(), v.null()),
+  /** Muse Spark box on the 0–1000 grid. */
+  bbox: gridBox,
+};
+
+/** One SAM instance exactly as the API encoded it; clients decode it (lib/masks/contour.ts). */
+export const maskFields = {
+  objectId: v.string(),
+  encoding: v.union(v.literal("lossless"), v.literal("one_bit")),
+  payload: v.string(),
+  width: v.number(),
+  height: v.number(),
+  bounds: pixelBox,
+  confidence: v.optional(v.number()),
+};
 
 export default defineSchema({
   /** A temporary desktop ↔ phone session, purged after 24 h. */
   sessions: defineTable({
     code: v.string(),
     status: sessionStatus,
-    locale: v.union(v.literal("en"), v.literal("fr")),
+    locale,
     /** SHA-256 of the one-time token carried by the QR code; cleared once a phone joins. */
     joinTokenHash: v.optional(v.string()),
     phoneJoinedAt: v.optional(v.number()),
@@ -50,28 +87,22 @@ export default defineSchema({
   /** One photo (fridge, pantry…) inside a session. */
   scans: defineTable({
     sessionId: v.id("sessions"),
-    storageId: v.optional(v.id("_storage")),
-    /** Set when the scan replays a recording instead of calling the API. */
-    recordingId: v.optional(v.string()),
+    source: scanSource,
     width: v.number(),
     height: v.number(),
     status: scanStatus,
     error: v.optional(v.string()),
     costUsd: v.number(),
+    finishedAt: v.optional(v.number()),
   }).index("by_session", ["sessionId"]),
 
   ingredients: defineTable({
     sessionId: v.id("sessions"),
     scanId: v.id("scans"),
-    name: v.string(),
-    samPrompt: v.string(),
-    category,
-    quantity: v.string(),
-    daysLeft: v.number(),
-    freshnessCues: v.string(),
-    dateRead: v.union(v.string(), v.null()),
-    /** Muse Spark box on the 0–1000 grid. */
-    bbox: v.object({ x_min: v.number(), y_min: v.number(), x_max: v.number(), y_max: v.number() }),
+    /** Position in Muse Spark's answer; object ids of box prompts refer to it. */
+    order: v.number(),
+    ...perceivedFields,
+    segmentation,
     source: v.union(v.literal("perceived"), v.literal("tapped"), v.literal("manual")),
     removed: v.boolean(),
   })
@@ -82,13 +113,8 @@ export default defineSchema({
   masks: defineTable({
     scanId: v.id("scans"),
     ingredientId: v.id("ingredients"),
-    objectId: v.string(),
-    encoding: v.union(v.literal("lossless"), v.literal("one_bit")),
-    payload: v.string(),
-    width: v.number(),
-    height: v.number(),
-    bounds: box,
-    confidence: v.optional(v.number()),
+    via: maskVia,
+    ...maskFields,
   })
     .index("by_scan", ["scanId"])
     .index("by_ingredient", ["ingredientId"]),
@@ -120,4 +146,10 @@ export default defineSchema({
     score: v.number(),
     plateStorageId: v.optional(v.id("_storage")),
   }).index("by_run", ["runId"]),
+
+  /** Money spent on the Meta Model API per UTC day, checked before every paid call. */
+  spend: defineTable({
+    day: v.string(),
+    usd: v.number(),
+  }).index("by_day", ["day"]),
 });

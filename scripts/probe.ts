@@ -1,27 +1,28 @@
 /**
- * Day 1 probe: calls the real Meta models once on a test photo, prints what the
- * wire formats look like and saves everything as a replayable recording.
- * Spending is capped by META_BUDGET_USD (default $0.25) before each call.
+ * Calls the real Meta models once on a test photo through the same pipeline
+ * as the app, prints what the wire formats look like and saves everything as
+ * a replayable recording. Spending is capped by META_BUDGET_USD (default
+ * $0.25) before each call.
  *
- *   npm run probe                                  # models list (free) + perceive + segment
- *   npm run probe -- --steps perceive,segment,cook,plate
- *   npm run probe -- --photo fridge-full.jpg --segments 4
- *   npm run probe -- --contributor                 # muse-spark contributor variant, ~12x cheaper
+ *   npm run probe                                   # models list (free) + perceive + segment
+ *   npm run probe -- --steps segment,cook,plate
+ *   npm run probe -- --photo fridge-full.jpg
+ *   npm run probe -- --contributor                  # muse-spark contributor variant, ~12x cheaper
+ *   npm run probe -- --out /tmp/rec.json            # write somewhere else (tests against fake-meta)
  */
-import "dotenv/config";
 import { config as loadEnv } from "dotenv";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { recordsOfKind } from "@meta-sam/parser";
 import { Budget } from "../lib/meta/budget";
-import { hasMetaKey, metaClient } from "../lib/meta/client";
+import { hasMetaKey, metaBaseUrl, metaClient } from "../lib/meta/client";
 import { cook } from "../lib/meta/cook";
-import { IMAGE_USD_PER_IMAGE, SAM_USD_PER_IMAGE } from "../lib/meta/models";
-import { perceive } from "../lib/meta/perceive";
+import { liveProvider } from "../lib/meta/live-provider";
+import { IMAGE_USD_PER_IMAGE } from "../lib/meta/models";
 import { plate } from "../lib/meta/plate";
-import { segmentConcept, type MaskEncoding } from "../lib/meta/segment";
 import { mostUrgent } from "../lib/pantry/freshness";
+import { runPipeline } from "../lib/pipeline/run";
+import type { VisionProvider } from "../lib/pipeline/types";
 import type { Recording } from "../lib/replay/recording";
 
 loadEnv({ path: ".env.local", override: false });
@@ -29,25 +30,46 @@ loadEnv({ path: ".env.local", override: false });
 const { values } = parseArgs({
   options: {
     photo: { type: "string", default: "fridge-drawers.jpg" },
-    steps: { type: "string", default: "perceive,segment" },
-    segments: { type: "string", default: "6" },
-    encoding: { type: "string", default: "lossless" },
+    steps: { type: "string", default: "segment" },
     contributor: { type: "boolean", default: false },
+    out: { type: "string" },
   },
 });
 
 const steps = new Set(values.steps!.split(","));
 const photoPath = path.join("public", "fixtures", "photos", values.photo!);
 
-async function imageSize(buffer: Buffer): Promise<{ width: number; height: number }> {
-  // JPEG SOF scan: enough for our fixtures without pulling in an image library.
+function jpegSize(buffer: Buffer): { width: number; height: number } {
+  // Baseline/progressive JPEG SOF scan: enough for our fixtures without an image library.
   for (let i = 2; i < buffer.length; ) {
     const marker = buffer.readUInt16BE(i);
     const length = buffer.readUInt16BE(i + 2);
     if (marker >= 0xffc0 && marker <= 0xffc3) return { height: buffer.readUInt16BE(i + 5), width: buffer.readUInt16BE(i + 7) };
     i += 2 + length;
   }
-  throw new Error("Not a baseline JPEG");
+  throw new Error("Not a JPEG");
+}
+
+/** Wraps a provider and keeps every raw answer for the recording. */
+function recorder(inner: VisionProvider, recording: Recording): VisionProvider {
+  return {
+    kind: inner.kind,
+    async perceive() {
+      const result = await inner.perceive();
+      recording.perception = { model: result.model, rawText: result.rawText, ms: result.ms, costUsd: result.costUsd };
+      return result;
+    },
+    async segmentConcept(ingredientIndex, prompt) {
+      const result = await inner.segmentConcept(ingredientIndex, prompt);
+      recording.segments.push({ ingredientIndex, prompt, encoding: "one_bit", rawText: result.rawText, ms: result.ms });
+      return result;
+    },
+    async segmentBoxes(prompt, ingredientIndexes) {
+      const result = await inner.segmentBoxes(prompt, ingredientIndexes);
+      recording.boxFallback = { ingredientIndexes, prompt, rawText: result.rawText, ms: result.ms };
+      return result;
+    },
+  };
 }
 
 async function main() {
@@ -56,13 +78,13 @@ async function main() {
     process.exit(1);
   }
   const budget = Budget.fromEnv();
-  console.log(`Budget cap: $${budget.capUsd.toFixed(2)}  ·  photo: ${values.photo}  ·  steps: ${[...steps].join(", ")}`);
+  console.log(`API: ${metaBaseUrl()}  ·  budget cap $${budget.capUsd.toFixed(2)}  ·  photo ${values.photo}  ·  steps ${[...steps].join(", ")}`);
 
   const models = await metaClient().models.list();
   console.log(`✓ key works, ${models.data.length} models visible: ${models.data.map((m) => m.id).join(", ")}`);
 
   const jpeg = await readFile(photoPath);
-  const size = await imageSize(jpeg);
+  const size = jpegSize(jpeg);
   const dataUrl = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
   const id = `${path.parse(values.photo!).name}.live`;
 
@@ -76,41 +98,43 @@ async function main() {
     totalCostUsd: 0,
   };
 
-  // 1. Perceive
-  budget.reserve("perceive", 0.03);
-  const seen = await perceive(dataUrl, { contributor: values.contributor });
-  budget.settle("perceive", 0.03, seen.usage.costUsd);
-  recording.perception = { model: seen.model, rawText: seen.rawText, ms: seen.ms, costUsd: seen.usage.costUsd };
-  const items = seen.perception.ingredients;
-  console.log(`\n✓ ${seen.model}: ${items.length} ingredients in ${seen.ms} ms, ${seen.usage.inputTokens} in / ${seen.usage.outputTokens} out tokens, $${seen.usage.costUsd.toFixed(4)}`);
-  for (const i of items) {
-    const b = i.bbox;
-    const outOfGrid = [b.x_min, b.y_min, b.x_max, b.y_max].some((v) => v < 0 || v > 1000) ? "  ⚠ outside 0–1000" : "";
-    console.log(`  · ${i.name.padEnd(18)} D-${String(i.daysLeft).padEnd(3)} "${i.samPrompt}"  [${b.x_min},${b.y_min} → ${b.x_max},${b.y_max}]${outOfGrid}`);
-  }
+  const live = liveProvider(dataUrl, {
+    contributor: values.contributor,
+    reserve: (label, usd) => budget.reserve(label, usd),
+    settle: (label, estimate, actual) => budget.settle(label, estimate, actual),
+  });
+  // Without the segment step, stop right after perception.
+  const provider: VisionProvider = steps.has("segment")
+    ? recorder(live, recording)
+    : { ...recorder(live, recording), segmentConcept: async () => ({ rawText: "", ms: 0, costUsd: 0 }), segmentBoxes: async () => ({ rawText: "", ms: 0, costUsd: 0 }) };
 
-  // 2. Segment the most urgent items, one concept per request, in parallel
+  const summary = await runPipeline(provider, size, {
+    perceived: (p) => {
+      console.log(`\n✓ ${p.model}: ${p.perception.ingredients.length} ingredients in ${p.ms} ms, $${p.costUsd.toFixed(4)}`);
+      for (const i of p.perception.ingredients) {
+        const b = i.bbox;
+        const off = [b.x_min, b.y_min, b.x_max, b.y_max].some((v) => v < 0 || v > 1000) ? "  ⚠ outside 0–1000" : "";
+        console.log(`  · ${i.name.padEnd(18)} D-${String(i.daysLeft).padEnd(3)} "${i.samPrompt}"  [${b.x_min},${b.y_min} → ${b.x_max},${b.y_max}]${off}`);
+      }
+    },
+  });
+
   if (steps.has("segment")) {
-    const targets = mostUrgent(items, Number(values.segments)).map((item) => ({ item, index: items.indexOf(item) }));
-    budget.reserve("segment", targets.length * SAM_USD_PER_IMAGE);
-    const results = await Promise.all(
-      targets.map(({ item }) => segmentConcept(dataUrl, item.samPrompt, values.encoding as MaskEncoding)),
-    );
-    budget.settle("segment", targets.length * SAM_USD_PER_IMAGE, targets.length * SAM_USD_PER_IMAGE);
-    console.log(`\n✓ sam-3.1 × ${targets.length} (${values.encoding})`);
-    results.forEach((r, n) => {
-      const masks = recordsOfKind(r.result.records, "mask");
-      const bytes = r.rawText.length;
-      console.log(`  · "${r.prompt}": ${masks.length} mask(s), ${r.ms} ms, ${bytes} chars, ${r.result.outcome.status}, ${r.result.diagnostics.length} diagnostics`);
-      recording.segments.push({ ingredientIndex: targets[n].index, prompt: r.prompt, encoding: values.encoding as MaskEncoding, rawText: r.rawText, ms: r.ms });
-    });
-    console.log(`  first line: ${results[0]?.rawText.slice(0, 160)}…`);
+    const name = (i: number) => summary.perception.ingredients[i].name;
+    console.log(`\n✓ sam-3.1: ${summary.concept.length} by concept, ${summary.box.length} by box fallback, ${summary.none.length} unsegmented`);
+    if (summary.box.length) console.log(`  box fallback: ${summary.box.map(name).join(", ")}`);
+    if (summary.none.length) console.log(`  unsegmented: ${summary.none.map(name).join(", ")}`);
+    const first = recording.segments.find((s) => s.rawText);
+    if (first) console.log(`  first SAM line: ${first.rawText.slice(0, 160)}…`);
   }
 
-  // 3. Cook
   if (steps.has("cook")) {
     budget.reserve("cook", 0.08);
-    const inventory = mostUrgent(items, items.length).map((i) => ({ name: i.name, quantity: i.quantity, daysLeft: i.daysLeft }));
+    const inventory = mostUrgent(summary.perception.ingredients, summary.perception.ingredients.length).map((i) => ({
+      name: i.name,
+      quantity: i.quantity,
+      daysLeft: i.daysLeft,
+    }));
     const cooked = await cook(inventory, { emergency: true, maxMinutes: 30 }, "en");
     budget.settle("cook", 0.08, cooked.usage.costUsd);
     recording.recipes = { model: cooked.model, rawText: cooked.rawText, recipes: cooked.recipes, ms: cooked.ms, costUsd: cooked.usage.costUsd };
@@ -118,7 +142,6 @@ async function main() {
     for (const r of cooked.recipes) console.log(`  · ${r.title} (${r.minutes} min) uses ${r.uses.map((u) => u.ingredient).join(", ")}`);
   }
 
-  // 4. Plate
   if (steps.has("plate") && recording.recipes?.recipes[0]) {
     const first = recording.recipes.recipes[0];
     budget.reserve("plate", IMAGE_USD_PER_IMAGE);
@@ -132,7 +155,7 @@ async function main() {
   }
 
   recording.totalCostUsd = budget.totalUsd;
-  const file = path.join("fixtures", "recordings", `${id}.json`);
+  const file = values.out ?? path.join("fixtures", "recordings", `${id}.json`);
   await writeFile(file, JSON.stringify(recording, null, 2));
   console.log(`\nSaved ${file}  ·  total spent ≈ $${budget.totalUsd.toFixed(4)}`);
 }

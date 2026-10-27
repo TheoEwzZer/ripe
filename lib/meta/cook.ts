@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { recipeSetSchema, type Recipe } from "@/lib/pantry/recipe-schema";
+import { recipeSetSchema, type Recipe } from "../pantry/recipe-schema";
 import { metaClient } from "./client";
 import { MODELS, tokenCostUsd } from "./models";
 

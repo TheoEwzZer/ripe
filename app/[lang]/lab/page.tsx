@@ -4,12 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { LangToggle } from "@/components/LangToggle";
-import { FreshnessMap } from "@/components/lab/FreshnessMap";
+import { LabReplay } from "@/components/lab/LabReplay";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import type { Recording } from "@/lib/replay/recording";
 
-/** Prefers a live recording (made with npm run probe) over the synthetic one. */
+/** Prefers a live recording (made with npm run probe) over the synthetic one. Cached: restart dev after a new probe. */
 async function loadRecording(): Promise<Recording | null> {
   "use cache";
   const dir = path.join(process.cwd(), "fixtures", "recordings");
@@ -46,16 +46,7 @@ export default async function LabPage({ params }: PageProps<"/[lang]/lab">) {
       </div>
 
       {recording ? (
-        <FreshnessMap
-          recording={recording}
-          labels={{
-            daysLeft: t.lab.daysLeft,
-            today: t.lab.today,
-            confidence: t.lab.confidence,
-            priority: t.lab.priority,
-            items: t.lab.items,
-          }}
-        />
+        <LabReplay recording={recording} t={{ scan: t.scan, replay: t.lab.replay }} />
       ) : (
         <p className="text-ink-soft">{t.lab.noRecording}</p>
       )}

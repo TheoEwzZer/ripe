@@ -37,8 +37,9 @@ export const create = mutation({
   },
 });
 
+/** Takes the raw URL segment: a malformed id reads as "no session" instead of throwing. */
 export const get = query({
-  args: { sessionId: v.id("sessions") },
+  args: { sessionId: v.string() },
   returns: v.union(
     v.null(),
     v.object({
@@ -51,8 +52,9 @@ export const get = query({
       expiresAt: v.number(),
     }),
   ),
-  handler: async (ctx, { sessionId }) => {
-    const session = await ctx.db.get(sessionId);
+  handler: async (ctx, args) => {
+    const sessionId = ctx.db.normalizeId("sessions", args.sessionId);
+    const session = sessionId && (await ctx.db.get(sessionId));
     if (!session || session.expiresAt < Date.now()) return null;
     // Never expose the join token hash to clients.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -79,7 +81,7 @@ export const purgeExpired = internalMutation({
         for (const mask of await ctx.db.query("masks").withIndex("by_scan", (q) => q.eq("scanId", scan._id)).take(200)) {
           await ctx.db.delete(mask._id);
         }
-        if (scan.storageId) await ctx.storage.delete(scan.storageId);
+        if (scan.source.kind === "upload") await ctx.storage.delete(scan.source.storageId);
         await ctx.db.delete(scan._id);
       }
       for (const item of await ctx.db.query("ingredients").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(200)) {

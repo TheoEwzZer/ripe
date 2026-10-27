@@ -34,8 +34,13 @@ async function run(imageUrl: string, inputText: string, encoding: MaskEncoding):
 }
 
 /** SAM 3.1 takes exactly one short noun phrase per request; callers fan out one request per ingredient. */
-export function segmentConcept(imageUrl: string, nounPhrase: string, encoding: MaskEncoding = "lossless") {
+export function segmentConcept(imageUrl: string, nounPhrase: string, encoding: MaskEncoding = "one_bit") {
   return run(imageUrl, nounPhrase, encoding);
+}
+
+/** Box prompts (up to 16 objects) built with buildObjectPrompt; the API always answers in one_bit. */
+export function segmentBoxes(imageUrl: string, objectPrompt: string) {
+  return run(imageUrl, objectPrompt, "one_bit");
 }
 
 /** "Tap to add": a positive point on something the perception step missed. */

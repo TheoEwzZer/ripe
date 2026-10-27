@@ -1,0 +1,288 @@
+{
+  "id": "fridge-drawers.live",
+  "source": "live",
+  "createdAt": "2026-10-27T20:53:55.998Z",
+  "image": {
+    "src": "/fixtures/photos/fridge-drawers.jpg",
+    "height": 1280,
+    "width": 1920
+  },
+  "perception": {
+    "model": "muse-spark-1.3",
+    "rawText": "{\"ingredients\": [{\"bbox\": {\"x_max\": 272, \"x_min\": 120, \"y_max\": 130, \"y_min\": 0}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"white, soft, sealed, no discoloration\", \"name\": \"mozzarella\", \"quantity\": \"1 ball\", \"samPrompt\": \"white mozzarella ball\"}, {\"bbox\": {\"x_max\": 625, \"x_min\": 273, \"y_max\": 145, \"y_min\": 0}, \"category\": \"egg\", \"dateRead\": null, \"daysLeft\": 14, \"freshnessCues\": \"in carton, refrigerated\", \"name\": \"egg\", \"quantity\": \"~12\", \"samPrompt\": \"yellow egg carton\"}, {\"bbox\": {\"x_max\": 370, \"x_min\": 185, \"y_max\": 306, \"y_min\": 154}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 5, \"freshnessCues\": \"bright red, firm, in clamshell\", \"name\": \"cherry tomato\", \"quantity\": \"~15\", \"samPrompt\": \"box of red cherry tomatoes\"}, {\"bbox\": {\"x_max\": 414, \"x_min\": 110, \"y_max\": 449, \"y_min\": 270}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 3, \"freshnessCues\": \"green leaves, no wilting visible\", \"name\": \"spinach\", \"quantity\": \"1 box\", \"samPrompt\": \"box of green spinach\"}, {\"bbox\": {\"x_max\": 652, \"x_min\": 304, \"y_max\": 567, \"y_min\": 304}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"bright orange, sealed bag, firm\", \"name\": \"baby carrot\", \"quantity\": \"1 bag\", \"samPrompt\": \"bag of baby carrots\"}, {\"bbox\": {\"x_max\": 706, \"x_min\": 610, \"y_max\": 315, \"y_min\": 0}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 5, \"freshnessCues\": \"sealed carton in fridge\", \"name\": \"milk\", \"quantity\": \"1 carton\", \"samPrompt\": \"white milk carton\"}, {\"bbox\": {\"x_max\": 838, \"x_min\": 650, \"y_max\": 547, \"y_min\": 0}, \"category\": \"drink\", \"dateRead\": null, \"daysLeft\": 6, \"freshnessCues\": \"sealed plastic bottle, refrigerated\", \"name\": \"grapefruit juice\", \"quantity\": \"1 bottle\", \"samPrompt\": \"pink juice bottle\"}, {\"bbox\": {\"x_max\": 1000, \"x_min\": 810, \"y_max\": 595, \"y_min\": 0}, \"category\": \"drink\", \"dateRead\": null, \"daysLeft\": 6, \"freshnessCues\": \"sealed plastic bottle, refrigerated\", \"name\": \"orange juice\", \"quantity\": \"1 bottle\", \"samPrompt\": \"yellow orange juice bottle\"}, {\"bbox\": {\"x_max\": 364, \"x_min\": 195, \"y_max\": 655, \"y_min\": 521}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"green florets, firm\", \"name\": \"broccoli\", \"quantity\": \"1 head\", \"samPrompt\": \"green broccoli head\"}, {\"bbox\": {\"x_max\": 299, \"x_min\": 24, \"y_max\": 978, \"y_min\": 546}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"dark shiny skin, intact stem\", \"name\": \"eggplant\", \"quantity\": \"2\", \"samPrompt\": \"dark purple eggplant\"}, {\"bbox\": {\"x_max\": 304, \"x_min\": 116, \"y_max\": 997, \"y_min\": 625}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"firm green skin, fresh\", \"name\": \"zucchini\", \"quantity\": \"1\", \"samPrompt\": \"green zucchini\"}, {\"bbox\": {\"x_max\": 432, \"x_min\": 272, \"y_max\": 781, \"y_min\": 573}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"red, firm, on vine\", \"name\": \"tomato\", \"quantity\": \"4\", \"samPrompt\": \"red vine tomatoes\"}, {\"bbox\": {\"x_max\": 616, \"x_min\": 508, \"y_max\": 806, \"y_min\": 695}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"bright yellow, firm\", \"name\": \"lemon\", \"quantity\": \"1\", \"samPrompt\": \"yellow lemon\"}, {\"bbox\": {\"x_max\": 708, \"x_min\": 617, \"y_max\": 809, \"y_min\": 733}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 5, \"freshnessCues\": \"brown fuzzy skin, whole\", \"name\": \"kiwi\", \"quantity\": \"1\", \"samPrompt\": \"brown kiwi\"}, {\"bbox\": {\"x_max\": 848, \"x_min\": 529, \"y_max\": 998, \"y_min\": 752}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"firm orange peel, fresh\", \"name\": \"grapefruit\", \"quantity\": \"2\", \"samPrompt\": \"large orange grapefruits\"}, {\"bbox\": {\"x_max\": 891, \"x_min\": 809, \"y_max\": 998, \"y_min\": 775}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 8, \"freshnessCues\": \"green firm skins\", \"name\": \"lime\", \"quantity\": \"4\", \"samPrompt\": \"green limes\"}], \"scene\": \"fridge\"}",
+    "ms": 9032,
+    "costUsd": 0.014169
+  },
+  "segments": [
+    {
+      "ingredientIndex": 9,
+      "prompt": "dark purple eggplant",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=127;y1=690;x2=320;y2=892;w=1920;h=1280;c=0.8672199249267578|><|mask;x=0;y=0;c=0.8672199249267578;data=203,194,!!!!#BBfVH/xuR57qHWl-]+OVMn10g2[kpKN6i?gowB8U8/AC.$x]n]zagf*8RyCf=Hmby`vTe6T6zZ:(UY:iaG3R4KsPNZJY9RTEm{jIebegeG/B.U^m{VA`sR%7_3B_kQU:z0CJv2y6.qOLr!!|>,1<|box;x1=412;y1=805;x2=578;y2=970;w=1920;h=1280;c=0.8128654956817627|><|mask;x=0;y=0;c=0.8128654956817627;data=166,167,!!!!#$EwDAj(w1gf@X{'ytl:etT4MwDThuGyY[J{bx7[U{:0oy-1gb06uERqmfz]HhtSb-/2y!Y-LlIogc5V*Z%Euwj3OE-5Ox$xvEitT(ZcAJlioB&|>,2<|box;x1=47;y1=952;x2=309;y2=1276;w=1920;h=1280;c=0.7229437232017517|><|mask;x=0;y=0;c=0.7229437232017517;data=325,263,!!!!#lE3V6twH6i_MYuz84'x'EeeN6e8Nl]&vcEV2`mn!2v3D!ztRyJk38IT@RgyaFMBpi0eK')_Dwcv69e9Z[HLd%]uKSRiW#:8Y=U0?&J'=%GH6{v[vYD3Ac]/Ep!379.RhJ:p(-7{KL_@nPc@H85P@jat$)j^BoL^Ai+*M)_fKLWB5zWXkhAWzRE*Mw/f&elJI$g|>\n",
+      "ms": 1968
+    },
+    {
+      "ingredientIndex": 11,
+      "prompt": "red vine tomatoes",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2601
+    },
+    {
+      "ingredientIndex": 0,
+      "prompt": "white mozzarella ball",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2678
+    },
+    {
+      "ingredientIndex": 10,
+      "prompt": "green zucchini",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=110;y1=767;x2=212;y2=855;w=1920;h=1280;c=0.6132930517196655|><|mask;x=0;y=0;c=0.6132930517196655;data=89,103,!!!!!ZF]o8TBVL?Cr9Dp2wr5JWtww*Avc.S-p)uDgBE6jU:X%]QE5!e:82389'WIA0BOBC#|>,1<|box;x1=311;y1=797;x2=571;y2=1160;w=1920;h=1280;c=0.7620818018913269|><|mask;x=0;y=0;c=0.7620818018913269;data=364,261,!!!!$(DX9o/Y'w[ow[Me+IG$(7Hg=zm)&%`9.g%7d]Gbr'#J-Of5oEjufPk637!R{vS@TR_IesRFlI/iUk.JaiZp3=LpX'2(eE*4M4[uv6+i]w3^dl%p)ks+f^j46v4CU%!'tXpeh-9)Yy:){y=TB5'00s@8lwEQ*q!aYbjoJ[.wRAJ&B9+G=CFu*Ygd?qAOIj/v&Y56KQ370@%vGULZfn)j`0RI)qK?j!|>,2<|box;x1=175;y1=992;x2=562;y2=1279;w=1920;h=1280;c=0.6332378387451172|><|mask;x=0;y=0;c=0.6332378387451172;data=288,388,!!!!#fIb51z*AS#Gs0SObjJbZAq!ne`-0Rp#38aWv4b)zr0V-bn^$2cG9A[th5@q.81oOhfg7-&*EsI8i@c?YDI{^$*3S.YZ3NsYQn4@^ZmShM/hlFP*_P^$7p+_m`D]^6g&goI1[7*4)a0mgFaWDn*2lJz&]R/dW#s4$6-B)&oh]E*.]tFK_1nxj]ZELQ0|>\n",
+      "ms": 2682
+    },
+    {
+      "ingredientIndex": 3,
+      "prompt": "box of green spinach",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2703
+    },
+    {
+      "ingredientIndex": 2,
+      "prompt": "box of red cherry tomatoes",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2892
+    },
+    {
+      "ingredientIndex": 8,
+      "prompt": "green broccoli head",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=375;y1=649;x2=692;y2=861;w=1920;h=1280;c=0.8048780560493469|><|mask;x=0;y=0;c=0.8048780560493469;data=213,318,!!!!#kF/tk#i97lp'5Pn3Iu7R=X.z:o#wreo]G[A_euA2H^%a//mHF^s2bU[kWqFsya*R14x_v8#B!{@0S?@9(iU0iCtXdmmtdvgR6fP$&?4HbHhk`8we9%@`UII$MP-VC^%M@9$q-/sTQDm8clNC6UrC!X{vwbWKWTM[cWC'y^.B{sRbZt]++VlR/_Qyp.H@IpGe$|>\n",
+      "ms": 3035
+    },
+    {
+      "ingredientIndex": 5,
+      "prompt": "white milk carton",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 3127
+    },
+    {
+      "ingredientIndex": 12,
+      "prompt": "yellow lemon",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1006;y1=898;x2=1179;y2=1059;w=1920;h=1280;c=0.8128654956817627|><|mask;x=0;y=0;c=0.8128654956817627;data=162,174,!!!!#-EA)w3pcH6LDVs8F:%A-HoB'0dDxIr_7+{@%V-SM8B*#NR]:iCgv-ctgwC!4C/ry7P@v0-oi.?)*KHGsbYbWcJszPNlma6yMJt*P.eC%!h`efra!!!veYfL.|>\n",
+      "ms": 579
+    },
+    {
+      "ingredientIndex": 13,
+      "prompt": "brown kiwi",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1334
+    },
+    {
+      "ingredientIndex": 4,
+      "prompt": "bag of baby carrots",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=588;y1=386;x2=1247;y2=723;w=1920;h=1280;c=0.9298245906829834|><|mask;x=0;y=0;c=0.9298245906829834;data=338,660,!!!!%!?y6`5_qQZ-4Rg&:10GzfOOC7g_bkA:=M1D]oR/8[M9Ka^uTMt+%@-5TZz!3$F6q7x3ARKhtf)8yC!aD&hB?l:+lcN*LN.wfUEta$!i)qs%0#G8TLDP3XIE_&'.GhV*752[EQ{njlubC6#9^0`aIKkV)h&nDqJTHnAHb_TMlb_bGfs*WaXc)a76vl+8BVhXQh@e/%I`rEG&%XqDS@9g!GyYdj10x85N-&m)uu/T)zEXiEw:STPiJByR=Q7q47*#9mEn9Exd0q2^jNYZ23(oX`bRM2Yf4f*]EMJDYiwZ0ZFW:J+s[1Pm^uRi?f%^@0lcU|>\n",
+      "ms": 721
+    },
+    {
+      "ingredientIndex": 7,
+      "prompt": "yellow orange juice bottle",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1560;y1=0;x2=1919;y2=757;w=1920;h=1280;c=0.6167664527893066|><|mask;x=0;y=0;c=0.6167664527893066;data=758,360,!!!!$9BPD)?eggerpBl[]TNu@8(Q#q8gkNKyR[!jSHqoRkB9t4oLqr9u@^ozHW*nQ*$/f6:DtLi.nm*qak5Rcna?f:7KA6.Qj$C'lAfnhuw@V5`lq)@5_wXBGW$?)C)bIBeuf-2qHqEydovX.3@F[XjrSS1hP7'F9]=wJDF+Di0[mXB1s(V$MbMr8XsR(M28]QFon.ve_ZZU%Ho*p38f#$aNv1^?qQtyCLSYpi+62in[8C=ggoYZBG|>\n",
+      "ms": 1185
+    },
+    {
+      "ingredientIndex": 15,
+      "prompt": "green limes",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1592;y1=1212;x2=1691;y2=1279;w=1920;h=1280;c=0.8324607610702515|><|mask;x=0;y=0;c=0.8324607610702515;data=68,100,!!!!!GCu1M93$$[!r4oZulSYbNFf!h7]Hx-?eV/7@m^V3mTY|>,1<|box;x1=1581;y1=1021;x2=1737;y2=1097;w=1920;h=1280;c=0.8439024686813354|><|mask;x=0;y=0;c=0.8439024686813354;data=77,157,!!!!!ZG=/BRpcD?YUl(qeAb3'.crEx`].L@RIB^ID?Tp$KgiUfKN'hJ?AZ:^@xU9zsDdK^p|>,2<|box;x1=1642;y1=1098;x2=1708;y2=1222;w=1920;h=1280;c=0.8439024686813354|><|mask;x=0;y=0;c=0.8439024686813354;data=125,67,!!!!!cN^EIvk(4(eAv^u05_4Y.V`nkNl&D0RXVSq47HcwKZ=TmND(7Pe+wlX5Vi&G!4UAItDCb+x2bMK-|>\n",
+      "ms": 891
+    },
+    {
+      "ingredientIndex": 6,
+      "prompt": "pink juice bottle",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1659
+    },
+    {
+      "ingredientIndex": 1,
+      "prompt": "yellow egg carton",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=502;y1=0;x2=1117;y2=193;w=1920;h=1280;c=0.7730495929718018|><|mask;x=0;y=0;c=0.7730495929718018;data=194,616,!!!!$QFR4u31]J&)rts#XbR6q.oz[EMkssE6a9YGn'2DLF-2^y1M$G)M#Zoubr.j@7u%#9d/5[a4rvb4t1dYjd(.#Fm-ecdmhsf:*vOG68fJ9kepIUTW8WH01J*xXd=xK(4x51SuqTDfWb6_ROce_[82hcE]PP!Mf#.Dsw9IyRXxXp80xs@Pa.!!VGg%:4i1sOBX1DaSR[x@V{fDgRdF.fyb[y^C+o6RWjY6s+08/EByGl#IC/Gc!Y)ts@w/():(o+]cf+ioX'oEi1%!!|>\n",
+      "ms": 1187
+    },
+    {
+      "ingredientIndex": 14,
+      "prompt": "large orange grapefruits",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1294;y1=995;x2=1654;y2=1279;w=1920;h=1280;c=0.6404494643211365|><|mask;x=0;y=0;c=0.6404494643211365;data=285,361,!!!!#bBqHb^fIP5$Bio)v[jZB]PSIBGno-8OXG_Z6l3U)XN6/4SZ7KxrN4@B+#)9+%-!qIBs9`SH^+DJjTgNyP9Mib5L=%%*F-YVX-.'W'ho+BuPr#1C5?Cyi7%wTqn1AWHWS4zc-V0qm@/D3*0Euu=7=!n?Wx`vn4-'huI_EhMw*+{Ne+]E'eJ=f/|>,1<|box;x1=1046;y1=1031;x2=1329;y2=1279;w=1920;h=1280;c=0.6332378387451172|><|mask;x=0;y=0;c=0.6332378387451172;data=249,284,!!!!#SB5(BcD!Pc7rlE7*m{+0jbt4[Z6tsGOTP)hio[3EB`_WUIGAQ0vkf:GH79GAQ060ww.Tw.5$1uByQ2r`D6@jW/8$d/Ty(l?6[6BIm+2dEyYpOfY)s3:jV?r@RVkp^k0bl[1_2uAkHh$DERME7c?{Y=e9^6p@VdL@#Dn^|>\n",
+      "ms": 2384
+    }
+  ],
+  "totalCostUsd": 0.098509,
+  "boxFallback": {
+    "ingredientIndexes": [
+      11,
+      0,
+      3,
+      2,
+      5,
+      13,
+      6
+    ],
+    "prompt": "<0f>11<|box;x1=522;y1=733;x2=828;y2=999;w=1920;h=1280|>,0<|box;x1=230;y1=0;x2=521;y2=165;w=1920;h=1280|>,3<|box;x1=211;y1=346;x2=794;y2=574;w=1920;h=1280|>,2<|box;x1=355;y1=197;x2=709;y2=391;w=1920;h=1280|>,5<|box;x1=1171;y1=0;x2=1355;y2=402;w=1920;h=1280|>,13<|box;x1=1185;y1=938;x2=1358;y2=1035;w=1920;h=1280|>,6<|box;x1=1248;y1=0;x2=1608;y2=699;w=1920;h=1280|>",
+    "rawText": "<0f>0<|box;x1=283;y1=0;x2=545;y2=164;w=1920;h=1280;c=0.95703125|><|mask;x=0;y=0;c=0.95703125;data=165,263,!!!!#WBmhtaBKY4]synA/90443FvnIG8qHn_$f-&v5X*/3lXg@T)[kmb&5{6[fUv5%pP9@&Tz#UhjTy+n@LA8R`'ueStz56u..3WJ531jtN']JAH522@`(dxXGUr_jpe?&Z1tWNQo$*fuZSfxVvaTIN6JkR-.R&j+hU5NxxM&:o!!!|>,2<|box;x1=355;y1=191;x2=730;y2=388;w=1920;h=1280;c=0.95703125|><|mask;x=0;y=0;c=0.95703125;data=198,376,!!!!$(Bmf8b+Pxa:x$@k#60HqzS=juG*'hirr88hU'&&G-/q+e$ivzZumTS1Iwx!V_U^eH#Lz%Jgfq5RZsbx8#@mhvfj5CCw[@pSwGGIwlu^uL*v!Cn[f8%8D%^[{8[o#5(W{b/OIP.O7@mCG8VSdbfXokToax*BL$dSkDG$Sbt2#l9/FmX!qNzMg*Z=tM&we&Z54X?Zah_$IjW4YQ!#c_Dl!^x/.$_MDG|>,3<|box;x1=277;y1=340;x2=810;y2=573;w=1920;h=1280;c=0.9140625|><|mask;x=0;y=0;c=0.9140625;data=234,534,!!!!&oBHCrein:Pr76ulcjxdF4$d]nh7(rj9TmS6M[E?^7UrsY{y$:P$G6d[SBb$og%UD%b*GO/gt!i)6ps/[E.H8j@R$A=//Du(3ODTxvR{YHG'T$CDg&W`k3`I&=DR*=Rrg%@84jjcD4$^@+4u6)'W8`+t*A4UN8+E%5'^W#9`3@q!xOKvW?=5L5D8B:XwhI/O'hnE!5ph%WVLS7bY'7Ll3$ChjQn]q_nmtX.7*$oGIQT)a.tk^TmoyS6`o:2`f=G-n50.S_?m$O5ToC1^7Swg8XPu=xtMSfgy)U]w!E7AL/UI:Wa6MoA't60?wBDI`?@@Uf+TBdlTmHKM14b((+fT`co!)u8/jnpC$e*'^vea!AwnwWIUW%4FQ[yhHXhtprqTAO0(ZP8r!g737*^@*XIxLVne?ZiHB-=IU?DYqJ.mrI(Cu7z')-RMo_0'cJl]c@91umcv.h*L*1QLG2T+c7tQ/@L_6KM@D2q8XOY@{79.mHkFFX&)Y[ic.{.cFcTkLMHmR$M%/|>,5<|box;x1=1121;y1=0;x2=1323;y2=425;w=1920;h=1280;c=0.79296875|><|mask;x=0;y=0;c=0.79296875;data=426,203,!!!!&LF0dF4BomoqJrQ#^PlCxvP(RHPT*MvVFhd]7AF%(kNCv3Fp@e)g&&v2:${x#I7?COuDSsOz]6i[zL^xjO@(_lun2k:/)30+FdCs`$M5y_4q8-+[/G((G5T+.NTT&ZdKI'OM(fr[e$qn2B5O0[Y`[sc8Vs[p4[8*A@&z4cRT!YI/&W0kG.y!Y/wzHT1gMBFT9Y{`r_LPXSWIFIKP/W6(M`]PJrPm+LRURk`YGS-=LBk@5$g1lZhE^jvSluaBYIV3#n:EP&m8{gyZwCq_A^OZ8[!`lcEy^L`i]97DpQ^^9rjVo1X&L0.a&Q588t)x0T7Elr=byG[_(b1XJqXEUh.)7(vJ`S[kib.56[RVDcXeRvT0V?xu'&xy#t_a@K24f![G2Z'Cb815w'sO1a-g6j*h&XSxmVvi=[/-)/tmrmWvBVJfh'M?&FbwR^/YDA`vU/PfNIs3Yfo&ZK7ADH7_30b*x#+h[$Z|>,6<|box;x1=1246;y1=0;x2=1627;y2=697;w=1920;h=1280;c=0.9921875|><|mask;x=0;y=0;c=0.9921875;data=698,382,!!!!%/C9R`vk@`.1NSE^teC?aR2@nH*uC5Y.)#n9e6wW#4[pQv*12(z*^$GpiE.#WC=r$GBaG]=_an7hNOva#wfo@77aSLR@HK+TJ8@QUrCZoJn8X3W))[TJjiGcZ%sEGQ?NakdWXcMg9j6UF^?n(E3`DXBmx?Gy7lhQMcP]q*.VwoyT%&MCA*w+:1^s^_&Bq.7AIBS%6s8`?ER-+f^/xpfzX6(c$vazDS]6D:ne_:t(:&7Zr)otY]7(f!Z9(sP=qrvg+&=G8)v#6p[YnS6yj0(Ie[1c^c^!rd)T4?TPHHe$#.Yr)1H@MUtVyHo+(m/znxKg9Pqb7HN[)xRj.VNl|>,11<|box;x1=548;y1=728;x2=840;y2=1014;w=1920;h=1280;c=0.69140625|><|mask;x=0;y=0;c=0.69140625;data=287,293,!!!!'BAb3VrJoB@PsjFkqITd_:O1-KUkW3EF)yFJ3s]3jfQU*!uLq-+it1QD)3M59ql[gdQ+9q{KC$maf^[bKPa:0[pPXA*C(DP*dFo0(@PVf5f$4_5]@R%h/d*WghfJa@w@fT1$8=3?`tx=#9sJAcLq0?cGa(PWx5Rg(qZ?hK^JEu!J5n=fe:_4qb8v8_vI4CKyPrBJ:W#)VJ2!?F3ct[njeiPS@2+WYLBO.zfmO5*RUV%!M^wQCjDH(PW'UpNP&uG3hI7$jx1?:H@:hV5kacC/hcR3]eaXw0:g(RH4Q@4NFWzt8nxp:1M4BoRZk#$MTiR7)PPbLwD-X4.Tg-Q+e/df3J_8SALoyawnodf[J70[FQAod`Qp?L4ql8vf&s[)Ceu1lI&M@WR0N_mo0Vb5zXrI51C(@/FLxlKP84+[9FkotM6@/#!8@Qy(5hG:q$OnebK5E-%k-H9aY+Czd]Eebp7&O9?oIrWXv)?fNQ8ylPS.6KQ{1inr#xgt%C@.XVke9({LS.cPM!G$N)qz=gQQZOn0L+hIO9F7=%q`aS%?pV6{6qxM.3[WHVBvJqd-Y|>,13<|box;x1=1181;y1=943;x2=1358;y2=1037;w=1920;h=1280;c=0.515625|><|mask;x=0;y=0;c=0.515625;data=95,178,!!!!#bNW9FiIV_s#)n$=fUFW[hs$_nR_u/aBn&oAQq8kttr'7UcHNh(d-a7DI2wgQ{J_'T3^)_QM.a'](s-`elB]n(VSz.*Ly7emOONSM%u.U8Zr+0z7Zle:c/'N?=.K?b:2wkiVb5$uXs8(ngo(dN=pJ+xGak`_!omVo7KgC$)en@pq^htgG6AzYn|>\n",
+    "ms": 1845
+  },
+  "recipes": {
+    "model": "muse-wonder-1.0",
+    "rawText": "{\"recipes\":[{\"diet\": [\"vegetarian\", \"gluten-free\"], \"equipment\": [\"frying pan\"], \"extras\": [\"parmesan\", \"whole wheat bread\"], \"minutes\": 25, \"pitch\": \"A salty, satisfying way to use up that spinach before it wilts, plus all those eggs\", \"steps\": [\"Bring a large pan of salted water to the boil and cook the spaghetti according to packet instructions. Reserve a mugful of pasta cooking water, then drain.\", \"Meanwhile, heat the olive oil in a large frying pan over a medium heat. Add the bacon or pancetta and fry for 5 minutes until crisp. Remove and set aside.\", \"Wilt the spinach in the same pan with a splash of water for 2 minutes, then remove excess liquid.\", \"In a bowl, whisk the eggs with most of the parmesan or mozzarella and plenty of black pepper.\", \"Return the spaghetti to the pan off the heat. Pour over the egg mixture and toss well, adding reserved pasta water a little at a time until glossy and coating the pasta. The residual heat should cook the eggs gently without scrambling.\", \"Stir through the bacon and spinach. Serve topped with mozzarella, reserved cheese and extra black pepper.\"], \"title\": \"Spinach Carbonara with Mozzarella\", \"uses\": [{\"amount\": \"1 box\", \"ingredient\": \"spinach\"}, {\"amount\": \"200g\", \"ingredient\": \"spaghetti\"}, {\"amount\": \"15\", \"ingredient\": \"cherry tomato\"}, {\"amount\": \"4\", \"ingredient\": \"egg\"}]}, {\"diet\": [\"vegetarian\", \"gluten-free\"], \"equipment\": [\"saucepan\", \"blender\"], \"extras\": [\"vegetable stock cube\", \"garlic\"], \"minutes\": 30, \"pitch\": \"A vibrant green soup that saves wilting spinach and that head of broccoli, lifted with fresh lemon\", \"steps\": [\"Heat olive oil in a large saucepan over a medium heat. Add the broccoli florets and baby carrots, season with salt and pepper, and cook for 5 minutes, stirring occasionally.\", \"Add 800ml water and crumble in a stock cube if using. Bring to the boil, then simmer for 10-12 minutes until the broccoli is tender.\", \"Stir in the spinach and cook for 2 minutes until just wilted.\", \"Blend the soup until very smooth using a hand blender. Stir in a splash of milk for creaminess if you like, and a good squeeze of lemon juice.\", \"Taste and adjust seasoning. Serve in warm bowls with a drizzle of olive oil and torn mozzarella on top if using.\"], \"title\": \"Broccoli & Spinach Soup with Lemon\", \"uses\": [{\"amount\": \"1 head\", \"ingredient\": \"broccoli\"}, {\"amount\": \"1 box\", \"ingredient\": \"spinach\"}, {\"amount\": \"1\", \"ingredient\": \"lemon\"}, {\"amount\": \"200g\", \"ingredient\": \"baby carrot\"}]}, {\"diet\": [\"vegetarian\", \"gluten-free\"], \"equipment\": [\"oven tray\"], \"extras\": [\"olive oil\", \"balsamic vinegar\"], \"minutes\": 30, \"pitch\": \"Sweet roasted tomatoes and soft aubergine topped with melting mozzarella – a fresh, summery traybake\", \"steps\": [\"Preheat the oven to 200°C (180°C fan). Lightly oil a large roasting tray.\", \"Slice the eggplants and zucchini into 1cm rounds. Arrange on the tray with the cherry tomatoes and thickly sliced tomatoes. Drizzle with oil, season with salt, pepper and a pinch of chilli flakes or dried herbs if you have them.\", \"Roast for 20-22 minutes until the vegetables are soft and starting to caramelise at the edges.\", \"Tear the mozzarella over the top and return to the oven for 3-4 minutes until just melted.\", \"Serve straight from the tray with a squeeze of lemon or lime juice and an extra drizzle of oil. Great on its own or with crusty bread to mop up the juices.\"], \"title\": \"Roasted Eggplant, Tomato & Mozzarella Traybake\", \"uses\": [{\"amount\": \"2\", \"ingredient\": \"eggplant\"}, {\"amount\": \"1\", \"ingredient\": \"zucchini\"}, {\"amount\": \"15\", \"ingredient\": \"cherry tomato\"}, {\"amount\": \"4\", \"ingredient\": \"tomato\"}, {\"amount\": \"1 ball\", \"ingredient\": \"mozzarella\"}]}]}",
+    "recipes": [
+      {
+        "title": "Spinach Carbonara with Mozzarella",
+        "pitch": "A salty, satisfying way to use up that spinach before it wilts, plus all those eggs",
+        "minutes": 25,
+        "equipment": [
+          "frying pan"
+        ],
+        "diet": [
+          "vegetarian",
+          "gluten-free"
+        ],
+        "uses": [
+          {
+            "ingredient": "spinach",
+            "amount": "1 box"
+          },
+          {
+            "ingredient": "spaghetti",
+            "amount": "200g"
+          },
+          {
+            "ingredient": "cherry tomato",
+            "amount": "15"
+          },
+          {
+            "ingredient": "egg",
+            "amount": "4"
+          }
+        ],
+        "extras": [
+          "parmesan",
+          "whole wheat bread"
+        ],
+        "steps": [
+          "Bring a large pan of salted water to the boil and cook the spaghetti according to packet instructions. Reserve a mugful of pasta cooking water, then drain.",
+          "Meanwhile, heat the olive oil in a large frying pan over a medium heat. Add the bacon or pancetta and fry for 5 minutes until crisp. Remove and set aside.",
+          "Wilt the spinach in the same pan with a splash of water for 2 minutes, then remove excess liquid.",
+          "In a bowl, whisk the eggs with most of the parmesan or mozzarella and plenty of black pepper.",
+          "Return the spaghetti to the pan off the heat. Pour over the egg mixture and toss well, adding reserved pasta water a little at a time until glossy and coating the pasta. The residual heat should cook the eggs gently without scrambling.",
+          "Stir through the bacon and spinach. Serve topped with mozzarella, reserved cheese and extra black pepper."
+        ]
+      },
+      {
+        "title": "Broccoli & Spinach Soup with Lemon",
+        "pitch": "A vibrant green soup that saves wilting spinach and that head of broccoli, lifted with fresh lemon",
+        "minutes": 30,
+        "equipment": [
+          "saucepan",
+          "blender"
+        ],
+        "diet": [
+          "vegetarian",
+          "gluten-free"
+        ],
+        "uses": [
+          {
+            "ingredient": "broccoli",
+            "amount": "1 head"
+          },
+          {
+            "ingredient": "spinach",
+            "amount": "1 box"
+          },
+          {
+            "ingredient": "lemon",
+            "amount": "1"
+          },
+          {
+            "ingredient": "baby carrot",
+            "amount": "200g"
+          }
+        ],
+        "extras": [
+          "vegetable stock cube",
+          "garlic"
+        ],
+        "steps": [
+          "Heat olive oil in a large saucepan over a medium heat. Add the broccoli florets and baby carrots, season with salt and pepper, and cook for 5 minutes, stirring occasionally.",
+          "Add 800ml water and crumble in a stock cube if using. Bring to the boil, then simmer for 10-12 minutes until the broccoli is tender.",
+          "Stir in the spinach and cook for 2 minutes until just wilted.",
+          "Blend the soup until very smooth using a hand blender. Stir in a splash of milk for creaminess if you like, and a good squeeze of lemon juice.",
+          "Taste and adjust seasoning. Serve in warm bowls with a drizzle of olive oil and torn mozzarella on top if using."
+        ]
+      },
+      {
+        "title": "Roasted Eggplant, Tomato & Mozzarella Traybake",
+        "pitch": "Sweet roasted tomatoes and soft aubergine topped with melting mozzarella – a fresh, summery traybake",
+        "minutes": 30,
+        "equipment": [
+          "oven tray"
+        ],
+        "diet": [
+          "vegetarian",
+          "gluten-free"
+        ],
+        "uses": [
+          {
+            "ingredient": "eggplant",
+            "amount": "2"
+          },
+          {
+            "ingredient": "zucchini",
+            "amount": "1"
+          },
+          {
+            "ingredient": "cherry tomato",
+            "amount": "15"
+          },
+          {
+            "ingredient": "tomato",
+            "amount": "4"
+          },
+          {
+            "ingredient": "mozzarella",
+            "amount": "1 ball"
+          }
+        ],
+        "extras": [
+          "olive oil",
+          "balsamic vinegar"
+        ],
+        "steps": [
+          "Preheat the oven to 200°C (180°C fan). Lightly oil a large roasting tray.",
+          "Slice the eggplants and zucchini into 1cm rounds. Arrange on the tray with the cherry tomatoes and thickly sliced tomatoes. Drizzle with oil, season with salt, pepper and a pinch of chilli flakes or dried herbs if you have them.",
+          "Roast for 20-22 minutes until the vegetables are soft and starting to caramelise at the edges.",
+          "Tear the mozzarella over the top and return to the oven for 3-4 minutes until just melted.",
+          "Serve straight from the tray with a squeeze of lemon or lime juice and an extra drizzle of oil. Great on its own or with crusty bread to mop up the juices."
+        ]
+      }
+    ],
+    "ms": 10233,
+    "costUsd": 0.03184
+  },
+  "plate": {
+    "src": "/fixtures/plates/fridge-drawers.live.webp",
+    "recipeTitle": "Spinach Carbonara with Mozzarella",
+    "ms": 18993,
+    "costUsd": 0.01
+  }
+}

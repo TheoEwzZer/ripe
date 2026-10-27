@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { perceptionSchema, type Perception } from "@/lib/pantry/schema";
+import { perceptionSchema, type Perception } from "../pantry/schema";
 import { metaClient } from "./client";
 import { MODELS, tokenCostUsd } from "./models";
 
@@ -8,7 +8,7 @@ List every distinct food item visible in this photo of a fridge, pantry or count
 
 For each item:
 - name: common English name, singular.
-- samPrompt: a short English noun phrase a segmentation model can find on its own, with a colour or container if it helps ("cherry tomatoes", "bag of baby carrots"). Never a list.
+- samPrompt: the plainest English name for it, 1 to 3 words, the way a shop label says it: "spinach", "cherry tomatoes", "milk carton", "kiwi". No colours, containers or other adjectives unless two different items would otherwise share the name. Never a list. A segmentation model searches the photo for exactly this phrase.
 - daysLeft: realistic days before it should be eaten, judged from what you see (wilting, spots, opened packaging) and any legible date. 0 means today.
 - freshnessCues: the visual evidence for that estimate, in a few words.
 - dateRead: a printed best-before date only if you can actually read it, else null.

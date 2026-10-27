@@ -10,7 +10,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 // Internal encoder, not in the package exports; reached by path for test data only.
 import { encodeSegmentationMask } from "../node_modules/@meta-sam/parser/dist/mask-codec.js";
-import { replaySegment, type Recording } from "../lib/replay/recording";
+import { buildObjectPrompt } from "@meta-sam/parser";
+import { gridToPixels } from "../lib/pipeline/geometry";
+import { runPipeline } from "../lib/pipeline/run";
+import { parseSamText } from "../lib/pipeline/sam";
+import { replayProvider } from "../lib/replay/provider";
+import type { Recording } from "../lib/replay/recording";
 import type { Perception } from "../lib/pantry/schema";
 
 const W = 1920;
@@ -66,19 +71,23 @@ function blob(width: number, height: number, shape: Shape, seed: number): Uint8A
   return raster;
 }
 
+type Instance = { id: number; box: [number, number, number, number]; shape: Shape; seed: number };
+
 /** One SAM 3.1 output line: `<0f>` then `id<|box;…|><|mask;…|>` records, as the API streams it. */
-function samLineFor(a: Annotation, seed: number): string {
-  const records = a.boxes.map(([x1, y1, x2, y2], i) => {
+function samLine(instances: Instance[]): string {
+  const records = instances.map(({ id, box: [x1, y1, x2, y2], shape, seed }) => {
     const w = x2 - x1 + 1;
     const h = y2 - y1 + 1;
-    const mask = encodeSegmentationMask(blob(w, h, a.shape, seed + i), w, h);
-    const c = (0.86 + ((seed * 7 + i) % 12) / 100).toFixed(2);
-    return `${i}<|box;x1=${x1};y1=${y1};x2=${x2};y2=${y2};w=${W};h=${H};c=${c}|><|mask;x=0;y=0;c=${c};data=${h},${w},${mask.payload}|>`;
+    const mask = encodeSegmentationMask(blob(w, h, shape, seed), w, h);
+    const c = (0.86 + ((seed * 7) % 12) / 100).toFixed(2);
+    return `${id}<|box;x1=${x1};y1=${y1};x2=${x2};y2=${y2};w=${W};h=${H};c=${c}|><|mask;x=0;y=0;c=${c};data=${h},${w},${mask.payload}|>`;
   });
-  return `<0f>${records.join(",")}\n`;
+  return `<0f>${records.join(",")}
+`;
 }
 
 const toGrid = (v: number, size: number) => Math.round((v / size) * 1000);
+const indexOf = (name: string) => ANNOTATIONS.findIndex((a) => a.name === name);
 
 async function main() {
   const perception: Perception = {
@@ -104,15 +113,35 @@ async function main() {
     }),
   };
 
-  const segments: Recording["segments"] = [];
-  for (const [index, a] of ANNOTATIONS.entries()) {
-    const rawText = samLineFor(a, index + 1);
-    const parsed = await replaySegment(rawText);
-    const masks = parsed.records.filter((r) => r.kind === "mask").length;
-    if (parsed.outcome.status !== "completed" || masks !== a.boxes.length || parsed.diagnostics.length) {
-      throw new Error(`Mask round-trip failed for ${a.name}: ${JSON.stringify(parsed.diagnostics)}`);
+  // Two realistic failure modes so the replay exercises the whole pipeline:
+  // "kiwi fruit" latches onto a lime (dropped by the box check, recovered by the box prompt),
+  // and "red tomatoes on the vine" also matches the cherry tomatoes a shelf up (dropped).
+  const kiwi = indexOf("kiwi");
+  const tomato = indexOf("tomato");
+  const lime = ANNOTATIONS[indexOf("lime")];
+  const cherry = ANNOTATIONS[indexOf("cherry tomato")];
+
+  const segments: Recording["segments"] = ANNOTATIONS.map((a, index) => {
+    let instances: Instance[] = a.boxes.map((box, i) => ({ id: i, box, shape: a.shape, seed: index + 1 + i }));
+    if (index === kiwi) instances = [{ id: 0, box: lime.boxes[0], shape: "round", seed: 41 }];
+    if (index === tomato) instances = [...instances, { id: instances.length, box: cherry.boxes[0], shape: "rect", seed: 42 }];
+    return { ingredientIndex: index, prompt: a.samPrompt, encoding: "one_bit", rawText: samLine(instances), ms: 600 + index * 90 };
+  });
+
+  const size = { width: W, height: H };
+  const kiwiBox = gridToPixels(perception.ingredients[kiwi].bbox, size);
+  const boxFallback: Recording["boxFallback"] = {
+    ingredientIndexes: [kiwi],
+    prompt: buildObjectPrompt({ size, objects: [{ id: kiwi, prompts: [{ box: kiwiBox }] }] }),
+    rawText: samLine([{ id: kiwi, box: ANNOTATIONS[kiwi].boxes[0], shape: "round", seed: 43 }]),
+    ms: 700,
+  };
+
+  for (const segment of [...segments, boxFallback]) {
+    const parsed = await parseSamText(segment.rawText);
+    if (parsed.outcome.status !== "completed" || parsed.diagnostics.length) {
+      throw new Error(`Mask round-trip failed: ${JSON.stringify(parsed.diagnostics)}`);
     }
-    segments.push({ ingredientIndex: index, prompt: a.samPrompt, encoding: "one_bit", rawText, ms: 600 + index * 90 });
   }
 
   const recording: Recording = {
@@ -122,14 +151,21 @@ async function main() {
     image: { src: "/fixtures/photos/fridge-drawers.jpg", width: W, height: H },
     perception: { model: "mock", rawText: JSON.stringify(perception), ms: 2400, costUsd: 0 },
     segments,
+    boxFallback,
     totalCostUsd: 0,
   };
+
+  // The recording must drive the real pipeline to the expected outcome.
+  const summary = await runPipeline(replayProvider(recording, { speed: Infinity }), size);
+  if (summary.box.join() !== String(kiwi) || summary.none.length || summary.concept.length !== ANNOTATIONS.length - 1) {
+    throw new Error(`Unexpected pipeline outcome: ${JSON.stringify({ concept: summary.concept, box: summary.box, none: summary.none })}`);
+  }
 
   const out = path.join(process.cwd(), "fixtures", "recordings", `${recording.id}.json`);
   await mkdir(path.dirname(out), { recursive: true });
   await writeFile(out, JSON.stringify(recording, null, 2));
   const kb = Math.round(JSON.stringify(recording).length / 1024);
-  console.log(`✓ ${ANNOTATIONS.length} ingredients, ${segments.length} SAM lines, round-trip OK → ${out} (${kb} KB)`);
+  console.log(`✓ ${ANNOTATIONS.length} ingredients: ${summary.concept.length} by concept, ${summary.box.length} by box fallback → ${out} (${kb} KB)`);
 }
 
 main().catch((error) => {
