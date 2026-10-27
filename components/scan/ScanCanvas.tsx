@@ -2,14 +2,14 @@
 
 import { MotionConfig, motion } from "motion/react";
 import Image from "next/image";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, type MouseEvent } from "react";
 import { maskToPath } from "@/lib/masks/contour";
 import { tierColorVar, tierFor } from "@/lib/pantry/freshness";
 import { gridToPixels, union, type GridBox, type PixelBox } from "@/lib/pipeline/geometry";
 import { toSegmentationMask } from "@/lib/pipeline/sam";
 import { Pip, dayLabel } from "./Pip";
 
-export type Segmentation = "pending" | "concept" | "box" | "none";
+export type Segmentation = "pending" | "concept" | "box" | "point" | "none";
 
 export type CanvasIngredient = {
   key: string;
@@ -30,7 +30,13 @@ export type CanvasMask = {
   bounds: PixelBox;
 };
 
-type Labels = { daysLeft: string; today: string };
+type Labels = { daysLeft: string; today: string; identifying: string; unknown: string };
+
+/** A tapped item has no name until Muse Spark has looked at it. */
+export function displayName(item: Pick<CanvasIngredient, "name" | "segmentation">, labels: Pick<Labels, "identifying" | "unknown">) {
+  if (item.name) return item.name;
+  return item.segmentation === "pending" || item.segmentation === "point" ? labels.identifying : labels.unknown;
+}
 
 /** Decoding is the expensive part; a mask never changes once stored, so its path is cached by key. */
 const pathCache = new Map<string, string>();
@@ -81,6 +87,7 @@ const MaskShape = memo(function MaskShape({ mask, color, dimmed, onEnter, onLeav
         animate={{ opacity: dimmed ? 0.14 : 1, scale: 1 }}
         transition={{ type: "spring", duration: 0.38, bounce: 0.3 }}
         style={{ transformBox: "fill-box", transformOrigin: "center", fillOpacity: 0.34, cursor: "pointer" }}
+        data-shape=""
         onPointerEnter={onEnter}
         onPointerLeave={onLeave}
         onClick={onSelect}
@@ -111,6 +118,7 @@ function BoxShape({ box, pending, color, dimmed, onEnter, onLeave, onSelect }: S
       animate={{ opacity: dimmed ? 0.14 : 1 }}
       transition={{ duration: 0.25 }}
       style={{ cursor: "pointer" }}
+      data-shape=""
       onPointerEnter={onEnter}
       onPointerLeave={onLeave}
       onClick={onSelect}
@@ -127,6 +135,7 @@ export function ScanCanvas({
   onActive,
   labels,
   maxLabels = 4,
+  onTap,
 }: {
   image: { src: string | null; width: number; height: number };
   ingredients: CanvasIngredient[];
@@ -136,8 +145,23 @@ export function ScanCanvas({
   onActive: (key: string | null) => void;
   labels: Labels;
   maxLabels?: number;
+  /** Tapping an empty spot reports it in image pixels (tap to add a missed item). */
+  onTap?: (point: { x: number; y: number }) => void;
 }) {
   const { width: W, height: H } = image;
+  const [ripples, setRipples] = useState<{ id: number; left: number; top: number }[]>([]);
+
+  const handleTap = (event: MouseEvent<HTMLElement>) => {
+    if (!onTap || (event.target as Element).closest("[data-shape]")) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const fx = (event.clientX - rect.left) / rect.width;
+    const fy = (event.clientY - rect.top) / rect.height;
+    if (fx < 0 || fy < 0 || fx >= 1 || fy >= 1) return;
+    const id = Date.now();
+    setRipples((r) => [...r, { id, left: fx * 100, top: fy * 100 }]);
+    setTimeout(() => setRipples((r) => r.filter((p) => p.id !== id)), 900);
+    onTap({ x: Math.min(W - 1, Math.floor(fx * W)), y: Math.min(H - 1, Math.floor(fy * H)) });
+  };
   // Labels are laid out in screen pixels, so the canvas tracks its rendered width.
   const figureRef = useRef<HTMLElement>(null);
   const [shownW, setShownW] = useState(640);
@@ -179,7 +203,7 @@ export function ScanCanvas({
     .flatMap(({ item, box }) => {
       const isActive = item.key === active;
       if (!isActive && placed.length >= maxLabels + (active ? 1 : 0)) return [];
-      const w = chipWidth(item.name);
+      const w = chipWidth(displayName(item, labels));
       const cx = Math.min(shownW - w / 2 - 6, Math.max(w / 2 + 6, ((box.left + box.right) / 2) * scale));
       const top = box.top * scale;
       const y = top < CHIP_H + 8 ? top + 6 : top - CHIP_H - 6;
@@ -195,10 +219,11 @@ export function ScanCanvas({
     <MotionConfig reducedMotion="user">
       <figure
         ref={figureRef}
-        className="relative mx-auto overflow-hidden rounded-3xl bg-scene select-none"
+        className={`relative mx-auto overflow-hidden rounded-3xl bg-scene select-none ${onTap ? "cursor-crosshair" : ""}`}
         style={{ aspectRatio: `${W} / ${H}`, width: `min(100%, calc(70svh * ${W / H}))` }}
         // A box swapped for its mask under the cursor never gets pointerleave; the figure always does.
         onPointerLeave={() => onActive(null)}
+        onClick={handleTap}
       >
         {image.src && (
           <Image
@@ -250,11 +275,15 @@ export function ScanCanvas({
               style={{ left: `${left}%`, top: `${top}%` }}
             >
               <Pip daysLeft={item.daysLeft} className="size-3" />
-              <span className="max-w-32 truncate font-medium">{item.name}</span>
+              <span className="max-w-32 truncate font-medium">{displayName(item, labels)}</span>
               <span className="font-mono text-[11px] text-porcelaine/75">{dayLabel(item.daysLeft, labels)}</span>
             </div>
           );
         })}
+
+        {ripples.map((r) => (
+          <span key={r.id} className="tap-ripple pointer-events-none absolute" style={{ left: `${r.left}%`, top: `${r.top}%` }} aria-hidden="true" />
+        ))}
 
         {scanning && <div className="scan-beam pointer-events-none absolute inset-0 motion-reduce:hidden" aria-hidden="true" />}
       </figure>

@@ -20,9 +20,9 @@ export function liveProvider(imageUrl: string, options: LiveOptions): VisionProv
 
   return {
     kind: "live",
-    async perceive() {
+    async perceive(onItem) {
       await reserve("perceive", PERCEIVE_RESERVE_USD);
-      const result = await perceive(imageUrl, { contributor });
+      const result = await perceive(imageUrl, { contributor, onItem });
       await settle?.("perceive", PERCEIVE_RESERVE_USD, result.usage.costUsd);
       return {
         model: result.model,

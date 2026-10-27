@@ -1,14 +1,18 @@
 "use node";
 
 import { ConvexError, v } from "convex/values";
+import { IDENTIFY_RESERVE_USD, identify } from "../lib/meta/identify";
 import { liveProvider } from "../lib/meta/live-provider";
 import { SAM_USD_PER_IMAGE } from "../lib/meta/models";
+import { segmentPoint } from "../lib/meta/segment";
+import { pixelsToGrid, union } from "../lib/pipeline/geometry";
 import { runPipeline } from "../lib/pipeline/run";
+import { masksOf } from "../lib/pipeline/sam";
 import type { VisionProvider } from "../lib/pipeline/types";
 import { recordings } from "../lib/replay/catalog";
 import { replayProvider } from "../lib/replay/provider";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internalAction, type ActionCtx } from "./_generated/server";
 
 /** SAM calls are cheap and many; reserve them in blocks so parallel requests don't contend on one row. */
@@ -70,14 +74,17 @@ export const run = internalAction({
       provider = liveProvider(imageUrl, guard);
     }
 
-    let ids: Id<"ingredients">[] = [];
+    const ids: Id<"ingredients">[] = [];
     try {
       const summary = await runPipeline(
         provider,
         { width: scan.width, height: scan.height },
         {
-          perceived: async ({ perception }) => {
-            ids = await ctx.runMutation(internal.scans.savePerception, { scanId, ingredients: perception.ingredients });
+          perceivedItem: async (item, index) => {
+            ids[index] = await ctx.runMutation(internal.scans.addIngredient, { scanId, order: index, item });
+          },
+          perceived: async () => {
+            await ctx.runMutation(internal.scans.finishPerception, { scanId });
           },
           masks: async (index, masks, via) => {
             await ctx.runMutation(internal.scans.saveMasks, { scanId, ingredientId: ids[index], via, masks });
@@ -93,6 +100,66 @@ export const run = internalAction({
       await ctx.runMutation(internal.scans.fail, { scanId, message: errorMessage(error) });
     } finally {
       await guard.refund();
+    }
+    return null;
+  },
+});
+
+/**
+ * The photo as the Meta API can fetch it: Convex storage for uploads, the
+ * deployed site for bundled demo photos (PUBLIC_SITE_URL in the Convex env).
+ */
+async function publicImageUrl(ctx: ActionCtx, source: Doc<"scans">["source"]): Promise<string | null> {
+  if (source.kind === "upload") return await ctx.storage.getUrl(source.storageId);
+  const site = process.env.PUBLIC_SITE_URL;
+  return site ? new URL(source.imageSrc, site).href : null;
+}
+
+/** Tap to add: SAM outlines what is under the finger, then Muse Spark names it. */
+export const tapAdd = internalAction({
+  args: { ingredientId: v.id("ingredients"), x: v.number(), y: v.number() },
+  returns: v.null(),
+  handler: async (ctx, { ingredientId, x, y }) => {
+    const scan = await ctx.runQuery(internal.scans.forTap, { ingredientId });
+    const imageUrl = scan && (await publicImageUrl(ctx, scan.source));
+    if (!scan || !imageUrl) {
+      await ctx.runMutation(internal.scans.dropTap, { ingredientId });
+      return null;
+    }
+    const size = { width: scan.width, height: scan.height };
+
+    try {
+      await ctx.runMutation(internal.spend.reserve, { label: "tap", usd: SAM_USD_PER_IMAGE + IDENTIFY_RESERVE_USD });
+      const segmented = await segmentPoint(imageUrl, size, { x, y });
+      const masks = masksOf(segmented.result);
+      const bounds = union(masks.map((m) => m.bounds));
+      if (!bounds) {
+        await ctx.runMutation(internal.spend.settle, { estimateUsd: IDENTIFY_RESERVE_USD, actualUsd: 0 });
+        await ctx.runMutation(internal.scans.dropTap, { ingredientId });
+        return null;
+      }
+      const bbox = pixelsToGrid(bounds, size);
+      await ctx.runMutation(internal.scans.saveTapMasks, { ingredientId, masks, bbox });
+
+      const { item, costUsd } = await identify(imageUrl, bbox);
+      await ctx.runMutation(internal.spend.settle, { estimateUsd: IDENTIFY_RESERVE_USD, actualUsd: costUsd });
+      if (!item) {
+        await ctx.runMutation(internal.scans.dropTap, { ingredientId });
+        return null;
+      }
+      await ctx.runMutation(internal.scans.nameTap, {
+        ingredientId,
+        name: item.name,
+        samPrompt: item.samPrompt,
+        category: item.category,
+        quantity: item.quantity,
+        daysLeft: item.daysLeft,
+        freshnessCues: item.freshnessCues,
+        dateRead: item.dateRead,
+      });
+    } catch (error) {
+      console.error("tap failed", ingredientId, error);
+      await ctx.runMutation(internal.scans.dropTap, { ingredientId });
     }
     return null;
   },

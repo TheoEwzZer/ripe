@@ -26,16 +26,13 @@ export function LabReplay({ recording, t }: { recording: Recording; t: { scan: D
       }));
 
     runPipeline(replayProvider(recording, { signal: controller.signal }), recording.image, {
-      perceived: ({ perception }) =>
+      perceivedItem: (item, index) =>
         setState((s) => ({
           ...s,
-          ingredients: perception.ingredients.map((item, index) => ({
-            key: `${run}-${index}`,
-            name: item.name,
-            daysLeft: item.daysLeft,
-            bbox: item.bbox,
-            segmentation: "pending",
-          })),
+          ingredients: [
+            ...s.ingredients,
+            { key: `${run}-${index}`, name: item.name, daysLeft: item.daysLeft, bbox: item.bbox, segmentation: "pending" },
+          ],
         })),
       masks: (index, masks, via) => {
         setSegmentation(index, via);

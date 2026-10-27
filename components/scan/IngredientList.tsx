@@ -1,9 +1,9 @@
 "use client";
 
-import type { CanvasIngredient } from "./ScanCanvas";
+import { displayName, type CanvasIngredient } from "./ScanCanvas";
 import { Pip, dayLabel } from "./Pip";
 
-type Labels = { daysLeft: string; today: string; pending: string; approximate: string };
+type Labels = { daysLeft: string; today: string; pending: string; approximate: string; identifying: string; unknown: string };
 
 /** The inventory ranked by urgency; hovering an item lights it up on the photo. */
 export function IngredientList({
@@ -33,8 +33,8 @@ export function IngredientList({
             className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-glass aria-pressed:bg-glass"
           >
             <Pip daysLeft={item.daysLeft} />
-            <span className="min-w-0 flex-1 truncate">{item.name}</span>
-            {item.segmentation === "pending" && (
+            <span className="min-w-0 flex-1 truncate">{displayName(item, labels)}</span>
+            {(item.segmentation === "pending" || (item.segmentation === "point" && !item.name)) && (
               <span className="ghost-pulse text-xs text-ink-soft" aria-label={labels.pending}>
                 ···
               </span>

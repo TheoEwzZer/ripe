@@ -103,6 +103,27 @@ body {
   }
 }
 
+/* Where the finger landed when adding a missed item. */
+.tap-ripple {
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  border: 2px solid var(--color-porcelaine);
+  animation: tap-ripple 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes tap-ripple {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
 /* Muse Spark's box breathing while SAM outlines the item. */
 .ghost-pulse {
   animation: ghost-pulse 1.4s ease-in-out infinite;

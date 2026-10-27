@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { decodeMaskToRaster } from "@meta-sam/parser";
 import { contourInternals, rasterToPath } from "../lib/masks/contour";
 import { belongsTo, gridToPixels } from "../lib/pipeline/geometry";
+import { ArrayItemStream } from "../lib/pipeline/json-stream";
 import { runPipeline } from "../lib/pipeline/run";
 import { masksOf, parseSamText, toSegmentationMask, type MaskData } from "../lib/pipeline/sam";
 import type { VisionProvider } from "../lib/pipeline/types";
@@ -60,12 +61,39 @@ async function main() {
     assert.equal(masks.get(names.indexOf("orange"))?.masks.length, 2);
   });
 
-  await check("replay: the most urgent ingredients are segmented first", async () => {
-    const order: number[] = [];
-    await runPipeline(replayProvider(recording, { speed: Infinity }), size, { masks: (i) => void order.push(i) }, { concurrency: 1 });
-    const days = order.map((i) => replayPerception(recording).ingredients[i].daysLeft);
-    const conceptDays = days.slice(0, -1); // the box fallback runs last
-    assert.deepEqual(conceptDays, [...conceptDays].sort((a, b) => a - b));
+  await check("stream: objects come out of a JSON array however the text is split", () => {
+    const raw = recording.perception.rawText;
+    const expected = (JSON.parse(raw) as { ingredients: unknown[] }).ingredients;
+    for (const seed of [1, 7, 42]) {
+      const stream = new ArrayItemStream("ingredients");
+      const got: unknown[] = [];
+      let rng = seed;
+      for (let i = 0; i < raw.length; ) {
+        rng = (rng * 1103515245 + 12345) % 2147483648;
+        const n = 1 + (rng % 37);
+        got.push(...stream.push(raw.slice(i, i + n)));
+        i += n;
+      }
+      assert.deepEqual(got, expected);
+    }
+    const tricky = new ArrayItemStream("ingredients");
+    const items = tricky.push('{"scene":"fridge","ingredients":[{"name":"a \\"}\\" b","x":[1,{"y":"]"}]},{"name":"c"}]}');
+    assert.deepEqual(items, [{ name: 'a "}" b', x: [1, { y: "]" }] }, { name: "c" }]);
+    assert.deepEqual(tricky.push("{}"), []);
+  });
+
+  await check("stream: each item is saved before its masks, and SAM starts before Muse Spark finishes", async () => {
+    const log: string[] = [];
+    await runPipeline(replayProvider(recording, { speed: 4 }), size, {
+      perceivedItem: (_item, index) => void log.push(`item ${index}`),
+      perceived: () => void log.push("perceived"),
+      masks: (index) => void log.push(`mask ${index}`),
+    });
+    for (const [at, entry] of log.entries()) {
+      if (entry.startsWith("mask ")) assert.ok(log.indexOf(`item ${entry.slice(5)}`) < at, `${entry} before its item`);
+    }
+    assert.ok(log.findIndex((e) => e.startsWith("mask ")) < log.indexOf("perceived"), "no mask arrived during perception");
+    assert.equal(log.filter((e) => e.startsWith("item ")).length, names.length);
   });
 
   await check("failures: a throwing concept request falls back to boxes, an empty box answer marks it unsegmented", async () => {

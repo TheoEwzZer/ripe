@@ -37,7 +37,7 @@ async function body(req: IncomingMessage): Promise<Json> {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const isImageUrl = (url: unknown) => typeof url === "string" && /^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/.test(url);
 
-function chatCompletion(req: Json, res: ServerResponse) {
+async function chatCompletion(req: Json, res: ServerResponse) {
   if (req.model !== "muse-spark-1.3" && req.model !== "muse-spark-1.3-contributor" && req.model !== "muse-wonder-1.0") {
     return send(res, 404, { error: { code: "model_not_found", message: `Unknown model ${String(req.model)}` } });
   }
@@ -54,13 +54,29 @@ function chatCompletion(req: Json, res: ServerResponse) {
   } else {
     content = JSON.stringify({ recipes: [] });
   }
+  const usage = { prompt_tokens: 2400, completion_tokens: 900, total_tokens: 3300 };
+  if (req.stream === true) {
+    // Chat Completions streaming: content deltas, then a usage-only chunk, then [DONE].
+    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+    const event = (payload: Json) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    const base = { id: "chatcmpl-fake", object: "chat.completion.chunk", created: 0, model: req.model };
+    event({ ...base, choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }] });
+    for (let i = 0; i < content.length; i += 90) {
+      event({ ...base, choices: [{ index: 0, delta: { content: content.slice(i, i + 90) }, finish_reason: null }] });
+      await sleep(20);
+    }
+    const options = (req.stream_options ?? {}) as Json;
+    if (options.include_usage === true) event({ ...base, choices: [], usage });
+    res.write("data: [DONE]\n\n");
+    return res.end();
+  }
   send(res, 200, {
     id: "chatcmpl-fake",
     object: "chat.completion",
     created: Math.floor(Date.now() / 1000),
     model: req.model,
     choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content } }],
-    usage: { prompt_tokens: 2400, completion_tokens: 900, total_tokens: 3300 },
+    usage,
   });
 }
 
@@ -119,7 +135,7 @@ createServer(async (req, res) => {
     }
     if (req.method === "POST" && url === "/v1/chat/completions") {
       await sleep(300);
-      return chatCompletion(await body(req), res);
+      return await chatCompletion(await body(req), res);
     }
     if (req.method === "POST" && url === "/v1/responses") {
       await sleep(150);

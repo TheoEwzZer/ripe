@@ -3,7 +3,7 @@ import { defaultRecordingId, recordings } from "../lib/replay/catalog";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
-import { maskFields, maskVia, perceivedFields, scanSource, scanStatus, segmentation } from "./schema";
+import { gridBox, maskFields, maskVia, perceivedFields, scanSource, scanStatus, segmentation } from "./schema";
 
 const MAX_SCANS_PER_SESSION = 12;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -178,6 +178,125 @@ export const masks = query({
   },
 });
 
+// ——— Tap to add ———
+
+const MAX_TAPS_PER_SCAN = 20;
+const MAX_PENDING_TAPS = 3;
+/** Half-size of the placeholder shown under the finger, on the 0–1000 grid. */
+const TAP_GHOST = 22;
+
+/** The user tapped something Ripe missed: show a placeholder now, outline and name it in the background. */
+export const tap = mutation({
+  args: { scanId: v.id("scans"), x: v.number(), y: v.number() },
+  returns: v.id("ingredients"),
+  handler: async (ctx, { scanId, x, y }) => {
+    if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Live analysis is not enabled" });
+    const scan = await ctx.db.get(scanId);
+    const session = scan && (await ctx.db.get(scan.sessionId));
+    if (!scan || !session || session.expiresAt < Date.now()) throw new ConvexError({ code: "session", message: "Session expired" });
+    if (scan.status === "perceiving" || scan.status === "segmenting") {
+      throw new ConvexError({ code: "busy", message: "Wait for the analysis to finish" });
+    }
+    if (![x, y].every(Number.isInteger) || x < 0 || y < 0 || x >= scan.width || y >= scan.height) {
+      throw new ConvexError({ code: "tap", message: "Tap inside the photo" });
+    }
+
+    const items = await ctx.db
+      .query("ingredients")
+      .withIndex("by_scan", (q) => q.eq("scanId", scanId))
+      .take(200);
+    const taps = items.filter((i) => i.source === "tapped");
+    if (taps.length >= MAX_TAPS_PER_SCAN) throw new ConvexError({ code: "quota", message: "Too many additions on this photo" });
+    if (taps.filter((i) => i.segmentation === "pending").length >= MAX_PENDING_TAPS) {
+      throw new ConvexError({ code: "busy", message: "Wait for the previous additions" });
+    }
+
+    const gx = Math.round((x / scan.width) * 1000);
+    const gy = Math.round((y / scan.height) * 1000);
+    const ingredientId = await ctx.db.insert("ingredients", {
+      sessionId: scan.sessionId,
+      scanId,
+      order: items.length,
+      name: "",
+      samPrompt: "",
+      category: "other",
+      quantity: "",
+      daysLeft: 7,
+      freshnessCues: "",
+      dateRead: null,
+      bbox: {
+        x_min: Math.max(0, gx - TAP_GHOST),
+        y_min: Math.max(0, gy - TAP_GHOST),
+        x_max: Math.min(1000, gx + TAP_GHOST),
+        y_max: Math.min(1000, gy + TAP_GHOST),
+      },
+      segmentation: "pending",
+      source: "tapped",
+      removed: false,
+    });
+    await ctx.scheduler.runAfter(0, internal.pipeline.tapAdd, { ingredientId, x, y });
+    return ingredientId;
+  },
+});
+
+export const forTap = internalQuery({
+  args: { ingredientId: v.id("ingredients") },
+  returns: v.union(
+    v.null(),
+    v.object({ scanId: v.id("scans"), source: scanSource, width: v.number(), height: v.number() }),
+  ),
+  handler: async (ctx, { ingredientId }) => {
+    const item = await ctx.db.get(ingredientId);
+    const scan = item && (await ctx.db.get(item.scanId));
+    return scan && { scanId: scan._id, source: scan.source, width: scan.width, height: scan.height };
+  },
+});
+
+export const saveTapMasks = internalMutation({
+  args: { ingredientId: v.id("ingredients"), masks: v.array(v.object(maskFields)), bbox: gridBox },
+  returns: v.null(),
+  handler: async (ctx, { ingredientId, masks, bbox }) => {
+    const item = await ctx.db.get(ingredientId);
+    if (!item) return null;
+    for (const mask of masks) await ctx.db.insert("masks", { scanId: item.scanId, ingredientId, via: "point", ...mask });
+    await ctx.db.patch(ingredientId, { segmentation: "point", bbox });
+    return null;
+  },
+});
+
+/** Muse Spark's description of the tapped item; the outline from SAM keeps its box. */
+export const nameTap = internalMutation({
+  args: {
+    ingredientId: v.id("ingredients"),
+    name: v.string(),
+    samPrompt: v.string(),
+    category: perceivedFields.category,
+    quantity: v.string(),
+    daysLeft: v.number(),
+    freshnessCues: v.string(),
+    dateRead: v.union(v.string(), v.null()),
+  },
+  returns: v.null(),
+  handler: async (ctx, { ingredientId, daysLeft, ...fields }) => {
+    if (!(await ctx.db.get(ingredientId))) return null;
+    await ctx.db.patch(ingredientId, { ...fields, daysLeft: Math.max(0, Math.round(daysLeft)) });
+    return null;
+  },
+});
+
+/** Nothing usable under the finger: the placeholder disappears. */
+export const dropTap = internalMutation({
+  args: { ingredientId: v.id("ingredients") },
+  returns: v.null(),
+  handler: async (ctx, { ingredientId }) => {
+    for (const mask of await ctx.db.query("masks").withIndex("by_ingredient", (q) => q.eq("ingredientId", ingredientId)).take(50)) {
+      await ctx.db.delete(mask._id);
+    }
+    if (await ctx.db.get(ingredientId)) await ctx.db.delete(ingredientId);
+    return null;
+  },
+});
+
 // ——— Pipeline internals ———
 
 export const forPipeline = internalQuery({
@@ -192,29 +311,34 @@ export const forPipeline = internalQuery({
   },
 });
 
-export const savePerception = internalMutation({
-  args: { scanId: v.id("scans"), ingredients: v.array(v.object(perceivedFields)) },
-  returns: v.array(v.id("ingredients")),
-  handler: async (ctx, { scanId, ingredients }) => {
+/** One ingredient, saved the moment Muse Spark finishes describing it. */
+export const addIngredient = internalMutation({
+  args: { scanId: v.id("scans"), order: v.number(), item: v.object(perceivedFields) },
+  returns: v.id("ingredients"),
+  handler: async (ctx, { scanId, order, item }) => {
     const scan = await ctx.db.get(scanId);
     if (!scan || scan.status !== "perceiving") throw new Error("Scan is not waiting for perception");
-    const ids: Id<"ingredients">[] = [];
-    for (const [order, item] of ingredients.entries()) {
-      ids.push(
-        await ctx.db.insert("ingredients", {
-          sessionId: scan.sessionId,
-          scanId,
-          order,
-          ...item,
-          daysLeft: Math.max(0, Math.round(item.daysLeft)),
-          segmentation: "pending",
-          source: "perceived",
-          removed: false,
-        }),
-      );
-    }
-    await ctx.db.patch(scanId, { status: "segmenting" });
-    return ids;
+    return await ctx.db.insert("ingredients", {
+      sessionId: scan.sessionId,
+      scanId,
+      order,
+      ...item,
+      daysLeft: Math.max(0, Math.round(item.daysLeft)),
+      segmentation: "pending",
+      source: "perceived",
+      removed: false,
+    });
+  },
+});
+
+/** Muse Spark's answer is complete; only box prompts and late masks remain. */
+export const finishPerception = internalMutation({
+  args: { scanId: v.id("scans") },
+  returns: v.null(),
+  handler: async (ctx, { scanId }) => {
+    const scan = await ctx.db.get(scanId);
+    if (scan?.status === "perceiving") await ctx.db.patch(scanId, { status: "segmenting" });
+    return null;
   },
 });
 

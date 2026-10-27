@@ -39,7 +39,13 @@ export const category = v.union(
 );
 
 /** How an ingredient got its outline: still waiting, by its name, by Muse Spark's box, or not at all. */
-export const segmentation = v.union(v.literal("pending"), v.literal("concept"), v.literal("box"), v.literal("none"));
+export const segmentation = v.union(
+  v.literal("pending"),
+  v.literal("concept"),
+  v.literal("box"),
+  v.literal("point"),
+  v.literal("none"),
+);
 
 export const maskVia = v.union(v.literal("concept"), v.literal("box"), v.literal("point"));
 

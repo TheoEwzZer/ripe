@@ -1,5 +1,8 @@
+import OpenAI from "openai";
 import { z } from "zod";
-import { perceptionSchema, type Perception } from "../pantry/schema";
+import { perceivedIngredientSchema, perceptionSchema, type Perception } from "../pantry/schema";
+import { ArrayItemStream } from "../pipeline/json-stream";
+import type { OnPerceivedItem } from "../pipeline/types";
 import { metaClient } from "./client";
 import { MODELS, tokenCostUsd } from "./models";
 
@@ -16,6 +19,9 @@ For each item:
 
 Ignore the fridge itself, shelves, drawers and non-food objects.`;
 
+/** Charged when the API returns no usage; on the high side of a measured 16-item photo. */
+const UNKNOWN_USAGE_USD = 0.02;
+
 export type PerceiveResult = {
   model: string;
   rawText: string;
@@ -24,38 +30,88 @@ export type PerceiveResult = {
   ms: number;
 };
 
-export async function perceive(imageUrl: string, opts: { contributor?: boolean } = {}): Promise<PerceiveResult> {
+/** Keeps every valid ingredient: one malformed entry must not cost the whole inventory. */
+export function parsePerception(rawText: string): Perception {
+  const json = JSON.parse(rawText) as { scene?: unknown; ingredients?: unknown };
+  const scene = perceptionSchema.shape.scene.safeParse(json.scene);
+  const ingredients = (Array.isArray(json.ingredients) ? json.ingredients : []).flatMap((item) => {
+    const parsed = perceivedIngredientSchema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
+  return { scene: scene.success ? scene.data : "other", ingredients };
+}
+
+/**
+ * Muse Spark reads the photo and streams its JSON answer; each ingredient is
+ * handed to `onItem` the moment its object closes, so segmentation can start
+ * while the rest is still being written.
+ */
+export async function perceive(
+  imageUrl: string,
+  opts: { contributor?: boolean; onItem?: OnPerceivedItem } = {},
+): Promise<PerceiveResult> {
   const model = opts.contributor ? MODELS.perceiveContributor : MODELS.perceive;
   const started = Date.now();
-
-  const response = await metaClient().chat.completions.create({
+  const request = {
     model,
-    reasoning_effort: "low",
+    reasoning_effort: "low" as const,
     messages: [
       {
-        role: "user",
+        role: "user" as const,
         content: [
-          { type: "text", text: PERCEIVE_PROMPT },
-          { type: "image_url", image_url: { url: imageUrl } },
+          { type: "text" as const, text: PERCEIVE_PROMPT },
+          { type: "image_url" as const, image_url: { url: imageUrl } },
         ],
       },
     ],
     response_format: {
-      type: "json_schema",
+      type: "json_schema" as const,
       json_schema: { name: "perception", strict: true, schema: z.toJSONSchema(perceptionSchema) },
     },
-  });
+  };
 
-  const rawText = response.choices[0]?.message.content ?? "";
-  const perception = perceptionSchema.parse(JSON.parse(rawText));
-  const inputTokens = response.usage?.prompt_tokens ?? 0;
-  const outputTokens = response.usage?.completion_tokens ?? 0;
+  let rawText = "";
+  let usage: OpenAI.CompletionUsage | null = null;
+  let emitted = 0;
+  const items = new ArrayItemStream("ingredients");
 
+  try {
+    const stream = await metaClient().chat.completions.create({
+      ...request,
+      stream: true,
+      stream_options: { include_usage: true },
+    });
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        rawText += delta;
+        for (const candidate of items.push(delta)) {
+          const parsed = perceivedIngredientSchema.safeParse(candidate);
+          if (parsed.success) await opts.onItem?.(parsed.data, emitted++);
+        }
+      }
+      if (chunk.usage) usage = chunk.usage;
+    }
+  } catch (error) {
+    // Fall back to one blocking call only when the API refuses streaming up front.
+    if (rawText || !(error instanceof OpenAI.APIError && error.status === 400)) throw error;
+    const response = await metaClient().chat.completions.create(request);
+    rawText = response.choices[0]?.message.content ?? "";
+    usage = response.usage ?? null;
+  }
+
+  const perception = parsePerception(rawText);
+  const inputTokens = usage?.prompt_tokens ?? 0;
+  const outputTokens = usage?.completion_tokens ?? 0;
   return {
     model,
     rawText,
     perception,
-    usage: { inputTokens, outputTokens, costUsd: tokenCostUsd(model, inputTokens, outputTokens) },
+    usage: {
+      inputTokens,
+      outputTokens,
+      costUsd: usage ? tokenCostUsd(model, inputTokens, outputTokens) : UNKNOWN_USAGE_USD,
+    },
     ms: Date.now() - started,
   };
 }

@@ -54,8 +54,8 @@ function jpegSize(buffer: Buffer): { width: number; height: number } {
 function recorder(inner: VisionProvider, recording: Recording): VisionProvider {
   return {
     kind: inner.kind,
-    async perceive() {
-      const result = await inner.perceive();
+    async perceive(onItem) {
+      const result = await inner.perceive(onItem);
       recording.perception = { model: result.model, rawText: result.rawText, ms: result.ms, costUsd: result.costUsd };
       return result;
     },
@@ -108,7 +108,11 @@ async function main() {
     ? recorder(live, recording)
     : { ...recorder(live, recording), segmentConcept: async () => ({ rawText: "", ms: 0, costUsd: 0 }), segmentBoxes: async () => ({ rawText: "", ms: 0, costUsd: 0 }) };
 
+  const t0 = Date.now();
   const summary = await runPipeline(provider, size, {
+    perceivedItem: (item, index) => {
+      if (index < 3) console.log(`  + streamed "${item.name}" at ${Date.now() - t0} ms`);
+    },
     perceived: (p) => {
       console.log(`\n✓ ${p.model}: ${p.perception.ingredients.length} ingredients in ${p.ms} ms, $${p.costUsd.toFixed(4)}`);
       for (const i of p.perception.ingredients) {

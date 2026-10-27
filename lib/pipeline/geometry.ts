@@ -14,6 +14,15 @@ export function gridToPixels(box: GridBox, { width, height }: Size): PixelBox {
   return { left: x1, top: y1, right: x2, bottom: y2 };
 }
 
+export function pixelsToGrid(box: PixelBox, { width, height }: Size): GridBox {
+  return {
+    x_min: Math.round((box.left / width) * 1000),
+    y_min: Math.round((box.top / height) * 1000),
+    x_max: Math.round((box.right / width) * 1000),
+    y_max: Math.round((box.bottom / height) * 1000),
+  };
+}
+
 export function area(box: PixelBox): number {
   return Math.max(0, box.right - box.left) * Math.max(0, box.bottom - box.top);
 }

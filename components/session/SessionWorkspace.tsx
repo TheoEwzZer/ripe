@@ -26,6 +26,8 @@ function errorText(error: unknown, t: T["session"]): string {
       return t.errLive;
     case "session":
       return t.errSession;
+    case "busy":
+      return t.errBusy;
     default:
       return t.errGeneric;
   }
@@ -43,6 +45,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   const startDemo = useMutation(api.scans.startDemo);
   const generateUploadUrl = useMutation(api.scans.generateUploadUrl);
   const startUpload = useMutation(api.scans.startUpload);
+  const tap = useMutation(api.scans.tap);
 
   const [busy, setBusy] = useState<"demo" | "upload" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -162,9 +165,24 @@ export function SessionWorkspace({ t }: { t: T }) {
   const outlined = ingredients.filter((i) => i.segmentation !== "pending").length;
   const seconds = scan.finishedAt ? ((scan.finishedAt - scan._creationTime) / 1000).toFixed(1) : null;
 
+  // Adding by touch needs the live API and a finished analysis (item order and boxes are settled).
+  const canTap = live && (scan.status === "done" || scan.status === "error");
+  const onTap = canTap
+    ? async (point: { x: number; y: number }) => {
+        setError(null);
+        try {
+          await tap({ scanId: scan._id, ...point });
+        } catch (e) {
+          setError(errorText(e, t.session));
+        }
+      }
+    : undefined;
+
   const status =
     scan.status === "perceiving"
-      ? t.scan.perceiving
+      ? ingredients.length > 0
+        ? fill(t.scan.perceivingCount, { n: ingredients.length })
+        : t.scan.perceiving
       : scan.status === "segmenting"
         ? fill(t.scan.segmenting, { done: outlined, total: ingredients.length })
         : scan.status === "error"
@@ -184,6 +202,7 @@ export function SessionWorkspace({ t }: { t: T }) {
         {actions(true)}
       </div>
       {error && <p className="text-sm text-betterave" role="alert">{error}</p>}
+      {canTap && <p className="-mt-2 text-sm text-ink-soft">{t.scan.tapHint}</p>}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
         <ScanCanvas
@@ -194,6 +213,7 @@ export function SessionWorkspace({ t }: { t: T }) {
           active={active}
           onActive={setActive}
           labels={t.scan}
+          onTap={onTap}
         />
         {ingredients.length > 0 && (
           <aside className="glass rounded-3xl p-4">

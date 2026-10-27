@@ -32,13 +32,25 @@ export function replayProvider(recording: Recording, options: ReplayOptions = {}
 
   return {
     kind: "replay",
-    async perceive() {
+    async perceive(onItem) {
       const ms = Math.min(recording.perception.ms, maxPerceiveMs);
-      await wait(scaled(ms), signal);
+      const perception = replayPerception(recording);
+      // Like the live stream: a first item after a short think, the rest spread over the answer.
+      const count = perception.ingredients.length;
+      const first = ms * 0.3;
+      const step = count > 1 ? (ms - first) / (count - 1) : 0;
+      let elapsed = 0;
+      for (const [index, item] of perception.ingredients.entries()) {
+        const at = first + index * step;
+        await wait(scaled(at - elapsed), signal);
+        elapsed = at;
+        await onItem?.(item, index);
+      }
+      await wait(scaled(ms - elapsed), signal);
       return {
         model: recording.perception.model,
         rawText: recording.perception.rawText,
-        perception: replayPerception(recording),
+        perception,
         ms,
         costUsd: 0,
       };
