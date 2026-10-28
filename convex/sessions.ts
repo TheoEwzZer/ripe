@@ -49,6 +49,7 @@ export const get = query({
       status: sessionStatus,
       locale: v.union(v.literal("en"), v.literal("fr")),
       phoneJoinedAt: v.optional(v.number()),
+      pantry: v.optional(v.array(v.string())),
       expiresAt: v.number(),
     }),
   ),
@@ -89,7 +90,7 @@ export const purgeExpired = internalMutation({
       }
       for (const run of await ctx.db.query("recipeRuns").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(50)) {
         for (const recipe of await ctx.db.query("recipes").withIndex("by_run", (q) => q.eq("runId", run._id)).take(20)) {
-          if (recipe.plateStorageId) await ctx.storage.delete(recipe.plateStorageId);
+          for (const p of [recipe.plate, recipe.previous?.plate]) if (p?.status === "ready" && p.storageId) await ctx.storage.delete(p.storageId);
           await ctx.db.delete(recipe._id);
         }
         await ctx.db.delete(run._id);

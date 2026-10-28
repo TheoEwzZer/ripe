@@ -109,7 +109,7 @@ export const run = internalAction({
  * The photo as the Meta API can fetch it: Convex storage for uploads, the
  * deployed site for bundled demo photos (PUBLIC_SITE_URL in the Convex env).
  */
-async function publicImageUrl(ctx: ActionCtx, source: Doc<"scans">["source"]): Promise<string | null> {
+export async function publicImageUrl(ctx: ActionCtx, source: Doc<"scans">["source"]): Promise<string | null> {
   if (source.kind === "upload") return await ctx.storage.getUrl(source.storageId);
   const site = process.env.PUBLIC_SITE_URL;
   return site ? new URL(source.imageSrc, site).href : null;

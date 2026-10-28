@@ -8,9 +8,11 @@
  * @module
  */
 
+import type * as cooking from "../cooking.js";
 import type * as crons from "../crons.js";
 import type * as ingredients from "../ingredients.js";
 import type * as pipeline from "../pipeline.js";
+import type * as recipes from "../recipes.js";
 import type * as scans from "../scans.js";
 import type * as sessions from "../sessions.js";
 import type * as spend from "../spend.js";
@@ -22,9 +24,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cooking: typeof cooking;
   crons: typeof crons;
   ingredients: typeof ingredients;
   pipeline: typeof pipeline;
+  recipes: typeof recipes;
   scans: typeof scans;
   sessions: typeof sessions;
   spend: typeof spend;

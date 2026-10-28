@@ -1,5 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { v, type Infer } from "convex/values";
 
 export const locale = v.union(v.literal("en"), v.literal("fr"));
 
@@ -76,6 +76,71 @@ export const maskFields = {
   confidence: v.optional(v.number()),
 };
 
+export const equipmentMode = v.union(v.literal("microwave"), v.literal("air-fryer"), v.literal("one-pan"));
+export const diet = v.union(v.literal("vegetarian"), v.literal("vegan"), v.literal("gluten-free"));
+
+/** lib/recipes/filters.ts CookFilters. */
+export const cookFilters = v.object({
+  emergency: v.boolean(),
+  maxMinutes: v.optional(v.union(v.literal(10), v.literal(15), v.literal(30))),
+  equipment: v.optional(equipmentMode),
+  diet: v.array(diet),
+  fewDishes: v.boolean(),
+  servings: v.number(),
+});
+
+export const runStatus = v.union(v.literal("cooking"), v.literal("fixing"), v.literal("done"), v.literal("error"));
+
+/** lib/recipes/validate.ts Issue: a rule a recipe still breaks after the correction round. */
+export const recipeIssue = v.union(
+  v.object({ code: v.literal("unknown"), ingredient: v.string() }),
+  v.object({ code: v.literal("staple"), staple: v.string() }),
+  v.object({ code: v.literal("toBuy"), count: v.number() }),
+  v.object({ code: v.literal("time"), minutes: v.number(), limit: v.number() }),
+  v.object({ code: v.literal("equipment"), mode: equipmentMode }),
+  v.object({ code: v.literal("dishes"), dishes: v.number(), limit: v.number() }),
+  v.object({ code: v.literal("diet"), diet, ingredient: v.string() }),
+  v.object({ code: v.literal("urgent"), used: v.number() }),
+  v.object({ code: v.literal("empty") }),
+);
+
+export const recipeUse = v.object({
+  /** The inventory item Ripe matched the model's name to. */
+  ingredientId: v.optional(v.id("ingredients")),
+  ingredient: v.string(),
+  amount: v.string(),
+  share: v.number(),
+});
+
+/** What a recipe says, as checked and scored by Ripe. */
+export const recipeContent = {
+  title: v.string(),
+  pitch: v.string(),
+  minutes: v.number(),
+  servings: v.number(),
+  equipment: v.array(v.string()),
+  dishes: v.number(),
+  diet: v.array(v.string()),
+  uses: v.array(recipeUse),
+  staples: v.array(v.string()),
+  toBuy: v.array(v.string()),
+  steps: v.array(v.string()),
+  /** Anti-waste score computed by Ripe from urgency weights, never by the model. */
+  score: v.number(),
+  issues: v.array(recipeIssue),
+  /** Rewritten by the correction round. */
+  fixed: v.boolean(),
+};
+
+export type RecipeContent = Infer<ReturnType<typeof v.object<typeof recipeContent>>>;
+
+/** Muse Image's plate: a stored image for live calls, a public file for replays. */
+export const plate = v.union(
+  v.object({ status: v.literal("imagining"), startedAt: v.number() }),
+  v.object({ status: v.literal("ready"), storageId: v.optional(v.id("_storage")), src: v.optional(v.string()), ms: v.number() }),
+  v.object({ status: v.literal("failed") }),
+);
+
 export default defineSchema({
   /** A temporary desktop ↔ phone session, purged after 24 h. */
   sessions: defineTable({
@@ -84,6 +149,8 @@ export default defineSchema({
     locale,
     /** SHA-256 of the one-time token carried by the QR code; cleared once a phone joins. */
     joinTokenHash: v.optional(v.string()),
+    /** Staple ids from lib/recipes/pantry.ts; unset means the standard pantry. */
+    pantry: v.optional(v.array(v.string())),
     phoneJoinedAt: v.optional(v.number()),
     expiresAt: v.number(),
   })
@@ -131,33 +198,40 @@ export default defineSchema({
     .index("by_scan", ["scanId"])
     .index("by_ingredient", ["ingredientId"]),
 
+  /** One "cook me something" request: three recipes for one scan's inventory. */
   recipeRuns: defineTable({
     sessionId: v.id("sessions"),
-    filters: v.object({
-      emergency: v.boolean(),
-      maxMinutes: v.optional(v.number()),
-      equipment: v.optional(v.string()),
-      diet: v.array(v.string()),
-    }),
-    status: v.union(v.literal("cooking"), v.literal("done"), v.literal("error")),
+    scanId: v.id("scans"),
+    filters: cookFilters,
+    pantry: v.array(v.string()),
+    locale,
+    status: runStatus,
+    source: v.union(v.literal("live"), v.literal("replay")),
+    /** A recorded pass shown because live cooking was off or out of budget: filters may not hold. */
+    approximate: v.boolean(),
+    /** The recorded pass a replay came from, so its plates can be replayed too. */
+    replayOf: v.optional(v.object({ recordingId: v.string(), cooking: v.number() })),
+    swaps: v.number(),
     error: v.optional(v.string()),
+    costUsd: v.number(),
+    finishedAt: v.optional(v.number()),
   }).index("by_session", ["sessionId"]),
 
   recipes: defineTable({
     runId: v.id("recipeRuns"),
     sessionId: v.id("sessions"),
-    title: v.string(),
-    pitch: v.string(),
-    minutes: v.number(),
-    equipment: v.array(v.string()),
-    diet: v.array(v.string()),
-    uses: v.array(v.object({ ingredientId: v.optional(v.id("ingredients")), ingredient: v.string(), amount: v.string() })),
-    extras: v.array(v.string()),
-    steps: v.array(v.string()),
-    /** Anti-waste score computed by the app from urgency weights, never by the model. */
-    score: v.number(),
-    plateStorageId: v.optional(v.id("_storage")),
-  }).index("by_run", ["runId"]),
+    /** Position in Muse Wonder's answer. */
+    order: v.number(),
+    /** A card shows from its title on ("writing"); "fixing" while the correction round rewrites it. */
+    status: v.union(v.literal("writing"), v.literal("ready"), v.literal("fixing")),
+    ...recipeContent,
+    plate: v.optional(plate),
+    swap: v.optional(v.object({ ingredient: v.string(), status: v.union(v.literal("swapping"), v.literal("failed")) })),
+    /** The recipe before the last swap, so it can be undone. */
+    previous: v.optional(v.object({ ...recipeContent, plate: v.optional(plate) })),
+  })
+    .index("by_run", ["runId"])
+    .index("by_session", ["sessionId"]),
 
   /** Money spent on the Meta Model API per UTC day, checked before every paid call. */
   spend: defineTable({
