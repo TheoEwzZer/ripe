@@ -13,7 +13,8 @@
     "probe": "tsx scripts/probe.ts",
     "typecheck": "next typegen && tsc --noEmit",
     "check:pipeline": "tsx scripts/check-pipeline.ts",
-    "fake-meta": "tsx scripts/fake-meta.ts"
+    "fake-meta": "tsx scripts/fake-meta.ts",
+    "record:recipes": "tsx scripts/record-recipes.ts"
   },
   "dependencies": {
     "@meta-sam/graphics": "^0.1.13",

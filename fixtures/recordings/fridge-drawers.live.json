@@ -141,7 +141,7 @@
       "ms": 1720
     }
   ],
-  "totalCostUsd": 0.06492700000000003,
+  "totalCostUsd": 0.21168700000000001,
   "boxFallback": {
     "ingredientIndexes": [
       0,
@@ -153,5 +153,55 @@
     "prompt": "<0f>0<|box;x1=221;y1=0;x2=517;y2=165;w=1920;h=1280|>,13<|box;x1=1187;y1=934;x2=1331;y2=1041;w=1920;h=1280|>,6<|box;x1=1242;y1=0;x2=1627;y2=671;w=1920;h=1280|>,5<|box;x1=1146;y1=0;x2=1316;y2=441;w=1920;h=1280|>,1<|box;x1=518;y1=0;x2=1151;y2=181;w=1920;h=1280|>",
     "rawText": "<0f>0<|box;x1=280;y1=0;x2=545;y2=164;w=1920;h=1280;c=0.95703125|><|mask;x=0;y=0;c=0.95703125;data=165,266,!!!!#`pL@b.hstiTk*JsXoPa1(#O-X*aY6L^RHOF:%?)[GVr+j/g![j&V6+cm&_#0_G1*f/iYf7v7OgAuQ!aF?I)E$Sv(H@sAq+M-Bnk4WSKGKQ_m:/7/76lZArjAAYFKZkKX(vj4J!tU5ou^HRQhM-:ecz(A4x)%mFd{Ns:kFmy*@_F_a.*I!!!|>,1<|box;x1=496;y1=0;x2=1124;y2=203;w=1920;h=1280;c=0.96484375|><|mask;x=0;y=0;c=0.96484375;data=204,629,!!!!$kF&d&cHlUD8=$qrs&d%)m%tQ_F7$u`?MvROArjyyblxEJCDh0J5A=C:=^:ni3`ZIuA'QBV*Gq!xB3/R6UW&J4gaZFlA*X3ZWDk$d_tC`gbWrT-#_m^i2inLv-Z0!ZBoH:?D[Et/Zm#1]IudxtTl=5DK`q&yH`ErVc_n=?!E?7W#':9eG([%pTdmM+3k.9!zOb0x7(v!`WZ=Tm1jqocoU&#^hKymW_9)`S#SmTdcdnW1)Hs3BDkexs_!c'%Rn?T+MLTL+U&xIvhaHvu{b)SLNQ$Z(B-m?8z])3IAf:g3J!!!|>,5<|box;x1=1119;y1=0;x2=1322;y2=434;w=1920;h=1280;c=0.8046875|><|mask;x=0;y=0;c=0.8046875;data=435,204,!!!!(UEwl'h_dogw$#k]s##LG@R%Dtd#3ORL*P:ELxw.FRW%_e(V_W8sABYn.%h61d@pMFuDo:`[YhwJJQaqK$YdeBC=.&)JnYL?kSf7geF[`KB0vD:ke`*1^N#th!Ib0+x3n?1ZVAD*hB]nAr'k)hlts@x(3Y?xRu`^6R:.KsydEFJ(7zkEa3HdJ/M%(m?g53*mv1B]mMjP(RoX[3B6pC@QR1+J_xREnH?!N9:3+ocZK#KM^Fof%uL!fNbmy'e^w$90(6WviF8=*f@]@Xr(('euyJ:YWSLaaW%X63Sqc8`nQ@Mm$YMY3K$]m1I(bNLN-x:fwSjjLvys=rISwZ8K7iB)l`3G5:si&Lplc{MdTilK]9nqbi:a27pOqZwTgS/DbgfuK52b@A_k$#seKX@:^)BJS^mGCtuvp5W&C*0K2*(U?miHJ0N&&:2=1lsqd`+A54cr3)*%^F/S?#$0-e`zN*9j&yq/a?9^5)(]Zxs6%S)(0BXp1+@Fkw4zn?Ex.IH(E2Xj#^]-jb{e[Lh4aWabfjBlbWR/=7u-fnZ3b!aI`D/wb.{cJNIJjG+f/P1CaS5RNubN4:e-D57ejGLkpnp4D(OKn`@@fZ[qBHaLOX4kNbjOsPqu1.5ElAwvC/[-nt=yU.%!C84sMB$/!F_+Q9K.t$WE?@i5BIy@QUvqIMIHyQp-O]^B6U_XIqrNnAJV!!!|>,6<|box;x1=1246;y1=0;x2=1627;y2=697;w=1920;h=1280;c=0.9921875|><|mask;x=0;y=0;c=0.9921875;data=698,382,!!!!$yC9Ra^q2!RvM@-F&7B6TOJ*:+m-.=[3GU3^U&4P/*@U$[iG&sPJO5bqDo*t?&h3d_(Y6Edk#vPwyIR8fCIf&-UDe4!7Ym/$3hFnC4ahgg5o8P5MsEGK&hLIYzXWiLuC{9#A.DCtcQL`EVESg^/p]b%j9*?xF0hq7Pt6Q@0-4N&A@IyA0PQSa#Ssw'&(bcL2H/:#P8mN@kci6]D@@!J`G8JC.Z1DkxLZi2aaXP*2+!h1jL8t2vUnL{ajojR17*4'E]S*?$KcDdM?L/[GmAN+ylA{C3^7VtBCv`Om3Gi)6ZBpXxs%iGpDJ(_Yh=8oi|>,13<|box;x1=1180;y1=943;x2=1316;y2=1038;w=1920;h=1280;c=0.52734375|><|mask;x=0;y=0;c=0.52734375;data=96,137,!!!!#1L?)q*DD3R6t+iebXmXjGKDn=PueZcB`4$J00Qi=?R63BdEEXt0?6dqB%1$c/UKnuPEYXNMkT=:9]K?%jn*UR!`Nc5c^HQ4'ueC9e8MT`5wSq4AI])+)Ek(f-88$z|>\n",
     "ms": 1726
-  }
+  },
+  "cooking": [
+    {
+      "locale": "en",
+      "filtersKey": "2p",
+      "pantryKey": "oil,salt-pepper,butter,garlic,onion,pasta,rice,flour,sugar,spices,vinegar",
+      "kitchenKey": "broccoli:1 head:3|carrot:~20 baby carrots:7|cherry tomato:1 box:5|egg:1 dozen:14|eggplant:2:4|grapefruit juice:1 bottle:7|kiwi:1:4|lemon:1:10|lime:4:10|milk:1 carton:6|mozzarella:2:5|orange juice:2 bottles:7|orange:2:8|spinach:1 box:3|tomato:4:3|zucchini:2:4",
+      "model": "muse-wonder-1.0",
+      "rawText": "{\"recipes\": [{\"diet\": [\"vegetarian\"], \"dishes\": 2, \"equipment\": [\"oven\", \"hob\"], \"minutes\": 30, \"pitch\": \"Uses the whole box of spinach, most tomatoes and all the mozzarella before they spoil, in a comforting one-tray pasta bake.\", \"servings\": 2, \"staples\": [\"oil\", \"salt-pepper\", \"garlic\", \"onion\", \"pasta\", \"spices\"], \"steps\": [\"Heat the oven to 200°C and boil the pasta until just tender.\", \"Fry chopped onion and garlic in oil for 3 minutes.\", \"Add chopped tomatoes, spices, salt and pepper; simmer 8 minutes.\", \"Stir in spinach until wilted, then mix with drained pasta.\", \"Top with torn mozzarella in a baking dish.\", \"Bake 12 minutes until golden and bubbling.\"], \"title\": \"Spinach, Tomato & Mozzarella Pasta Bake\", \"toBuy\": [], \"uses\": [{\"amount\": \"1 box\", \"ingredient\": \"spinach\", \"share\": 1.0}, {\"amount\": \"3\", \"ingredient\": \"tomato\", \"share\": 0.75}, {\"amount\": \"2\", \"ingredient\": \"mozzarella\", \"share\": 1.0}, {\"amount\": \"1/2 head\", \"ingredient\": \"broccoli\", \"share\": 0.5}]}, {\"diet\": [\"vegetarian\", \"gluten-free\"], \"dishes\": 1, \"equipment\": [\"hob\"], \"minutes\": 35, \"pitch\": \"A spiced, saucy pan of eggplant, zucchini and tomatoes with eggs poached on top - perfect for using the 3-4 day vegetables.\", \"servings\": 2, \"staples\": [\"oil\", \"salt-pepper\", \"garlic\", \"onion\", \"spices\"], \"steps\": [\"Fry chopped onion, garlic and spices in oil for 3 minutes.\", \"Add diced eggplant and zucchini; cook 8 minutes.\", \"Add chopped tomato and cherry tomatoes with a splash of water.\", \"Simmer 10 minutes until soft and saucy; season well.\", \"Make 4 wells, crack in the eggs and cover the pan.\", \"Cook 5-7 minutes until eggs are just set and serve.\"], \"title\": \"Eggplant, Zucchini & Tomato Shakshuka\", \"toBuy\": [], \"uses\": [{\"amount\": \"1\", \"ingredient\": \"eggplant\", \"share\": 0.5}, {\"amount\": \"1\", \"ingredient\": \"zucchini\", \"share\": 0.5}, {\"amount\": \"1\", \"ingredient\": \"tomato\", \"share\": 0.25}, {\"amount\": \"1/2 box\", \"ingredient\": \"cherry tomato\", \"share\": 0.5}, {\"amount\": \"4\", \"ingredient\": \"egg\", \"share\": 0.33}]}, {\"diet\": [\"vegetarian\", \"gluten-free\", \"dairy-free\"], \"dishes\": 1, \"equipment\": [\"hob\"], \"minutes\": 25, \"pitch\": \"Fast fried rice that clears the whole broccoli head and leftover zucchini and eggplant, with carrots for crunch.\", \"servings\": 2, \"staples\": [\"oil\", \"salt-pepper\", \"garlic\", \"onion\", \"rice\", \"spices\", \"vinegar\"], \"steps\": [\"Cook rice, spread out and leave to cool slightly.\", \"Scramble beaten eggs in oil in a large pan; set aside.\", \"Fry chopped onion, garlic, broccoli and diced zucchini for 5 minutes.\", \"Add sliced carrots and diced eggplant; cook 5 more minutes.\", \"Add rice, spices, salt, pepper and a splash of vinegar.\", \"Stir eggs back in, fry 2 minutes and serve hot.\"], \"title\": \"Broccoli & Vegetable Egg Fried Rice\", \"toBuy\": [], \"uses\": [{\"amount\": \"1 head\", \"ingredient\": \"broccoli\", \"share\": 1.0}, {\"amount\": \"1\", \"ingredient\": \"zucchini\", \"share\": 0.5}, {\"amount\": \"1\", \"ingredient\": \"eggplant\", \"share\": 0.5}, {\"amount\": \"10 baby carrots\", \"ingredient\": \"carrot\", \"share\": 0.5}, {\"amount\": \"3\", \"ingredient\": \"egg\", \"share\": 0.25}]}]}",
+      "ms": 25339,
+      "costUsd": 0.04126,
+      "plates": [
+        {
+          "src": "/fixtures/plates/fridge-drawers.live.en.2p.0.webp",
+          "ms": 13878
+        },
+        {
+          "src": "/fixtures/plates/fridge-drawers.live.en.2p.1.webp",
+          "ms": 12166
+        },
+        {
+          "src": "/fixtures/plates/fridge-drawers.live.en.2p.2.webp",
+          "ms": 13779
+        }
+      ]
+    },
+    {
+      "locale": "fr",
+      "filtersKey": "2p",
+      "pantryKey": "oil,salt-pepper,butter,garlic,onion,pasta,rice,flour,sugar,spices,vinegar",
+      "kitchenKey": "broccoli:1 head:3|carrot:~20 baby carrots:7|cherry tomato:1 box:5|egg:1 dozen:14|eggplant:2:4|grapefruit juice:1 bottle:7|kiwi:1:4|lemon:1:10|lime:4:10|milk:1 carton:6|mozzarella:2:5|orange juice:2 bottles:7|orange:2:8|spinach:1 box:3|tomato:4:3|zucchini:2:4",
+      "model": "muse-wonder-1.0",
+      "rawText": "{\"recipes\": [{\"diet\": [\"vegetarian\"], \"dishes\": 2, \"equipment\": [\"oven\", \"hob\"], \"minutes\": 45, \"pitch\": \"Tout l'aubergine, la courgette et le brocoli rôtis ensemble, servis sur du riz.\", \"servings\": 2, \"staples\": [\"oil\", \"salt-pepper\", \"garlic\", \"spices\", \"rice\", \"onion\"], \"steps\": [\"Chauffez le four à 200°C.\", \"Coupez aubergines, courgettes et tomates en dés, le brocoli en fleurettes.\", \"Mélangez avec huile, ail, oignon, herbes, sel et poivre sur une plaque.\", \"Rôtissez 30 minutes en remuant à mi-cuisson.\", \"Cuisez le riz selon le paquet.\", \"Servez les légumes rôtis sur le riz, avec un filet de jus de citron.\"], \"title\": \"Légumes rôtis aubergine, courgette et brocoli sur riz\", \"toBuy\": [], \"uses\": [{\"amount\": \"2 entières\", \"ingredient\": \"eggplant\", \"share\": 1.0}, {\"amount\": \"2 entières\", \"ingredient\": \"zucchini\", \"share\": 1.0}, {\"amount\": \"1 tête entière\", \"ingredient\": \"broccoli\", \"share\": 1.0}, {\"amount\": \"2 tomates\", \"ingredient\": \"tomato\", \"share\": 0.5}, {\"amount\": \"1/2 citron\", \"ingredient\": \"lemon\", \"share\": 0.5}, {\"amount\": \"1 orange en quartiers, en dessert\", \"ingredient\": \"orange\", \"share\": 0.5}]}, {\"diet\": [\"vegetarian\"], \"dishes\": 3, \"equipment\": [\"hob\", \"oven\"], \"minutes\": 35, \"pitch\": \"Une grosse frittata aux légumes les plus urgents, fondante à la mozzarella.\", \"servings\": 2, \"staples\": [\"oil\", \"butter\", \"salt-pepper\", \"garlic\", \"onion\", \"spices\"], \"steps\": [\"Chauffez le four à 180°C.\", \"Faites revenir oignon, ail et brocoli 5 minutes dans une poêle allant au four.\", \"Ajoutez les épinards, laissez-les tomber 2 minutes.\", \"Battez œufs, lait, sel, poivre et épices, puis versez sur les légumes.\", \"Ajoutez tomate en rondelles et mozzarella en tranches.\", \"Enfournez 15 à 18 minutes, jusqu'à prise.\", \"Servez avec les tomates cerises restantes en salade, et le kiwi en dessert.\"], \"title\": \"Frittata épinards, brocoli et mozzarella\", \"toBuy\": [], \"uses\": [{\"amount\": \"1 boîte entière\", \"ingredient\": \"spinach\", \"share\": 1.0}, {\"amount\": \"1/2 tête en petites fleurettes\", \"ingredient\": \"broccoli\", \"share\": 0.5}, {\"amount\": \"6 œufs\", \"ingredient\": \"egg\", \"share\": 0.5}, {\"amount\": \"1 boule en tranches\", \"ingredient\": \"mozzarella\", \"share\": 0.5}, {\"amount\": \"2 tomates\", \"ingredient\": \"tomato\", \"share\": 0.5}, {\"amount\": \"un petit filet, environ 60 ml\", \"ingredient\": \"milk\", \"share\": 0.1}, {\"amount\": \"1/2 boîte\", \"ingredient\": \"cherry tomato\", \"share\": 0.5}, {\"amount\": \"1 entier, en dessert\", \"ingredient\": \"kiwi\", \"share\": 1.0}]}, {\"diet\": [\"vegetarian\"], \"dishes\": 2, \"equipment\": [\"hob\"], \"minutes\": 25, \"pitch\": \"Des pâtes rapides où épinards, tomates fraîches et cerises fondent en sauce légère.\", \"servings\": 2, \"staples\": [\"pasta\", \"oil\", \"salt-pepper\", \"garlic\", \"onion\", \"spices\", \"vinegar\"], \"steps\": [\"Cuisez les pâtes dans l'eau salée, gardez une louche d'eau de cuisson.\", \"Faites revenir oignon et ail dans l'huile 3 minutes.\", \"Ajoutez tomates et tomates cerises coupées, cuisez 8 minutes.\", \"Ajoutez les épinards poignée par poignée jusqu'à ce qu'ils tombent.\", \"Mélangez pâtes, sauce et un peu d'eau de cuisson.\", \"Hors du feu, ajoutez la mozzarella déchirée, un trait de vinaigre, sel et poivre.\"], \"title\": \"Pâtes aux épinards, double tomate et mozzarella\", \"toBuy\": [], \"uses\": [{\"amount\": \"1 boîte entière\", \"ingredient\": \"spinach\", \"share\": 1.0}, {\"amount\": \"4 entières\", \"ingredient\": \"tomato\", \"share\": 1.0}, {\"amount\": \"1 boîte entière\", \"ingredient\": \"cherry tomato\", \"share\": 1.0}, {\"amount\": \"2 boules\", \"ingredient\": \"mozzarella\", \"share\": 1.0}, {\"amount\": \"10 petites carottes en bâtonnets, en accompagnement\", \"ingredient\": \"carrot\", \"share\": 0.5}]}]}",
+      "ms": 19135,
+      "costUsd": 0.0455,
+      "plates": [
+        {
+          "src": "/fixtures/plates/fridge-drawers.live.fr.2p.0.webp",
+          "ms": 11681
+        },
+        {
+          "src": "/fixtures/plates/fridge-drawers.live.fr.2p.1.webp",
+          "ms": 22807
+        },
+        {
+          "src": "/fixtures/plates/fridge-drawers.live.fr.2p.2.webp",
+          "ms": 10959
+        }
+      ]
+    }
+  ]
 }
