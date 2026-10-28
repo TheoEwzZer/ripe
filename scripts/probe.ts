@@ -2,25 +2,21 @@
  * Calls the real Meta models once on a test photo through the same pipeline
  * as the app, prints what the wire formats look like and saves everything as
  * a replayable recording. Spending is capped by META_BUDGET_USD (default
- * $0.25) before each call.
+ * $0.25) before each call. Recipes and plates: scripts/record-recipes.ts.
  *
  *   npm run probe                                   # models list (free) + perceive + segment
- *   npm run probe -- --steps segment,cook,plate
+ *   npm run probe -- --steps perceive                # stop after Muse Spark
  *   npm run probe -- --photo fridge-full.jpg
  *   npm run probe -- --contributor                  # muse-spark contributor variant, ~12x cheaper
  *   npm run probe -- --out /tmp/rec.json            # write somewhere else (tests against fake-meta)
  */
 import { config as loadEnv } from "dotenv";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { Budget } from "../lib/meta/budget";
 import { hasMetaKey, metaBaseUrl, metaClient } from "../lib/meta/client";
-import { cook } from "../lib/meta/cook";
 import { liveProvider } from "../lib/meta/live-provider";
-import { IMAGE_USD_PER_IMAGE } from "../lib/meta/models";
-import { plate } from "../lib/meta/plate";
-import { mostUrgent } from "../lib/pantry/freshness";
 import { runPipeline } from "../lib/pipeline/run";
 import type { VisionProvider } from "../lib/pipeline/types";
 import type { Recording } from "../lib/replay/recording";
@@ -130,32 +126,6 @@ async function main() {
     if (summary.none.length) console.log(`  unsegmented: ${summary.none.map(name).join(", ")}`);
     const first = recording.segments.find((s) => s.rawText);
     if (first) console.log(`  first SAM line: ${first.rawText.slice(0, 160)}…`);
-  }
-
-  if (steps.has("cook")) {
-    budget.reserve("cook", 0.08);
-    const inventory = mostUrgent(summary.perception.ingredients, summary.perception.ingredients.length).map((i) => ({
-      name: i.name,
-      quantity: i.quantity,
-      daysLeft: i.daysLeft,
-    }));
-    const cooked = await cook(inventory, { emergency: true, maxMinutes: 30 }, "en");
-    budget.settle("cook", 0.08, cooked.usage.costUsd);
-    recording.recipes = { model: cooked.model, rawText: cooked.rawText, recipes: cooked.recipes, ms: cooked.ms, costUsd: cooked.usage.costUsd };
-    console.log(`\n✓ ${cooked.model}: ${cooked.recipes.length} recipes in ${cooked.ms} ms, $${cooked.usage.costUsd.toFixed(4)}`);
-    for (const r of cooked.recipes) console.log(`  · ${r.title} (${r.minutes} min) uses ${r.uses.map((u) => u.ingredient).join(", ")}`);
-  }
-
-  if (steps.has("plate") && recording.recipes?.recipes[0]) {
-    const first = recording.recipes.recipes[0];
-    budget.reserve("plate", IMAGE_USD_PER_IMAGE);
-    const plated = await plate(dataUrl, first.title, first.uses.map((u) => u.ingredient));
-    budget.settle("plate", IMAGE_USD_PER_IMAGE, IMAGE_USD_PER_IMAGE);
-    const out = path.join("public", "fixtures", "plates", `${id}.webp`);
-    await mkdir(path.dirname(out), { recursive: true });
-    await writeFile(out, plated.webp);
-    recording.plate = { src: `/fixtures/plates/${id}.webp`, recipeTitle: first.title, ms: plated.ms, costUsd: IMAGE_USD_PER_IMAGE };
-    console.log(`\n✓ muse-image-1.0: ${out} in ${plated.ms} ms`);
   }
 
   recording.totalCostUsd = budget.totalUsd;

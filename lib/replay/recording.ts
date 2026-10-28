@@ -1,5 +1,20 @@
 import { perceptionSchema, type Perception } from "../pantry/schema";
-import type { Recipe } from "../pantry/recipe-schema";
+
+/** One recorded Muse Wonder pass on this photo's untouched inventory, with its plates. */
+export type RecordedCooking = {
+  locale: "en" | "fr";
+  /** lib/recipes/filters.ts filtersKey, lib/recipes/pantry.ts pantryKey, kitchenKey below. */
+  filtersKey: string;
+  pantryKey: string;
+  kitchenKey: string;
+  model: string;
+  rawText: string;
+  ms: number;
+  costUsd: number;
+  fix?: { rawText: string; ms: number; costUsd: number };
+  /** Muse Image plates by recipe index, served from public/. */
+  plates: ({ src: string; ms: number } | null)[];
+};
 
 /**
  * A recording keeps the raw model outputs for one photo. Replays run them
@@ -16,11 +31,18 @@ export type Recording = {
   segments: { ingredientIndex: number; prompt: string; encoding: "lossless" | "one_bit"; rawText: string; ms: number }[];
   /** The batched box prompt for ingredients the concept prompts missed. */
   boxFallback?: { ingredientIndexes: number[]; prompt: string; rawText: string; ms: number };
-  recipes?: { model: string; rawText: string; recipes: Recipe[]; ms: number; costUsd: number };
-  plate?: { src: string; recipeTitle: string; ms: number; costUsd: number };
+  cooking?: RecordedCooking[];
   totalCostUsd: number;
 };
 
 export function replayPerception(recording: Recording): Perception {
   return perceptionSchema.parse(JSON.parse(recording.perception.rawText));
+}
+
+/** The inventory a recording was cooked from: names, quantities and days, order-free. */
+export function kitchenKey(kitchen: readonly { name: string; quantity: string; daysLeft: number }[]): string {
+  return kitchen
+    .map((i) => `${i.name.trim().toLowerCase()}:${i.quantity.trim()}:${i.daysLeft}`)
+    .sort()
+    .join("|");
 }
