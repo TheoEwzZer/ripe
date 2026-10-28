@@ -3,8 +3,11 @@
 import type { OptimisticLocalStore } from "convex/browser";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { KitchenView } from "@/components/recipes/RecipeCard";
+import { RecipePanel } from "@/components/recipes/RecipePanel";
+import { recipeLabels } from "@/components/recipes/shared";
 import { EditCard } from "@/components/scan/EditCard";
 import { IngredientList } from "@/components/scan/IngredientList";
 import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from "@/components/scan/ScanCanvas";
@@ -13,12 +16,17 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage } from "@/lib/client/prepare-image";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 
-type T = { session: Dictionary["session"]; scan: Dictionary["scan"]; freshness: Dictionary["freshness"] };
+type T = {
+  session: Dictionary["session"];
+  scan: Dictionary["scan"];
+  freshness: Dictionary["freshness"];
+  recipes: Dictionary["recipes"];
+};
 type Toast = { message: string; undo: () => Promise<unknown> };
 
 const TOAST_MS = 5000;
 
-function errorText(error: unknown, t: T["session"]): string {
+function errorText(error: unknown, { session: t, recipes }: T): string {
   const code = error instanceof ConvexError ? (error.data as { code?: string }).code : undefined;
   switch (code) {
     case "quota":
@@ -33,6 +41,8 @@ function errorText(error: unknown, t: T["session"]): string {
       return t.errSession;
     case "busy":
       return t.errBusy;
+    case "empty":
+      return recipes.errEmpty;
     default:
       return t.errGeneric;
   }
@@ -42,11 +52,18 @@ const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
 
 /** "Tomatoes" and "tomato" are the same item; "cherry tomato" is not. */
-const nameKey = (name: string) => name.trim().toLowerCase().replace(/(es|s)$/, "");
+const nameKey = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/(es|s)$/, "");
 
 export function SessionWorkspace({ t }: { t: T }) {
-  const { id } = useParams<{ id: string }>();
+  const { id, lang } = useParams<{ id: string; lang: string }>();
+  const locale = lang === "fr" ? "fr" : "en";
+  const pathname = usePathname();
   const session = useQuery(api.sessions.get, { sessionId: id });
+  const recipes = useQuery(api.recipes.latest, { sessionId: id });
   const latest = useQuery(api.scans.latest, { sessionId: id });
   const masks = useQuery(api.scans.masks, latest ? { scanId: latest.scan._id } : "skip");
   const caps = useQuery(api.scans.capabilities);
@@ -63,13 +80,20 @@ export function SessionWorkspace({ t }: { t: T }) {
   const patchLocal = (store: OptimisticLocalStore, ingredientId: string, patch: Patch) => {
     const current = store.getQuery(api.scans.latest, { sessionId: id });
     if (!current) return;
-    store.setQuery(api.scans.latest, { sessionId: id }, {
-      ...current,
-      ingredients: current.ingredients.map((i) => (i._id === ingredientId ? { ...i, ...patch } : i)),
-    });
+    store.setQuery(
+      api.scans.latest,
+      { sessionId: id },
+      {
+        ...current,
+        ingredients: current.ingredients.map((i) => (i._id === ingredientId ? { ...i, ...patch } : i)),
+      },
+    );
   };
   const update = useMutation(api.ingredients.update).withOptimisticUpdate((store, { ingredientId, name, daysLeft }) =>
-    patchLocal(store, ingredientId, { ...(name === undefined ? {} : { name }), ...(daysLeft === undefined ? {} : { daysLeft }) }),
+    patchLocal(store, ingredientId, {
+      ...(name === undefined ? {} : { name }),
+      ...(daysLeft === undefined ? {} : { daysLeft }),
+    }),
   );
   const remove = useMutation(api.ingredients.remove).withOptimisticUpdate((store, { ingredientId }) =>
     patchLocal(store, ingredientId, { removed: true }),
@@ -83,11 +107,16 @@ export function SessionWorkspace({ t }: { t: T }) {
   const [active, setActive] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [tab, setTab] = useState<"inventory" | "recipes">("inventory");
+  const [hoveredRecipe, setHoveredRecipe] = useState<ReadonlySet<string> | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  useEffect(() => () => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    },
+    [],
+  );
 
   if (session === undefined || latest === undefined) {
     return <div className="h-72 animate-pulse rounded-3xl bg-glass" aria-busy="true" />;
@@ -109,7 +138,7 @@ export function SessionWorkspace({ t }: { t: T }) {
     try {
       await job();
     } catch (e) {
-      setError(errorText(e, t.session));
+      setError(errorText(e, t));
     }
   };
 
@@ -126,10 +155,19 @@ export function SessionWorkspace({ t }: { t: T }) {
     await attempt(async () => {
       const { blob, width, height } = await prepareImage(file);
       const uploadUrl = await generateUploadUrl({ sessionId });
-      const response = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": blob.type },
+        body: blob,
+      });
       if (!response.ok) throw new Error(`Upload failed with ${response.status}`);
       const { storageId } = (await response.json()) as { storageId: string };
-      await startUpload({ sessionId, storageId: storageId as Id<"_storage">, width, height });
+      await startUpload({
+        sessionId,
+        storageId: storageId as Id<"_storage">,
+        width,
+        height,
+      });
     });
     setBusy(null);
     if (fileInput.current) fileInput.current.value = "";
@@ -180,7 +218,11 @@ export function SessionWorkspace({ t }: { t: T }) {
         </div>
         {actions(false)}
         {!live && <p className="max-w-xl text-sm text-ink-soft">{t.session.liveOff}</p>}
-        {error && <p className="text-sm text-betterave" role="alert">{error}</p>}
+        {error && (
+          <p className="text-sm text-betterave" role="alert">
+            {error}
+          </p>
+        )}
         <p className="text-sm text-ink-soft">
           {t.session.code} <span className="font-mono text-ink">{session.code}</span>
         </p>
@@ -229,6 +271,15 @@ export function SessionWorkspace({ t }: { t: T }) {
 
   const current = visible.find((i) => i._id === selected) ?? null;
 
+  // A recipe under the pointer, or the one open in the sheet, lights its ingredients on the photo.
+  const openRecipeId = /\/r\/([^/]+)$/.exec(pathname)?.[1];
+  const openRecipe = openRecipeId ? recipes?.recipes.find((r) => r._id === openRecipeId) : undefined;
+  const highlight =
+    hoveredRecipe ?? (openRecipe ? new Set(openRecipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId as string] : []))) : null);
+  const kitchen: KitchenView = new Map(visible.map((i) => [i._id as string, { name: i.name, daysLeft: i.daysLeft, bbox: i.bbox }]));
+  const canCook = settled && visible.some((i) => i.name.trim() !== "");
+  const showRecipes = tab === "recipes" && settled;
+
   const removeItem = (itemId: string) => {
     const item = latest.ingredients.find((i) => i._id === itemId);
     if (!item) return;
@@ -249,15 +300,16 @@ export function SessionWorkspace({ t }: { t: T }) {
     if (!keep || duplicateIds.length === 0) return;
     void attempt(async () => {
       await merge({ keepId, duplicateIds });
-      showToast({ message: fill(t.scan.mergedToast, { name: keep.name }), undo: () => unmerge({ keepId }) });
+      showToast({
+        message: fill(t.scan.mergedToast, { name: keep.name }),
+        undo: () => unmerge({ keepId }),
+      });
     });
   };
 
   // Adding by touch needs the live API and a finished analysis (item order and boxes are settled).
   const canTap = live && settled;
-  const onTap = canTap
-    ? (point: { x: number; y: number }) => void attempt(() => tap({ scanId: scan._id, ...point }))
-    : undefined;
+  const onTap = canTap ? (point: { x: number; y: number }) => void attempt(() => tap({ scanId: scan._id, ...point })) : undefined;
 
   const status =
     scan.status === "perceiving"
@@ -274,7 +326,9 @@ export function SessionWorkspace({ t }: { t: T }) {
     <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1" aria-live="polite">
-          <p className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>{status}</p>
+          <p className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>
+            {status}
+          </p>
           <p className="font-mono text-xs text-ink-soft">
             {scan.live ? t.scan.liveBadge : t.scan.demoBadge}
             {seconds && ` · ${seconds} s`}
@@ -282,25 +336,76 @@ export function SessionWorkspace({ t }: { t: T }) {
         </div>
         {actions(true)}
       </div>
-      {error && <p className="text-sm text-betterave" role="alert">{error}</p>}
+      {error && (
+        <p className="text-sm text-betterave" role="alert">
+          {error}
+        </p>
+      )}
       {canTap && <p className="-mt-2 text-sm text-ink-soft">{t.scan.tapHint}</p>}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-        <ScanCanvas
-          image={{ src: scan.imageUrl, width: scan.width, height: scan.height }}
-          ingredients={ingredients}
-          masks={canvasMasks}
-          scanning={running}
-          active={active}
-          onActive={setActive}
-          labels={t.scan}
-          onTap={onTap}
-          selected={selected}
-          onSelect={setSelected}
-        />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+        <div className="lg:sticky lg:top-6">
+          <ScanCanvas
+            image={{
+              src: scan.imageUrl,
+              width: scan.width,
+              height: scan.height,
+            }}
+            ingredients={ingredients}
+            masks={canvasMasks}
+            scanning={running}
+            active={active}
+            onActive={setActive}
+            labels={t.scan}
+            onTap={onTap}
+            selected={selected}
+            onSelect={setSelected}
+            highlight={highlight}
+          />
+        </div>
         {ingredients.length > 0 && (
           <aside className="glass flex flex-col gap-3 rounded-3xl p-4">
-            {current && (
+            {settled && (
+              <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1 ring-1 ring-hairline" role="tablist">
+                {(["inventory", "recipes"] as const).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === key}
+                    onClick={() => {
+                      setTab(key);
+                      setSelected(null);
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                      tab === key ? "bg-aubergine text-porcelaine dark:bg-porcelaine dark:text-aubergine" : "text-ink-soft hover:text-ink"
+                    }`}
+                  >
+                    {key === "inventory" ? `${t.recipes.inventoryTab} · ${visible.length}` : t.recipes.recipesTab}
+                  </button>
+                ))}
+              </div>
+            )}
+            {showRecipes && recipes !== undefined && (
+              <RecipePanel
+                sessionId={sessionId}
+                locale={locale}
+                data={recipes}
+                pantry={session.pantry}
+                canCook={canCook}
+                kitchen={kitchen}
+                photo={{
+                  src: scan.imageUrl,
+                  width: scan.width,
+                  height: scan.height,
+                }}
+                recipeHref={(recipeId) => `/${locale}/s/${sessionId}/r/${recipeId}`}
+                labels={recipeLabels(t)}
+                attempt={attempt}
+                onHighlight={setHoveredRecipe}
+              />
+            )}
+            {!showRecipes && current && (
               <EditCard
                 key={current._id}
                 item={{ ...current, key: current._id }}
@@ -313,24 +418,44 @@ export function SessionWorkspace({ t }: { t: T }) {
                 onClose={() => setSelected(null)}
               />
             )}
-            <div className="flex flex-wrap items-baseline justify-between gap-2 px-2">
-              <p className="text-sm text-ink-soft">{t.scan.cookFirst}</p>
-              {duplicateTotal > 0 && firstDuplicate && (
-                <button type="button" onClick={() => setSelected(firstDuplicate)} className="text-sm font-medium underline-offset-4 hover:underline">
-                  {duplicateTotal === 1 ? t.scan.duplicateOne : fill(t.scan.duplicates, { n: duplicateTotal })}
-                </button>
-              )}
-            </div>
-            <IngredientList
-              ingredients={ingredients}
-              active={active}
-              onActive={setActive}
-              labels={t.scan}
-              selected={selected}
-              onSelect={settled ? setSelected : undefined}
-              onRemove={settled ? removeItem : undefined}
-            />
-            {settled && !current && <p className="px-2 text-xs text-ink-soft">{t.scan.selectHint}</p>}
+            {!showRecipes && (
+              <>
+                <div className="flex flex-wrap items-baseline justify-between gap-2 px-2">
+                  <p className="text-sm text-ink-soft">{t.scan.cookFirst}</p>
+                  {duplicateTotal > 0 && firstDuplicate && (
+                    <button
+                      type="button"
+                      onClick={() => setSelected(firstDuplicate)}
+                      className="text-sm font-medium underline-offset-4 hover:underline"
+                    >
+                      {duplicateTotal === 1 ? t.scan.duplicateOne : fill(t.scan.duplicates, { n: duplicateTotal })}
+                    </button>
+                  )}
+                </div>
+                <IngredientList
+                  ingredients={ingredients}
+                  active={active}
+                  onActive={setActive}
+                  labels={t.scan}
+                  selected={selected}
+                  onSelect={settled ? setSelected : undefined}
+                  onRemove={settled ? removeItem : undefined}
+                />
+                {settled && !current && <p className="px-2 text-xs text-ink-soft">{t.scan.selectHint}</p>}
+                {canCook && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab("recipes");
+                      setSelected(null);
+                    }}
+                    className="rounded-full bg-aubergine px-5 py-2.5 font-medium text-porcelaine transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.98] dark:bg-porcelaine dark:text-aubergine"
+                  >
+                    {t.recipes.seeRecipes}
+                  </button>
+                )}
+              </>
+            )}
           </aside>
         )}
       </div>

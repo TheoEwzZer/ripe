@@ -7,6 +7,8 @@ const dictionaries: Record<Locale, () => Promise<Dictionary>> = {
   fr: () => import("./dictionaries/fr").then((m) => m.fr),
 };
 
-export function getDictionary(locale: Locale): Promise<Dictionary> {
+/** Cached, so pages that read it stay instant on client navigation (Cache Components). */
+export async function getDictionary(locale: Locale): Promise<Dictionary> {
+  "use cache";
   return dictionaries[locale]();
 }

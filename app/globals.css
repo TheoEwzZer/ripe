@@ -64,6 +64,11 @@ body {
   overflow-x: clip;
 }
 
+/* The recipe sheet locks the page scroll; the reserved gutter keeps the layout still. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--surface);
   color: var(--ink);
@@ -71,7 +76,8 @@ body {
   font-synthesis: none;
 }
 
-:focus-visible {
+/* Containers focused by script (tabindex -1, like the recipe sheet) get no ring. */
+:focus-visible:not([tabindex="-1"]) {
   outline: 2px solid var(--color-kaki);
   outline-offset: 3px;
 }
@@ -178,5 +184,27 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Indeterminate bar while Muse Image plates the dish. */
+.plate-progress > span {
+  animation: plate-progress 1.6s ease-in-out infinite;
+}
+
+@keyframes plate-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate-progress > span {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
   }
 }

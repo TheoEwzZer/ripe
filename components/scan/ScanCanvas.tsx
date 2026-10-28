@@ -64,14 +64,15 @@ const overlaps = (a: Rect, b: Rect, gap = 4) => a.l < b.r + gap && b.l < a.r + g
 
 type ShapeProps = {
   color: string;
-  dimmed: boolean;
+  /** 1, or lower while another item or a recipe has the focus. */
+  fade: number;
   selected: boolean;
   onEnter: () => void;
   onLeave: () => void;
   onSelect: () => void;
 };
 
-const MaskShape = memo(function MaskShape({ mask, color, dimmed, selected, onEnter, onLeave, onSelect }: ShapeProps & { mask: CanvasMask }) {
+const MaskShape = memo(function MaskShape({ mask, color, fade, selected, onEnter, onLeave, onSelect }: ShapeProps & { mask: CanvasMask }) {
   const d = pathFor(mask);
   if (!d) return null;
   return (
@@ -85,8 +86,8 @@ const MaskShape = memo(function MaskShape({ mask, color, dimmed, selected, onEnt
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: dimmed ? 0.14 : 1, scale: 1 }}
-        transition={{ type: "spring", duration: 0.38, bounce: 0.3 }}
+        animate={{ opacity: fade, scale: 1 }}
+        transition={{ type: "spring", duration: 0.38, bounce: 0.3, opacity: { duration: 0.2 } }}
         style={{ transformBox: "fill-box", transformOrigin: "center", fillOpacity: 0.34, cursor: "pointer" }}
         data-shape=""
         onPointerEnter={onEnter}
@@ -98,7 +99,7 @@ const MaskShape = memo(function MaskShape({ mask, color, dimmed, selected, onEnt
 });
 
 /** Muse Spark's box, shown while SAM works (dashed) or when no outline came back (solid). */
-function BoxShape({ box, pending, color, dimmed, selected, onEnter, onLeave, onSelect }: ShapeProps & { box: PixelBox; pending: boolean }) {
+function BoxShape({ box, pending, color, fade, selected, onEnter, onLeave, onSelect }: ShapeProps & { box: PixelBox; pending: boolean }) {
   const w = box.right - box.left;
   const h = box.bottom - box.top;
   return (
@@ -116,8 +117,8 @@ function BoxShape({ box, pending, color, dimmed, selected, onEnter, onLeave, onS
       vectorEffect="non-scaling-stroke"
       className={pending ? "ghost-pulse" : undefined}
       initial={{ opacity: 0 }}
-      animate={{ opacity: dimmed ? 0.14 : 1 }}
-      transition={{ duration: 0.25 }}
+      animate={{ opacity: fade }}
+      transition={{ duration: 0.2 }}
       style={{ cursor: "pointer" }}
       data-shape=""
       onPointerEnter={onEnter}
@@ -139,6 +140,7 @@ export function ScanCanvas({
   onTap,
   selected: selectedProp = null,
   onSelect,
+  highlight = null,
 }: {
   image: { src: string | null; width: number; height: number };
   ingredients: CanvasIngredient[];
@@ -153,6 +155,8 @@ export function ScanCanvas({
   /** The item open for editing; clicking a shape selects it, clicking empty photo deselects first. */
   selected?: string | null;
   onSelect?: (key: string | null) => void;
+  /** A recipe's ingredients: they stay lit while the rest fades to 30 %. */
+  highlight?: ReadonlySet<string> | null;
 }) {
   const { width: W, height: H } = image;
   const [ripples, setRipples] = useState<{ id: number; left: number; top: number }[]>([]);
@@ -193,6 +197,8 @@ export function ScanCanvas({
   const hovered = activeProp !== null && byKey.has(activeProp) ? activeProp : null;
   const selected = selectedProp !== null && byKey.has(selectedProp) ? selectedProp : null;
   const active = hovered ?? selected;
+  const lit = active === null && highlight && [...highlight].some((k) => byKey.has(k)) ? highlight : null;
+  const fadeOf = (key: string) => (active !== null ? (active === key ? 1 : 0.14) : lit ? (lit.has(key) ? 1 : 0.3) : 1);
   const masksOf = new Map<string, CanvasMask[]>();
   for (const m of masks) if (byKey.has(m.ingredientKey)) masksOf.set(m.ingredientKey, [...(masksOf.get(m.ingredientKey) ?? []), m]);
 
@@ -209,14 +215,15 @@ export function ScanCanvas({
     box: union((masksOf.get(item.key) ?? []).map((m) => m.bounds)) ?? gridToPixels(item.bbox, image),
   }));
 
-  // Floating labels: the active item plus the most urgent ones, above their outline (inside it at
-  // the top edge), skipping any chip that would overlap one already placed.
+  // Floating labels: the active item plus the most urgent ones (a recipe's items only, while one is
+  // lit), above their outline (inside it at the top edge), skipping any chip that would overlap.
   const placed: Rect[] = [];
   const labelled = [...frames]
     .sort((a, b) => Number(b.item.key === active) - Number(a.item.key === active) || a.item.daysLeft - b.item.daysLeft)
     .flatMap(({ item, box }) => {
       const isActive = item.key === active;
-      if (!isActive && placed.length >= maxLabels + (active ? 1 : 0)) return [];
+      if (lit && !lit.has(item.key)) return [];
+      if (!isActive && placed.length >= (lit ? 8 : maxLabels + (active ? 1 : 0))) return [];
       const w = chipWidth(displayName(item, labels));
       const cx = Math.min(shownW - w / 2 - 6, Math.max(w / 2 + 6, ((box.left + box.right) / 2) * scale));
       const top = box.top * scale;
@@ -253,7 +260,7 @@ export function ScanCanvas({
         <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 size-full" preserveAspectRatio="none">
           {shapes.map(({ item, box }) => {
             const color = colorOf(item);
-            const dimmed = active !== null && active !== item.key;
+            const fade = fadeOf(item.key);
             const own = masksOf.get(item.key);
             if (own?.length) {
               return (
@@ -261,7 +268,7 @@ export function ScanCanvas({
                   {[...own]
                     .sort((a, b) => areaOf(b.bounds) - areaOf(a.bounds))
                     .map((mask) => (
-                      <MaskShape key={mask.key} mask={mask} color={color} dimmed={dimmed} selected={item.key === selected} {...handlers(item.key)} />
+                      <MaskShape key={mask.key} mask={mask} color={color} fade={fade} selected={item.key === selected} {...handlers(item.key)} />
                     ))}
                 </g>
               );
@@ -272,7 +279,7 @@ export function ScanCanvas({
                 box={box}
                 pending={item.segmentation === "pending"}
                 color={color}
-                dimmed={dimmed}
+                fade={fade}
                 selected={item.key === selected}
                 {...handlers(item.key)}
               />
