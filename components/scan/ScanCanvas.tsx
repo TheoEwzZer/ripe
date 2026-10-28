@@ -65,12 +65,13 @@ const overlaps = (a: Rect, b: Rect, gap = 4) => a.l < b.r + gap && b.l < a.r + g
 type ShapeProps = {
   color: string;
   dimmed: boolean;
+  selected: boolean;
   onEnter: () => void;
   onLeave: () => void;
   onSelect: () => void;
 };
 
-const MaskShape = memo(function MaskShape({ mask, color, dimmed, onEnter, onLeave, onSelect }: ShapeProps & { mask: CanvasMask }) {
+const MaskShape = memo(function MaskShape({ mask, color, dimmed, selected, onEnter, onLeave, onSelect }: ShapeProps & { mask: CanvasMask }) {
   const d = pathFor(mask);
   if (!d) return null;
   return (
@@ -79,8 +80,8 @@ const MaskShape = memo(function MaskShape({ mask, color, dimmed, onEnter, onLeav
         d={d}
         fillRule="evenodd"
         fill={color}
-        stroke={color}
-        strokeWidth={2.5}
+        stroke={selected ? "var(--color-porcelaine)" : color}
+        strokeWidth={selected ? 3.5 : 2.5}
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
         initial={{ opacity: 0, scale: 0.9 }}
@@ -97,7 +98,7 @@ const MaskShape = memo(function MaskShape({ mask, color, dimmed, onEnter, onLeav
 });
 
 /** Muse Spark's box, shown while SAM works (dashed) or when no outline came back (solid). */
-function BoxShape({ box, pending, color, dimmed, onEnter, onLeave, onSelect }: ShapeProps & { box: PixelBox; pending: boolean }) {
+function BoxShape({ box, pending, color, dimmed, selected, onEnter, onLeave, onSelect }: ShapeProps & { box: PixelBox; pending: boolean }) {
   const w = box.right - box.left;
   const h = box.bottom - box.top;
   return (
@@ -109,8 +110,8 @@ function BoxShape({ box, pending, color, dimmed, onEnter, onLeave, onSelect }: S
       rx={Math.min(w, h) * 0.14}
       fill={color}
       fillOpacity={pending ? 0.05 : 0.14}
-      stroke={color}
-      strokeWidth={2}
+      stroke={selected ? "var(--color-porcelaine)" : color}
+      strokeWidth={selected ? 3 : 2}
       strokeDasharray={pending ? "7 6" : undefined}
       vectorEffect="non-scaling-stroke"
       className={pending ? "ghost-pulse" : undefined}
@@ -136,6 +137,8 @@ export function ScanCanvas({
   labels,
   maxLabels = 4,
   onTap,
+  selected: selectedProp = null,
+  onSelect,
 }: {
   image: { src: string | null; width: number; height: number };
   ingredients: CanvasIngredient[];
@@ -147,12 +150,21 @@ export function ScanCanvas({
   maxLabels?: number;
   /** Tapping an empty spot reports it in image pixels (tap to add a missed item). */
   onTap?: (point: { x: number; y: number }) => void;
+  /** The item open for editing; clicking a shape selects it, clicking empty photo deselects first. */
+  selected?: string | null;
+  onSelect?: (key: string | null) => void;
 }) {
   const { width: W, height: H } = image;
   const [ripples, setRipples] = useState<{ id: number; left: number; top: number }[]>([]);
 
   const handleTap = (event: MouseEvent<HTMLElement>) => {
-    if (!onTap || (event.target as Element).closest("[data-shape]")) return;
+    if ((event.target as Element).closest("[data-shape]")) return;
+    // With an item open, a click on the photo only closes it: adding costs an API call.
+    if (onSelect && selectedProp !== null) {
+      onSelect(null);
+      return;
+    }
+    if (!onTap) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const fx = (event.clientX - rect.left) / rect.width;
     const fy = (event.clientY - rect.top) / rect.height;
@@ -178,7 +190,9 @@ export function ScanCanvas({
   const visible = ingredients.filter((i) => !i.removed);
   const byKey = new Map(visible.map((i) => [i.key, i]));
   // A key left over from a previous scan must not dim the whole photo.
-  const active = activeProp !== null && byKey.has(activeProp) ? activeProp : null;
+  const hovered = activeProp !== null && byKey.has(activeProp) ? activeProp : null;
+  const selected = selectedProp !== null && byKey.has(selectedProp) ? selectedProp : null;
+  const active = hovered ?? selected;
   const masksOf = new Map<string, CanvasMask[]>();
   for (const m of masks) if (byKey.has(m.ingredientKey)) masksOf.set(m.ingredientKey, [...(masksOf.get(m.ingredientKey) ?? []), m]);
 
@@ -186,7 +200,7 @@ export function ScanCanvas({
   const handlers = (key: string) => ({
     onEnter: () => onActive(key),
     onLeave: () => onActive(null),
-    onSelect: () => onActive(active === key ? null : key),
+    onSelect: () => (onSelect ? onSelect(selected === key ? null : key) : onActive(active === key ? null : key)),
   });
 
   // Where each item sits: the union of its masks, else Muse Spark's box.
@@ -247,7 +261,7 @@ export function ScanCanvas({
                   {[...own]
                     .sort((a, b) => areaOf(b.bounds) - areaOf(a.bounds))
                     .map((mask) => (
-                      <MaskShape key={mask.key} mask={mask} color={color} dimmed={dimmed} {...handlers(item.key)} />
+                      <MaskShape key={mask.key} mask={mask} color={color} dimmed={dimmed} selected={item.key === selected} {...handlers(item.key)} />
                     ))}
                 </g>
               );
@@ -259,6 +273,7 @@ export function ScanCanvas({
                 pending={item.segmentation === "pending"}
                 color={color}
                 dimmed={dimmed}
+                selected={item.key === selected}
                 {...handlers(item.key)}
               />
             );

@@ -24,7 +24,7 @@ export default async function SessionPage() {
         </Suspense>
       </header>
       <Suspense fallback={<div className="h-72 rounded-3xl bg-glass" />}>
-        <SessionWorkspace t={{ session: t.session, scan: t.scan }} />
+        <SessionWorkspace t={{ session: t.session, scan: t.scan, freshness: t.freshness }} />
       </Suspense>
     </main>
   );

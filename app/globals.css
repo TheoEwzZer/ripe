@@ -103,6 +103,42 @@ body {
   }
 }
 
+/* Freshness slider: the track is the ripeness scale itself (0 = today, 14 = two weeks). */
+.fresh-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+.fresh-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-betterave), var(--color-kaki) 10%, var(--color-safran) 28%, var(--color-pousse) 43%, var(--color-pousse));
+}
+.fresh-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-betterave), var(--color-kaki) 10%, var(--color-safran) 28%, var(--color-pousse) 43%, var(--color-pousse));
+}
+.fresh-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--color-porcelaine);
+  border: 3px solid var(--ink);
+}
+.fresh-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-porcelaine);
+  border: 3px solid var(--ink);
+}
+
 /* Where the finger landed when adding a missed item. */
 .tap-ripple {
   width: 44px;

@@ -1,17 +1,22 @@
 "use client";
 
+import type { OptimisticLocalStore } from "convex/browser";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { EditCard } from "@/components/scan/EditCard";
 import { IngredientList } from "@/components/scan/IngredientList";
-import { ScanCanvas, type CanvasIngredient, type CanvasMask } from "@/components/scan/ScanCanvas";
+import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from "@/components/scan/ScanCanvas";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage } from "@/lib/client/prepare-image";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 
-type T = { session: Dictionary["session"]; scan: Dictionary["scan"] };
+type T = { session: Dictionary["session"]; scan: Dictionary["scan"]; freshness: Dictionary["freshness"] };
+type Toast = { message: string; undo: () => Promise<unknown> };
+
+const TOAST_MS = 5000;
 
 function errorText(error: unknown, t: T["session"]): string {
   const code = error instanceof ConvexError ? (error.data as { code?: string }).code : undefined;
@@ -36,6 +41,9 @@ function errorText(error: unknown, t: T["session"]): string {
 const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
 
+/** "Tomatoes" and "tomato" are the same item; "cherry tomato" is not. */
+const nameKey = (name: string) => name.trim().toLowerCase().replace(/(es|s)$/, "");
+
 export function SessionWorkspace({ t }: { t: T }) {
   const { id } = useParams<{ id: string }>();
   const session = useQuery(api.sessions.get, { sessionId: id });
@@ -46,11 +54,40 @@ export function SessionWorkspace({ t }: { t: T }) {
   const generateUploadUrl = useMutation(api.scans.generateUploadUrl);
   const startUpload = useMutation(api.scans.startUpload);
   const tap = useMutation(api.scans.tap);
+  const merge = useMutation(api.ingredients.merge);
+  const unmerge = useMutation(api.ingredients.unmerge);
+
+  // Edits show at once; Convex replaces the guess with the stored value when the write lands.
+  type Latest = NonNullable<typeof latest>;
+  type Patch = Partial<Pick<Latest["ingredients"][number], "name" | "daysLeft" | "removed">>;
+  const patchLocal = (store: OptimisticLocalStore, ingredientId: string, patch: Patch) => {
+    const current = store.getQuery(api.scans.latest, { sessionId: id });
+    if (!current) return;
+    store.setQuery(api.scans.latest, { sessionId: id }, {
+      ...current,
+      ingredients: current.ingredients.map((i) => (i._id === ingredientId ? { ...i, ...patch } : i)),
+    });
+  };
+  const update = useMutation(api.ingredients.update).withOptimisticUpdate((store, { ingredientId, name, daysLeft }) =>
+    patchLocal(store, ingredientId, { ...(name === undefined ? {} : { name }), ...(daysLeft === undefined ? {} : { daysLeft }) }),
+  );
+  const remove = useMutation(api.ingredients.remove).withOptimisticUpdate((store, { ingredientId }) =>
+    patchLocal(store, ingredientId, { removed: true }),
+  );
+  const restore = useMutation(api.ingredients.restore).withOptimisticUpdate((store, { ingredientId }) =>
+    patchLocal(store, ingredientId, { removed: false }),
+  );
 
   const [busy, setBusy] = useState<"demo" | "upload" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+  }, []);
 
   if (session === undefined || latest === undefined) {
     return <div className="h-72 animate-pulse rounded-3xl bg-glass" aria-busy="true" />;
@@ -61,34 +98,41 @@ export function SessionWorkspace({ t }: { t: T }) {
   const running = latest?.scan.status === "perceiving" || latest?.scan.status === "segmenting";
   const live = caps?.live ?? false;
 
-  async function runDemo() {
-    setBusy("demo");
+  const showToast = (next: Toast) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(next);
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
+  };
+
+  const attempt = async (job: () => Promise<unknown>) => {
     setError(null);
     try {
-      await startDemo({ sessionId });
+      await job();
     } catch (e) {
       setError(errorText(e, t.session));
-    } finally {
-      setBusy(null);
     }
+  };
+
+  async function runDemo() {
+    setBusy("demo");
+    setSelected(null);
+    await attempt(() => startDemo({ sessionId }));
+    setBusy(null);
   }
 
   async function runUpload(file: File) {
     setBusy("upload");
-    setError(null);
-    try {
+    setSelected(null);
+    await attempt(async () => {
       const { blob, width, height } = await prepareImage(file);
       const uploadUrl = await generateUploadUrl({ sessionId });
       const response = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
       if (!response.ok) throw new Error(`Upload failed with ${response.status}`);
       const { storageId } = (await response.json()) as { storageId: string };
       await startUpload({ sessionId, storageId: storageId as Id<"_storage">, width, height });
-    } catch (e) {
-      setError(errorText(e, t.session));
-    } finally {
-      setBusy(null);
-      if (fileInput.current) fileInput.current.value = "";
-    }
+    });
+    setBusy(null);
+    if (fileInput.current) fileInput.current.value = "";
   }
 
   const actions = (compact: boolean) => (
@@ -145,6 +189,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   }
 
   const { scan } = latest;
+  const settled = scan.status === "done" || scan.status === "error";
   const ingredients: CanvasIngredient[] = latest.ingredients.map((i) => ({
     key: i._id,
     name: i.name,
@@ -162,20 +207,56 @@ export function SessionWorkspace({ t }: { t: T }) {
     height: m.height,
     bounds: m.bounds,
   }));
+  const visible = latest.ingredients.filter((i) => !i.removed);
   const outlined = ingredients.filter((i) => i.segmentation !== "pending").length;
   const seconds = scan.finishedAt ? ((scan.finishedAt - scan._creationTime) / 1000).toFixed(1) : null;
 
+  // Duplicates: same name once plurals are folded, only once the analysis has settled.
+  const groups = new Map<string, Id<"ingredients">[]>();
+  if (settled) {
+    for (const item of visible) {
+      if (!item.name) continue;
+      const key = nameKey(item.name);
+      groups.set(key, [...(groups.get(key) ?? []), item._id]);
+    }
+  }
+  const duplicatesOf = (itemId: string) => {
+    const item = visible.find((i) => i._id === itemId);
+    return item?.name ? (groups.get(nameKey(item.name)) ?? []).filter((other) => other !== itemId) : [];
+  };
+  const duplicateTotal = [...groups.values()].reduce((sum, ids) => sum + Math.max(0, ids.length - 1), 0);
+  const firstDuplicate = [...groups.values()].find((ids) => ids.length > 1)?.[0] ?? null;
+
+  const current = visible.find((i) => i._id === selected) ?? null;
+
+  const removeItem = (itemId: string) => {
+    const item = latest.ingredients.find((i) => i._id === itemId);
+    if (!item) return;
+    const ingredientId = item._id;
+    if (selected === itemId) setSelected(null);
+    void attempt(async () => {
+      await remove({ ingredientId });
+      showToast({
+        message: fill(t.scan.removedToast, { name: displayName(item, t.scan) }),
+        undo: () => restore({ ingredientId }),
+      });
+    });
+  };
+
+  const mergeInto = (keepId: Id<"ingredients">) => {
+    const duplicateIds = duplicatesOf(keepId);
+    const keep = visible.find((i) => i._id === keepId);
+    if (!keep || duplicateIds.length === 0) return;
+    void attempt(async () => {
+      await merge({ keepId, duplicateIds });
+      showToast({ message: fill(t.scan.mergedToast, { name: keep.name }), undo: () => unmerge({ keepId }) });
+    });
+  };
+
   // Adding by touch needs the live API and a finished analysis (item order and boxes are settled).
-  const canTap = live && (scan.status === "done" || scan.status === "error");
+  const canTap = live && settled;
   const onTap = canTap
-    ? async (point: { x: number; y: number }) => {
-        setError(null);
-        try {
-          await tap({ scanId: scan._id, ...point });
-        } catch (e) {
-          setError(errorText(e, t.session));
-        }
-      }
+    ? (point: { x: number; y: number }) => void attempt(() => tap({ scanId: scan._id, ...point }))
     : undefined;
 
   const status =
@@ -187,7 +268,7 @@ export function SessionWorkspace({ t }: { t: T }) {
         ? fill(t.scan.segmenting, { done: outlined, total: ingredients.length })
         : scan.status === "error"
           ? fill(t.scan.failed, { message: scan.error ?? "" })
-          : fill(t.scan.done, { total: ingredients.length });
+          : fill(t.scan.done, { total: visible.length });
 
   return (
     <section className="flex flex-col gap-5">
@@ -204,7 +285,7 @@ export function SessionWorkspace({ t }: { t: T }) {
       {error && <p className="text-sm text-betterave" role="alert">{error}</p>}
       {canTap && <p className="-mt-2 text-sm text-ink-soft">{t.scan.tapHint}</p>}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <ScanCanvas
           image={{ src: scan.imageUrl, width: scan.width, height: scan.height }}
           ingredients={ingredients}
@@ -214,14 +295,68 @@ export function SessionWorkspace({ t }: { t: T }) {
           onActive={setActive}
           labels={t.scan}
           onTap={onTap}
+          selected={selected}
+          onSelect={setSelected}
         />
         {ingredients.length > 0 && (
-          <aside className="glass rounded-3xl p-4">
-            <p className="px-2 pb-3 text-sm text-ink-soft">{t.scan.cookFirst}</p>
-            <IngredientList ingredients={ingredients} active={active} onActive={setActive} labels={t.scan} />
+          <aside className="glass flex flex-col gap-3 rounded-3xl p-4">
+            {current && (
+              <EditCard
+                key={current._id}
+                item={{ ...current, key: current._id }}
+                duplicateCount={duplicatesOf(current._id).length}
+                labels={{ ...t.scan, tiers: t.freshness }}
+                onRename={(name) => void attempt(() => update({ ingredientId: current._id, name }))}
+                onDays={(daysLeft) => void attempt(() => update({ ingredientId: current._id, daysLeft }))}
+                onRemove={() => removeItem(current._id)}
+                onMerge={() => mergeInto(current._id)}
+                onClose={() => setSelected(null)}
+              />
+            )}
+            <div className="flex flex-wrap items-baseline justify-between gap-2 px-2">
+              <p className="text-sm text-ink-soft">{t.scan.cookFirst}</p>
+              {duplicateTotal > 0 && firstDuplicate && (
+                <button type="button" onClick={() => setSelected(firstDuplicate)} className="text-sm font-medium underline-offset-4 hover:underline">
+                  {duplicateTotal === 1 ? t.scan.duplicateOne : fill(t.scan.duplicates, { n: duplicateTotal })}
+                </button>
+              )}
+            </div>
+            <IngredientList
+              ingredients={ingredients}
+              active={active}
+              onActive={setActive}
+              labels={t.scan}
+              selected={selected}
+              onSelect={settled ? setSelected : undefined}
+              onRemove={settled ? removeItem : undefined}
+            />
+            {settled && !current && <p className="px-2 text-xs text-ink-soft">{t.scan.selectHint}</p>}
           </aside>
         )}
       </div>
+
+      {toast && (
+        <div
+          role="status"
+          className="fixed inset-x-0 z-20 flex justify-center px-4"
+          style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="flex items-center gap-3 rounded-full bg-aubergine py-2 pr-2 pl-4 text-sm text-porcelaine shadow-lg dark:bg-porcelaine dark:text-aubergine">
+            <span>{toast.message}</span>
+            <button
+              type="button"
+              onClick={() => {
+                const { undo } = toast;
+                setToast(null);
+                void attempt(undo);
+              }}
+              className="rounded-full bg-porcelaine/15 px-3 py-1.5 font-medium transition-colors hover:bg-porcelaine/25 dark:bg-aubergine/10 dark:hover:bg-aubergine/20"
+            >
+              {t.scan.undo}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

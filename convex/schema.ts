@@ -111,6 +111,10 @@ export default defineSchema({
     segmentation,
     source: v.union(v.literal("perceived"), v.literal("tapped"), v.literal("manual")),
     removed: v.boolean(),
+    /** Set on a duplicate folded into another item; undo reads it. */
+    mergedInto: v.optional(v.id("ingredients")),
+    /** The kept item's values before a merge, so undo can put them back. */
+    beforeMerge: v.optional(v.object({ daysLeft: v.number(), quantity: v.string() })),
   })
     .index("by_session", ["sessionId"])
     .index("by_scan", ["scanId"]),
@@ -121,6 +125,8 @@ export default defineSchema({
     ingredientId: v.id("ingredients"),
     via: maskVia,
     ...maskFields,
+    /** The duplicate this mask belonged to before a merge. */
+    mergedFrom: v.optional(v.id("ingredients")),
   })
     .index("by_scan", ["scanId"])
     .index("by_ingredient", ["ingredientId"]),
