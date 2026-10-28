@@ -1,6 +1,7 @@
 /**
  * Offline checks for the scan pipeline, $0: geometry, the SAM instance filter,
- * the box fallback, failure handling and mask contours.
+ * the box fallback, failure handling and mask contours; then the recipe
+ * rules: streaming, checks, the correction round, the score and servings.
  *
  *   npm run check:pipeline
  */
@@ -15,6 +16,14 @@ import { masksOf, parseSamText, toSegmentationMask, type MaskData } from "../lib
 import type { VisionProvider } from "../lib/pipeline/types";
 import { replayProvider } from "../lib/replay/provider";
 import { replayPerception, type Recording } from "../lib/replay/recording";
+import type { CookRequest, CookResult } from "../lib/meta/cook";
+import { defaultFilters } from "../lib/recipes/filters";
+import { defaultPantry } from "../lib/recipes/pantry";
+import { runCooking } from "../lib/recipes/run";
+import { scaleAmount } from "../lib/recipes/scale";
+import type { CookedRecipe } from "../lib/recipes/schema";
+import { readRecipeStream } from "../lib/recipes/stream";
+import { antiWasteScore, checkRecipe, matchIngredient, type KitchenItem } from "../lib/recipes/validate";
 
 const recording = JSON.parse(readFileSync("fixtures/recordings/fridge-drawers.mock.json", "utf8")) as Recording;
 const size = { width: recording.image.width, height: recording.image.height };
@@ -141,6 +150,123 @@ async function main() {
         ring[y * n + x] = r < 18 && r > 8 ? 1 : 0;
       }
     assert.equal(rasterToPath(ring, n, n).split("M").length - 1, 2);
+  });
+
+  // ——— Recipes ———
+
+  const kitchen: KitchenItem[] = replayPerception(recording).ingredients.map((i, index) => ({
+    id: `i${index}`,
+    name: i.name,
+    quantity: i.quantity,
+    daysLeft: i.daysLeft,
+    category: i.category,
+  }));
+  const req: CookRequest = { kitchen, pantry: defaultPantry, filters: defaultFilters, locale: "en" };
+  const dish = (overrides: Partial<CookedRecipe> = {}): CookedRecipe => ({
+    title: "Spinach soup",
+    pitch: "",
+    minutes: 25,
+    servings: 2,
+    equipment: ["hob"],
+    dishes: 1,
+    diet: ["vegetarian"],
+    uses: [
+      { ingredient: "spinach", amount: "1 box", share: 1 },
+      { ingredient: "broccoli", amount: "1 head", share: 1 },
+    ],
+    staples: ["oil", "salt-pepper"],
+    toBuy: [],
+    steps: ["Cook.", "Blend."],
+    ...overrides,
+  });
+
+  await check("recipes: names match exactly, then by plural, then inside each other, the most urgent first", () => {
+    assert.equal(matchIngredient("Spinach", kitchen)?.name, "spinach");
+    assert.equal(matchIngredient("zucchinis", kitchen)?.name, "zucchini");
+    assert.equal(matchIngredient("carrot", kitchen)?.name, "baby carrot");
+    assert.equal(matchIngredient("spaghetti", kitchen), null);
+  });
+
+  await check("recipes: a clean recipe passes; spaghetti, time, oven and diet are caught", () => {
+    assert.deepEqual(checkRecipe(dish(), req).issues, []);
+    const strict = { ...req, filters: { ...defaultFilters, maxMinutes: 15 as const, equipment: "one-pan" as const, diet: ["vegan" as const] } };
+    const bad = dish({
+      equipment: ["oven"],
+      uses: [...dish().uses, { ingredient: "spaghetti", amount: "200 g", share: 1 }, { ingredient: "mozzarella", amount: "1", share: 1 }],
+      staples: ["butter"],
+    });
+    const codes = checkRecipe(bad, strict).issues.map((i) => i.code);
+    assert.deepEqual([...new Set(codes)].sort(), ["diet", "equipment", "time", "unknown"]);
+  });
+
+  await check("recipes: emergency mode needs two of the most urgent items, ties included", () => {
+    const urgent = { ...req, filters: { ...defaultFilters, emergency: true } };
+    assert.deepEqual(checkRecipe(dish(), urgent).issues, []);
+    const lazy = dish({ uses: [{ ingredient: "lime", amount: "1", share: 1 }, { ingredient: "spinach", amount: "1", share: 0.5 }] });
+    assert.deepEqual(checkRecipe(lazy, urgent).issues, [{ code: "urgent", used: 1 }]);
+  });
+
+  await check("recipes: the score rewards the most urgent items and caps at 100", () => {
+    const soup = antiWasteScore(checkRecipe(dish(), req).uses, kitchen);
+    const limes = antiWasteScore(checkRecipe(dish({ uses: [{ ingredient: "lime", amount: "3", share: 1 }] }), req).uses, kitchen);
+    assert.ok(soup > limes && soup <= 100 && limes >= 0, `${soup} vs ${limes}`);
+    const everything = kitchen.map((i) => ({ ingredient: i.name, amount: "all", share: 1 }));
+    assert.equal(antiWasteScore(checkRecipe(dish({ uses: everything }), req).uses, kitchen), 100);
+  });
+
+  await check("recipes: servings scale numbers and fractions, and the words agree", () => {
+    assert.equal(scaleAmount("200 g", 1.5), "300 g");
+    assert.equal(scaleAmount("1 1/2 cups", 2), "3 cups");
+    assert.equal(scaleAmount("½ lemon", 2), "1 lemon");
+    assert.equal(scaleAmount("½ lemon", 4), "2 lemons");
+    assert.equal(scaleAmount("2,5 dl", 2, "fr"), "5 dl");
+    assert.equal(scaleAmount("a pinch", 3), "a pinch");
+    assert.equal(scaleAmount("1 box", 2), "2 boxes");
+    assert.equal(scaleAmount("1 large onion, diced", 2), "2 large onions, diced");
+    assert.equal(scaleAmount("2 tomatoes", 0.5), "1 tomato");
+    assert.equal(scaleAmount("1 tête entière", 2, "fr"), "2 têtes entières");
+    assert.equal(scaleAmount("1 orange en quartiers, en dessert", 2, "fr"), "2 oranges en quartiers, en dessert");
+    assert.equal(scaleAmount("2 entières", 0.5, "fr"), "1 entière");
+    assert.equal(scaleAmount("1 c. à soupe", 2, "fr"), "2 c. à soupe");
+    assert.equal(scaleAmount("un petit filet, environ 60 ml", 0.5, "fr"), "un petit filet, environ 30 ml");
+    assert.equal(scaleAmount("2 radis", 0.5, "fr"), "1 radis");
+  });
+
+  await check("recipes: the stream shows each title before its recipe, however the text is split", async () => {
+    const text = JSON.stringify({ recipes: [dish(), dish({ title: 'Broccoli "gratin"' })] });
+    for (const step of [1, 7, text.length]) {
+      const log: string[] = [];
+      const chunks = Array.from({ length: Math.ceil(text.length / step) }, (_, i) => text.slice(i * step, (i + 1) * step));
+      await readRecipeStream(chunks, {
+        onTitle: (i, title) => void log.push(`title ${i} ${title}`),
+        onRecipe: (i) => void log.push(`recipe ${i}`),
+      });
+      assert.deepEqual(log, ["title 0 Spinach soup", "recipe 0", 'title 1 Broccoli "gratin"', "recipe 1"], `chunks of ${step}`);
+    }
+  });
+
+  await check("recipes: one correction round, kept only when it breaks fewer rules", async () => {
+    const feed = async (recipes: CookedRecipe[], handlers: Parameters<typeof readRecipeStream>[1]): Promise<CookResult> => {
+      const rawText = await readRecipeStream([JSON.stringify({ recipes })], handlers);
+      return { model: "fake", rawText, recipes, costUsd: 0, ms: 0 };
+    };
+    const pasta = dish({ title: "Pasta", uses: [{ ingredient: "spaghetti", amount: "200 g", share: 1 }, ...dish().uses] });
+    const corrected: string[] = [];
+    const summary = await runCooking(
+      {
+        kind: "live",
+        cook: (_r, h) => feed([dish(), pasta], h),
+        fix: (_r, broken, h) => {
+          corrected.push(...broken.map((b) => b.recipe.title));
+          return feed([dish({ title: "Pasta, fixed" })], h);
+        },
+      },
+      req,
+    );
+    assert.deepEqual(corrected, ["Pasta"]);
+    assert.equal(summary.recipes[1]?.recipe.title, "Pasta, fixed");
+    assert.equal(summary.recipes[1]?.fixed, true);
+    assert.equal(summary.recipes[0]?.fixed, false);
   });
 
   console.log(`\n${passed} checks passed`);

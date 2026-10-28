@@ -37,6 +37,33 @@ async function body(req: IncomingMessage): Promise<Json> {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const isImageUrl = (url: unknown) => typeof url === "string" && /^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/.test(url);
 
+/** Three plausible recipes from the kitchen in the prompt; the first needs spaghetti, so the correction round runs. */
+function fakeRecipes(messages: { role: string; content: string }[]) {
+  const prompt = messages[0]?.content ?? "";
+  const names = [...prompt.matchAll(/^- (.+?)(?: \((.*)\))?: eat within (\d+) day/gm)].map((m) => m[1]);
+  const recipe = (title: string, uses: string[], extra: string[] = []) => ({
+    title,
+    pitch: `Uses up the ${uses.slice(0, 2).join(" and ")} before they turn.`,
+    minutes: 20,
+    servings: 2,
+    equipment: ["hob"],
+    dishes: 1,
+    diet: ["vegetarian"],
+    uses: [...uses, ...extra].map((ingredient) => ({ ingredient, amount: "1", share: 0.8 })),
+    staples: ["oil", "salt-pepper"],
+    toBuy: [],
+    steps: ["Wash and chop everything.", "Cook it in the pan for 10 minutes.", "Season and serve."],
+  });
+  if (prompt.includes("Rewrite it without")) return [recipe("Swapped skillet", names.slice(0, 3))];
+  const fix = /Rewrite exactly these (\d+)/.exec(messages.at(-1)?.content ?? "");
+  if (messages.length >= 3 && fix) return Array.from({ length: Number(fix[1]) }, (_, i) => recipe(`Fixed skillet ${i + 1}`, names.slice(0, 2)));
+  return [
+    recipe("Green pasta skillet", names.slice(0, 2), ["spaghetti"]),
+    recipe("Roasted tray", names.slice(2, 5)),
+    recipe("Quick soup", [names[1], names[5]].filter(Boolean)),
+  ];
+}
+
 async function chatCompletion(req: Json, res: ServerResponse) {
   if (req.model !== "muse-spark-1.3" && req.model !== "muse-spark-1.3-contributor" && req.model !== "muse-wonder-1.0") {
     return send(res, 404, { error: { code: "model_not_found", message: `Unknown model ${String(req.model)}` } });
@@ -51,8 +78,10 @@ async function chatCompletion(req: Json, res: ServerResponse) {
     const image = parts.find((p) => p.type === "image_url");
     if (!isImageUrl(image?.image_url?.url)) return reject(res, "perception needs an image_url part with a URL or data URL");
     content = recording.perception.rawText;
+  } else if (format.json_schema.name === "recipes") {
+    content = JSON.stringify({ recipes: fakeRecipes(req.messages as { role: string; content: string }[]) });
   } else {
-    content = JSON.stringify({ recipes: [] });
+    return reject(res, `unknown schema ${String(format.json_schema.name)}`);
   }
   const usage = { prompt_tokens: 2400, completion_tokens: 900, total_tokens: 3300 };
   if (req.stream === true) {
@@ -136,6 +165,13 @@ createServer(async (req, res) => {
     if (req.method === "POST" && url === "/v1/chat/completions") {
       await sleep(300);
       return await chatCompletion(await body(req), res);
+    }
+    if (req.method === "POST" && url === "/v1/images/edits") {
+      const request = await body(req);
+      const images = request.images as { image_url?: string }[] | undefined;
+      if (request.model !== "muse-image-1.0" || !isImageUrl(images?.[0]?.image_url)) return reject(res, "images/edits needs muse-image-1.0 and an image URL");
+      await sleep(1500);
+      return send(res, 200, { data: [{ b64_json: readFileSync("public/fixtures/plates/fridge-drawers.live.webp").toString("base64") }] });
     }
     if (req.method === "POST" && url === "/v1/responses") {
       await sleep(150);
