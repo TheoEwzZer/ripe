@@ -9,6 +9,7 @@ export const fr: Dictionary = {
   nav: {
     language: "Langue",
     switchTo: "English",
+    install: "Installer Ripe",
   },
   home: {
     tagline: "Cuisine ce qui presse.",

@@ -7,6 +7,7 @@ export const en = {
   nav: {
     language: "Language",
     switchTo: "Français",
+    install: "Install Ripe",
   },
   home: {
     tagline: "Cook what's ripe.",

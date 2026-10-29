@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { InstallButton } from "@/components/InstallButton";
 import { LangToggle } from "@/components/LangToggle";
 import { Logo } from "@/components/brand/Logo";
 import { StartSessionButton } from "@/components/StartSessionButton";
@@ -15,7 +16,10 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-6 sm:px-8">
       <header className="flex items-center justify-between">
         <Logo className="h-9 w-auto text-ink" />
-        <LangToggle locale={lang} label={t.nav.switchTo} />
+        <div className="flex items-center gap-3">
+          <InstallButton label={t.nav.install} />
+          <LangToggle locale={lang} label={t.nav.switchTo} />
+        </div>
       </header>
 
       <section className="flex flex-1 flex-col justify-center gap-6 py-16">

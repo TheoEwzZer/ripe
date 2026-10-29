@@ -22,7 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: dict.meta.title,
     description: dict.meta.description,
-    icons: { icon: "/brand/ripe-favicon.svg", apple: "/brand/ripe-app-icon.svg" },
+    icons: { icon: "/brand/ripe-favicon.svg", apple: "/brand/apple-touch-icon.png" },
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, title: "Ripe", statusBarStyle: "black-translucent" },
   };
 }
 
