@@ -59,7 +59,7 @@ export const restore = mutation({
   handler: async (ctx, { ingredientId }) => {
     const { item } = await editable(ctx, ingredientId);
     if (item.mergedInto) throw new ConvexError({ code: "invalid", message: "Undo the merge instead" });
-    await ctx.db.patch(ingredientId, { removed: false });
+    await ctx.db.patch(ingredientId, { removed: false, cookedIn: undefined });
     return null;
   },
 });

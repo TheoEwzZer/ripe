@@ -50,6 +50,7 @@ export const get = query({
       locale: v.union(v.literal("en"), v.literal("fr")),
       phoneJoinedAt: v.optional(v.number()),
       incoming: v.optional(incomingPhoto),
+      cooking: v.optional(v.object({ recipeId: v.id("recipes"), at: v.number() })),
       pantry: v.optional(v.array(v.string())),
       expiresAt: v.number(),
     }),

@@ -21,6 +21,7 @@ import { defaultFilters } from "../lib/recipes/filters";
 import { defaultPantry } from "../lib/recipes/pantry";
 import { runCooking } from "../lib/recipes/run";
 import { scaleAmount } from "../lib/recipes/scale";
+import { clock, timersIn } from "../lib/recipes/timers";
 import type { CookedRecipe } from "../lib/recipes/schema";
 import { readRecipeStream } from "../lib/recipes/stream";
 import { antiWasteScore, checkRecipe, matchIngredient, type KitchenItem } from "../lib/recipes/validate";
@@ -230,6 +231,16 @@ async function main() {
     assert.equal(scaleAmount("1 c. à soupe", 2, "fr"), "2 c. à soupe");
     assert.equal(scaleAmount("un petit filet, environ 60 ml", 0.5, "fr"), "un petit filet, environ 30 ml");
     assert.equal(scaleAmount("2 radis", 0.5, "fr"), "1 radis");
+  });
+
+  await check("cooking mode: steps offer timers for the durations they mention", () => {
+    assert.deepEqual(timersIn("Rôtissez 30 minutes en remuant à mi-cuisson.").map((t) => t.seconds), [1800]);
+    assert.deepEqual(timersIn("Simmer for 10 to 12 min, then rest 5 minutes").map((t) => t.seconds), [600, 300]);
+    assert.deepEqual(timersIn("Cuire 1 h à 180°C").map((t) => t.seconds), [3600]);
+    assert.deepEqual(timersIn("Faites revenir 2 minutes, puis 30 sec de plus").map((t) => t.seconds), [120, 30]);
+    assert.deepEqual(timersIn("Chauffez le four à 200°C. Coupez 2 tomates."), []);
+    assert.equal(clock(90), "1:30");
+    assert.equal(clock(3600), "1:00:00");
   });
 
   await check("recipes: the stream shows each title before its recipe, however the text is split", async () => {

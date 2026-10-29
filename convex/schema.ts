@@ -161,6 +161,8 @@ export default defineSchema({
     phoneJoinedAt: v.optional(v.number()),
     /** A blurred thumbnail of a photo still uploading from a phone; cleared when its scan starts. */
     incoming: v.optional(incomingPhoto),
+    /** The recipe the desktop sent to the phones; each phone opens cooking mode when `at` changes. */
+    cooking: v.optional(v.object({ recipeId: v.id("recipes"), at: v.number() })),
     expiresAt: v.number(),
   })
     .index("by_code", ["code"])
@@ -208,6 +210,8 @@ export default defineSchema({
     mergedInto: v.optional(v.id("ingredients")),
     /** The kept item's values before a merge, so undo can put them back. */
     beforeMerge: v.optional(v.object({ daysLeft: v.number(), quantity: v.string() })),
+    /** Taken out of the inventory because this recipe was cooked; undo puts it back. */
+    cookedIn: v.optional(v.id("recipes")),
   })
     .index("by_session", ["sessionId"])
     .index("by_scan", ["scanId"]),
@@ -255,6 +259,8 @@ export default defineSchema({
     swap: v.optional(v.object({ ingredient: v.string(), status: v.union(v.literal("swapping"), v.literal("failed")) })),
     /** The recipe before the last swap, so it can be undone. */
     previous: v.optional(v.object({ ...recipeContent, plate: v.optional(plate) })),
+    /** Cooked from cooking mode: its ingredients left the inventory. */
+    cookedAt: v.optional(v.number()),
   })
     .index("by_run", ["runId"])
     .index("by_session", ["sessionId"]),

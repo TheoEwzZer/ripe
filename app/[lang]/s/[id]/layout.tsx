@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { lang } from "next/root-params";
 import { Suspense } from "react";
 import { Logo } from "@/components/brand/Logo";
+import { CookSignal } from "@/components/cook/CookSignal";
 import { LangToggle } from "@/components/LangToggle";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -27,6 +28,9 @@ export default async function SessionLayout({ children, modal }: LayoutProps<"/[
         {children}
       </main>
       {modal}
+      <Suspense>
+        <CookSignal />
+      </Suspense>
     </>
   );
 }

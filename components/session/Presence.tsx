@@ -58,6 +58,17 @@ export function usePresence(sessionId: Id<"sessions"> | null): Presence {
   return { me, phones: others.filter((d) => d.kind === "phone").length, desktops: others.filter((d) => d.kind === "desktop").length };
 }
 
+/** Phones online in the session, for screens that only need the count (the recipe sheet). */
+export function usePhonesOnline(sessionId: string): number {
+  const devices = useQuery(api.devices.list, { sessionId });
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(timer);
+  }, []);
+  return (devices ?? []).filter((d) => d.kind === "phone" && now - d.lastSeen < ONLINE_MS).length;
+}
+
 const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
 

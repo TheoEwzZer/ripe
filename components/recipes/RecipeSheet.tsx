@@ -4,6 +4,8 @@ import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Pip, dayLabel } from "@/components/scan/Pip";
+import { usePhonesOnline } from "@/components/session/Presence";
+import { deviceKind } from "@/lib/client/device";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { MAX_SERVINGS, MIN_SERVINGS } from "@/lib/recipes/filters";
@@ -35,6 +37,9 @@ export function RecipeSheet({
   const imagine = useMutation(api.recipes.imagine);
   const swap = useMutation(api.recipes.swap);
   const undoSwap = useMutation(api.recipes.undoSwap);
+  const sendToPhone = useMutation(api.recipes.sendToPhone);
+  const phones = usePhonesOnline(sessionId);
+  const [sent, setSent] = useState(false);
   const [servings, setServings] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(false);
@@ -138,6 +143,37 @@ export function RecipeSheet({
           <span className="text-center text-[11px] leading-tight text-ink-soft">{t.score}</span>
         </div>
       </header>
+
+      {recipe.status === "ready" && (
+        <div className="flex flex-wrap items-center gap-2">
+          {deviceKind() === "desktop" && (
+            <button
+              type="button"
+              disabled={phones === 0}
+              title={phones === 0 ? t.noPhone : undefined}
+              onClick={async () => {
+                try {
+                  await sendToPhone({ recipeId: recipe._id as Id<"recipes"> });
+                  setSent(true);
+                  setTimeout(() => setSent(false), 3000);
+                } catch {
+                  setError(true);
+                }
+              }}
+              className="rounded-full bg-aubergine px-5 py-2.5 text-sm font-medium text-porcelaine transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 dark:bg-porcelaine dark:text-aubergine"
+            >
+              {sent ? `✓ ${t.sentToPhone}` : t.sendToPhone}
+            </button>
+          )}
+          <Link
+            href={`/${locale}/s/${sessionId}/cook/${recipe._id}`}
+            className="rounded-full px-5 py-2.5 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass"
+          >
+            {t.cookMode}
+          </Link>
+          {deviceKind() === "desktop" && phones === 0 && <p className="text-xs text-ink-soft">{t.noPhone}</p>}
+        </div>
+      )}
 
       {(recipe.fixed || recipe.issues.length > 0) && (
         <div className="flex flex-col gap-1 rounded-2xl bg-surface p-3 text-sm ring-1 ring-hairline">

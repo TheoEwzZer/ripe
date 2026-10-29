@@ -144,6 +144,7 @@ const recipeView = v.object({
   plate: v.optional(plateView),
   swap: v.optional(v.object({ ingredient: v.string(), status: v.union(v.literal("swapping"), v.literal("failed")) })),
   canUndoSwap: v.boolean(),
+  cookedAt: v.optional(v.number()),
 });
 
 async function plateUrl(ctx: QueryCtx, p: Infer<typeof plate> | undefined): Promise<Infer<typeof plateView> | undefined> {
@@ -174,6 +175,7 @@ async function viewOf(ctx: QueryCtx, r: Doc<"recipes">): Promise<Infer<typeof re
     plate: await plateUrl(ctx, r.plate),
     swap: r.swap,
     canUndoSwap: r.previous !== undefined,
+    cookedAt: r.cookedAt,
   };
 }
 
@@ -312,6 +314,55 @@ export const undoSwap = mutation({
     if (!recipe.previous || recipe.swap?.status === "swapping") return null;
     if (recipe.plate?.status === "ready" && recipe.plate.storageId) await ctx.storage.delete(recipe.plate.storageId);
     await ctx.db.patch(recipeId, { ...recipe.previous, previous: undefined, swap: undefined });
+    return null;
+  },
+});
+
+/** Most of an item goes into the dish: it leaves the inventory once the recipe is cooked. */
+const USED_UP_SHARE = 0.5;
+
+/** The desktop hands the recipe to every phone in the session; they open cooking mode. */
+export const sendToPhone = mutation({
+  args: { recipeId: v.id("recipes") },
+  returns: v.null(),
+  handler: async (ctx, { recipeId }) => {
+    const { recipe } = await recipeFor(ctx, recipeId);
+    if (recipe.status !== "ready") throw new ConvexError({ code: "busy", message: "This recipe is still being written" });
+    await ctx.db.patch(recipe.sessionId, { cooking: { recipeId, at: Date.now() } });
+    return null;
+  },
+});
+
+/** "I cooked it": the items the recipe used up leave the inventory. Returns how many. */
+export const markCooked = mutation({
+  args: { recipeId: v.id("recipes") },
+  returns: v.number(),
+  handler: async (ctx, { recipeId }) => {
+    const { recipe } = await recipeFor(ctx, recipeId);
+    if (recipe.cookedAt) return 0;
+    let count = 0;
+    for (const use of recipe.uses) {
+      if (!use.ingredientId || use.share < USED_UP_SHARE) continue;
+      const item = await ctx.db.get(use.ingredientId);
+      if (!item || item.removed || item.sessionId !== recipe.sessionId) continue;
+      await ctx.db.patch(item._id, { removed: true, cookedIn: recipeId });
+      count++;
+    }
+    await ctx.db.patch(recipeId, { cookedAt: Date.now() });
+    return count;
+  },
+});
+
+export const unmarkCooked = mutation({
+  args: { recipeId: v.id("recipes") },
+  returns: v.null(),
+  handler: async (ctx, { recipeId }) => {
+    const { recipe } = await recipeFor(ctx, recipeId);
+    for (const use of recipe.uses) {
+      const item = use.ingredientId && (await ctx.db.get(use.ingredientId));
+      if (item && item.cookedIn === recipeId) await ctx.db.patch(item._id, { removed: false, cookedIn: undefined });
+    }
+    await ctx.db.patch(recipeId, { cookedAt: undefined });
     return null;
   },
 });
