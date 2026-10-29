@@ -1,0 +1,264 @@
+{
+  "id": "fridge-full.live",
+  "source": "live",
+  "createdAt": "2026-10-29T15:52:09.510Z",
+  "image": {
+    "src": "/fixtures/photos/fridge-full.jpg",
+    "height": 2880,
+    "width": 1920
+  },
+  "perception": {
+    "model": "muse-spark-1.3",
+    "rawText": "{\"ingredients\": [{\"bbox\": {\"x_max\": 1000, \"x_min\": 677, \"y_max\": 137, \"y_min\": 0}, \"category\": \"pantry\", \"dateRead\": null, \"daysLeft\": 60, \"freshnessCues\": \"sealed boxes on top of fridge\", \"name\": \"cereal\", \"quantity\": \"2 boxes\", \"samPrompt\": \"cereal box\"}, {\"bbox\": {\"x_max\": 457, \"x_min\": 228, \"y_max\": 128, \"y_min\": 0}, \"category\": \"pantry\", \"dateRead\": null, \"daysLeft\": 30, \"freshnessCues\": \"open bag but chips look intact\", \"name\": \"potato chip\", \"quantity\": \"1 bag\", \"samPrompt\": \"potato chips\"}, {\"bbox\": {\"x_max\": 352, \"x_min\": 262, \"y_max\": 360, \"y_min\": 246}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 14, \"freshnessCues\": \"sealed jar, label intact\", \"name\": \"sour cream\", \"quantity\": \"1 jar\", \"samPrompt\": \"sour cream\"}, {\"bbox\": {\"x_max\": 429, \"x_min\": 363, \"y_max\": 360, \"y_min\": 257}, \"category\": \"condiment\", \"dateRead\": null, \"daysLeft\": 60, \"freshnessCues\": \"olives submerged in brine\", \"name\": \"olive\", \"quantity\": \"1 jar\", \"samPrompt\": \"olive jar\"}, {\"bbox\": {\"x_max\": 829, \"x_min\": 605, \"y_max\": 362, \"y_min\": 323}, \"category\": \"bakery\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"soft flatbread in plastic\", \"name\": \"tortilla\", \"quantity\": \"~6\", \"samPrompt\": \"tortilla\"}, {\"bbox\": {\"x_max\": 899, \"x_min\": 835, \"y_max\": 357, \"y_min\": 244}, \"category\": \"condiment\", \"dateRead\": null, \"daysLeft\": 30, \"freshnessCues\": \"sealed dressing bottle\", \"name\": \"salad dressing\", \"quantity\": \"1 bottle\", \"samPrompt\": \"salad dressing\"}, {\"bbox\": {\"x_max\": 259, \"x_min\": 160, \"y_max\": 549, \"y_min\": 428}, \"category\": \"drink\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"full jug, bright color\", \"name\": \"orange juice\", \"quantity\": \"1 jug\", \"samPrompt\": \"orange juice\"}, {\"bbox\": {\"x_max\": 332, \"x_min\": 254, \"y_max\": 513, \"y_min\": 442}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"sealed milk bottle\", \"name\": \"milk\", \"quantity\": \"1 bottle\", \"samPrompt\": \"milk bottle\"}, {\"bbox\": {\"x_max\": 418, \"x_min\": 331, \"y_max\": 533, \"y_min\": 413}, \"category\": \"drink\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"sealed green bottle\", \"name\": \"juice\", \"quantity\": \"1 bottle\", \"samPrompt\": \"juice bottle\"}, {\"bbox\": {\"x_max\": 717, \"x_min\": 473, \"y_max\": 469, \"y_min\": 413}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 3, \"freshnessCues\": \"fresh cut yellow slices\", \"name\": \"pineapple\", \"quantity\": \"1 container\", \"samPrompt\": \"pineapple\"}, {\"bbox\": {\"x_max\": 859, \"x_min\": 665, \"y_max\": 474, \"y_min\": 422}, \"category\": \"bakery\", \"dateRead\": null, \"daysLeft\": 3, \"freshnessCues\": \"soft bun in bag\", \"name\": \"bread roll\", \"quantity\": \"2\", \"samPrompt\": \"bread roll\"}, {\"bbox\": {\"x_max\": 915, \"x_min\": 792, \"y_max\": 477, \"y_min\": 429}, \"category\": \"leftover\", \"dateRead\": null, \"daysLeft\": 3, \"freshnessCues\": \"cooked peas in container\", \"name\": \"green pea\", \"quantity\": \"1 container\", \"samPrompt\": \"green peas\"}, {\"bbox\": {\"x_max\": 243, \"x_min\": 112, \"y_max\": 575, \"y_min\": 515}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 20, \"freshnessCues\": \"wrapped sticks\", \"name\": \"butter\", \"quantity\": \"2 packs\", \"samPrompt\": \"butter\"}, {\"bbox\": {\"x_max\": 387, \"x_min\": 251, \"y_max\": 567, \"y_min\": 504}, \"category\": \"condiment\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"sealed tubs stacked\", \"name\": \"hummus\", \"quantity\": \"2 tubs\", \"samPrompt\": \"hummus\"}, {\"bbox\": {\"x_max\": 514, \"x_min\": 381, \"y_max\": 577, \"y_min\": 497}, \"category\": \"egg\", \"dateRead\": null, \"daysLeft\": 14, \"freshnessCues\": \"clean white shells\", \"name\": \"egg\", \"quantity\": \"~11\", \"samPrompt\": \"eggs\"}, {\"bbox\": {\"x_max\": 694, \"x_min\": 520, \"y_max\": 568, \"y_min\": 460}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 5, \"freshnessCues\": \"green crisp leaves, condensation\", \"name\": \"lettuce\", \"quantity\": \"1 pack\", \"samPrompt\": \"lettuce\"}, {\"bbox\": {\"x_max\": 956, \"x_min\": 698, \"y_max\": 576, \"y_min\": 476}, \"category\": \"dairy\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"wrapped block in tub\", \"name\": \"cheese\", \"quantity\": \"1\", \"samPrompt\": \"cheese\"}, {\"bbox\": {\"x_max\": 345, \"x_min\": 105, \"y_max\": 688, \"y_min\": 623}, \"category\": \"meat\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"vacuum packed, pink\", \"name\": \"bacon\", \"quantity\": \"1 pack\", \"samPrompt\": \"bacon\"}, {\"bbox\": {\"x_max\": 405, \"x_min\": 322, \"y_max\": 687, \"y_min\": 628}, \"category\": \"meat\", \"dateRead\": null, \"daysLeft\": 2, \"freshnessCues\": \"ground meat in bag\", \"name\": \"sausage\", \"quantity\": \"1 bag\", \"samPrompt\": \"sausage\"}, {\"bbox\": {\"x_max\": 885, \"x_min\": 571, \"y_max\": 677, \"y_min\": 610}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"firm bright oranges\", \"name\": \"orange\", \"quantity\": \"5\", \"samPrompt\": \"orange\"}, {\"bbox\": {\"x_max\": 754, \"x_min\": 697, \"y_max\": 676, \"y_min\": 643}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"firm yellow lemons\", \"name\": \"lemon\", \"quantity\": \"2\", \"samPrompt\": \"lemon\"}, {\"bbox\": {\"x_max\": 680, \"x_min\": 624, \"y_max\": 673, \"y_min\": 620}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"firm green limes\", \"name\": \"lime\", \"quantity\": \"3\", \"samPrompt\": \"lime\"}, {\"bbox\": {\"x_max\": 775, \"x_min\": 709, \"y_max\": 640, \"y_min\": 610}, \"category\": \"fruit\", \"dateRead\": null, \"daysLeft\": 7, \"freshnessCues\": \"dark red apple, firm\", \"name\": \"apple\", \"quantity\": \"1\", \"samPrompt\": \"apple\"}, {\"bbox\": {\"x_max\": 271, \"x_min\": 112, \"y_max\": 800, \"y_min\": 753}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"bright green pods\", \"name\": \"snow pea\", \"quantity\": \"1 bag\", \"samPrompt\": \"snow peas\"}, {\"bbox\": {\"x_max\": 427, \"x_min\": 258, \"y_max\": 799, \"y_min\": 749}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"yellow kernels, husked\", \"name\": \"corn\", \"quantity\": \"3 ears\", \"samPrompt\": \"corn\"}, {\"bbox\": {\"x_max\": 545, \"x_min\": 460, \"y_max\": 799, \"y_min\": 754}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 10, \"freshnessCues\": \"whole purple onion\", \"name\": \"red onion\", \"quantity\": \"1\", \"samPrompt\": \"red onion\"}, {\"bbox\": {\"x_max\": 721, \"x_min\": 545, \"y_max\": 797, \"y_min\": 733}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 5, \"freshnessCues\": \"green beans in bag\", \"name\": \"green bean\", \"quantity\": \"1 bag\", \"samPrompt\": \"green beans\"}, {\"bbox\": {\"x_max\": 895, \"x_min\": 824, \"y_max\": 799, \"y_min\": 744}, \"category\": \"produce\", \"dateRead\": null, \"daysLeft\": 4, \"freshnessCues\": \"red ripe tomatoes\", \"name\": \"tomato\", \"quantity\": \"2\", \"samPrompt\": \"tomato\"}], \"scene\": \"fridge\"}",
+    "ms": 15477,
+    "costUsd": 0.02308125
+  },
+  "segments": [
+    {
+      "ingredientIndex": 0,
+      "prompt": "cereal box",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1333;y1=0;x2=1787;y2=351;w=1920;h=2880;c=0.8476190567016602|><|mask;x=0;y=0;c=0.8476190567016602;data=352,455,!!!!#&E_mzX:HaJcvly.!a&S=Zji=M@bsg-#!2ujE9#O-`y1]'FQR-{ZX*f2:Ha)D8h=yoys/5#MUKW${OaRyS8VXJ5+O4{qg?l[JBHDh%5=Ilw/#dsR!!|>,1<|box;x1=1790;y1=0;x2=1919;y2=355;w=1920;h=2880;c=0.7770034670829773|><|mask;x=0;y=0;c=0.7770034670829773;data=356,130,!!!!!KK0p=wUSSPAxvNsPt3uD7)R2^A)M7U(6kmv1i%M2y?+/09!!|>\n",
+      "ms": 2162
+    },
+    {
+      "ingredientIndex": 1,
+      "prompt": "potato chips",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2428
+    },
+    {
+      "ingredientIndex": 2,
+      "prompt": "sour cream",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2263
+    },
+    {
+      "ingredientIndex": 5,
+      "prompt": "salad dressing",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2042
+    },
+    {
+      "ingredientIndex": 7,
+      "prompt": "milk bottle",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1793
+    },
+    {
+      "ingredientIndex": 4,
+      "prompt": "tortilla",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2517
+    },
+    {
+      "ingredientIndex": 3,
+      "prompt": "olive jar",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=783;y1=804;x2=898;y2=1108;w=1920;h=2880;c=0.5151515007019043|><|mask;x=0;y=0;c=0.5151515007019043;data=305,116,!!!!#+K+.6rcc/Rfbzw5Ix9y4qtT[yjo+1o?sKv-c!P_Hn-w!^R7p]W(YW6Pde7p(RBF%2b[&?*@K&F+=06)-!%oC6.w7iiCr[T/QM1^z%GJ]qh/4.+leDs%k!]]|>,1<|box;x1=702;y1=815;x2=822;y2=1111;w=1920;h=2880;c=0.5508772134780884|><|mask;x=0;y=0;c=0.5508772134780884;data=297,121,!!!!#&CuxV3#o_1{:kQu{#CQ3@e&m.wg_EDCaw8R$j]_K_=3wY`kwz!xThRFWDoIa1[t'YFq0-?$Kf-l1x38CMPG'Y*`W6!Qu'B/uD*qI=-ZmdwXc%rv!!|>\n",
+      "ms": 2822
+    },
+    {
+      "ingredientIndex": 8,
+      "prompt": "juice bottle",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=309;y1=1322;x2=494;y2=1720;w=1920;h=2880;c=0.8324607610702515|><|mask;x=0;y=0;c=0.8324607610702515;data=399,186,!!!!$2B-A2]&EGKbr._5d.6XWT7XnCbL5N*1Msj@z*%LudA`Y?9p'&2#+vey6r##QB(gY?v^?1U3w5%jCk?-HhwmRgdB'6^PCRRLa_3$ens1e@GSw9J5849pafh6:{Ws5fGl9O`-3UC0M7fa#i3&em+ai{M{NCqLqQcarDnx9MoCQ*.Nu-q5C3pgC%0XSg?2WgnJ/nRc&7Vg$-Tt?M.1_Gcu8DU86`ukW=B_F)%dCYf5!!|>,1<|box;x1=634;y1=1301;x2=804;y2=1610;w=1920;h=2880;c=0.7500000596046448|><|mask;x=0;y=0;c=0.7500000596046448;data=310,171,!!!!#ZC9K:m8{F3nsoqqNNO_`k2IsvaoZE=2]W:HyiUv^bx`mlY5KOU]v@WVu:x49P(BdkvA*%NCdA)sf5Q{Pu:.!acB0:vOt+Oam_LD5_P%Hu$4.'%{:2&zC7n+!1$ptJqYeW:oJfEEU_Y!Ms?+dd]SF]'{lJN7o9c).Z[SxY3FnDZvBY|>\n",
+      "ms": 1509
+    },
+    {
+      "ingredientIndex": 9,
+      "prompt": "pineapple",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1632
+    },
+    {
+      "ingredientIndex": 6,
+      "prompt": "orange juice",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=309;y1=1324;x2=494;y2=1720;w=1920;h=2880;c=0.5936508178710938|><|mask;x=0;y=0;c=0.5936508178710938;data=397,186,!!!!$0B.WM77UH6!ixZqdqZuLpUqfuuOu!Fkjj#a^-KRwDtMZ9Lm*^z@ie@6UseytUWS!=WX0jz.^+#ztrnY$2*{q1v96oODp]Y56_huw`5#iD{mw0B8Olop7n[Var=4fY/%]Swl?'M&faI]2qEbD6-OI'umZMbcO&lba+G'9vi4sr#SS78PeAp+j-wLs!Uwxficm4K3cSi8Sw50QJ*J]=_oBYpfe97pZDnnGvI2]zM|>\n",
+      "ms": 2991
+    },
+    {
+      "ingredientIndex": 13,
+      "prompt": "hummus",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1263
+    },
+    {
+      "ingredientIndex": 11,
+      "prompt": "green peas",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1499
+    },
+    {
+      "ingredientIndex": 1,
+      "prompt": "potato chip",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2374
+    },
+    {
+      "ingredientIndex": 7,
+      "prompt": "milk",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1840
+    },
+    {
+      "ingredientIndex": 12,
+      "prompt": "butter",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2192
+    },
+    {
+      "ingredientIndex": 14,
+      "prompt": "eggs",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=891;y1=1603;x2=965;y2=1686;w=1920;h=2880;c=0.7697842121124268|><|mask;x=0;y=0;c=0.7697842121124268;data=84,75,!!!!!bE3W&m`Xx3c'DeO-X{YM/wa=9VrD47]r+RX[Ne[$)L7$D#=h-YJ9p@F?L86S&SaDESje1C)_y:=|>,1<|box;x1=840;y1=1656;x2=901;y2=1711;w=1920;h=2880;c=0.7419355511665344|><|mask;x=0;y=0;c=0.7419355511665344;data=56,62,!!!!!SEI5o+aX7)fmDS^g1Em$ms`2wFV{![(jLDKlnPyLO56C/=MrDoaDh{23!!|>,2<|box;x1=901;y1=1746;x2=966;y2=1792;w=1920;h=2880;c=0.6167664527893066|><|mask;x=0;y=0;c=0.6167664527893066;data=47,66,!!!!!YEII=OLp)G+b?vmIio?r0A`YFwv*!lA6gE[3f0=*^NLfgM9)[h'X-uYUsX0i7IB&A|>,3<|box;x1=786;y1=1651;x2=843;y2=1684;w=1920;h=2880;c=0.675126850605011|><|mask;x=0;y=0;c=0.675126850605011;data=34,58,!!!!!MDty3v5D*UCv/=zz[^eGh:0YXqb7!dOeE.vg3ca0Dq1zCvp+%p|>,4<|box;x1=751;y1=1790;x2=860;y2=1878;w=1920;h=2880;c=0.6908212304115295|><|mask;x=0;y=0;c=0.6908212304115295;data=89,110,!!!!!oCcbx/uoj16iHwL/x&].^rW1onGW-8?D't#r26.OwokqsSd*u({GW^ocA.KM9GqMj!nO8L:x$p]&m:rxiET-wtXB(D]|>,5<|box;x1=758;y1=1731;x2=834;y2=1800;w=1920;h=2880;c=0.6404494643211365|><|mask;x=0;y=0;c=0.6404494643211365;data=70,77,!!!!!XDq%_9Ep^Z]60EX2nWaR&*++tlYs{h[-aX=&H[^Y-goEp#'g^[Cs#HCrVqq28L7w|>,6<|box;x1=887;y1=1682;x2=963;y2=1714;w=1920;h=2880;c=0.6952381134033203|><|mask;x=0;y=0;c=0.6952381134033203;data=33,77,!!!!!QE3['-2J-y5DL]y*@y]gECNoxomYSy/D6:U(CFj*l'(s[!3cL].!!!!|>,7<|box;x1=818;y1=1737;x2=906;y2=1842;w=1920;h=2880;c=0.7620818018913269|><|mask;x=0;y=0;c=0.7620818018913269;data=106,89,!!!!!oE''2=SF6&^R.-M'V0x6NxsZoj/9?2i)Q-Va12r9f`@8(/+UP:R7OtV/WmZnmWfsG[-D*so$Mt4=/e3TUA?gF@a1d3.|>,8<|box;x1=884;y1=1780;x2=972;y2=1876;w=1920;h=2880;c=0.7387754917144775|><|mask;x=0;y=0;c=0.7387754917144775;data=97,89,!!!!!lD]l'si1q'7nAPswggIK4$M=Y4W4Wgt'-?sgU'm5g^4.sc'.e^UOMB2]Q^+$kUogqdWO%i%i%A5T9S%me#[QF.!!|>,9<|box;x1=822;y1=1589;x2=907;y2=1661;w=1920;h=2880;c=0.7730495929718018|><|mask;x=0;y=0;c=0.7730495929718018;data=73,86,!!!!!cD)88Jft{?s&=.b23r9-mhe0Cegg1S!qgo$FAH_o7'hVO=V+/ZIL@yOISlm@BMqmTxsnjP#BjH`D|>,10<|box;x1=776;y1=1679;x2=859;y2=1714;w=1920;h=2880;c=0.7064220309257507|><|mask;x=0;y=0;c=0.7064220309257507;data=36,84,!!!!!UE3RCmDj.]r@bz$OP#tWDgbba?qPl4C6thjBJIW0)FM8TB6@a@^@x=0b)dH%|>\n",
+      "ms": 1509
+    },
+    {
+      "ingredientIndex": 15,
+      "prompt": "lettuce",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1500
+    },
+    {
+      "ingredientIndex": 10,
+      "prompt": "bread roll",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 2846
+    },
+    {
+      "ingredientIndex": 11,
+      "prompt": "green pea",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1723
+    },
+    {
+      "ingredientIndex": 18,
+      "prompt": "sausage",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1443
+    },
+    {
+      "ingredientIndex": 16,
+      "prompt": "cheese",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1832
+    },
+    {
+      "ingredientIndex": 20,
+      "prompt": "lemon",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1464;y1=2073;x2=1568;y2=2181;w=1920;h=2880;c=0.8632478713989258|><|mask;x=0;y=0;c=0.8632478713989258;data=109,105,!!!!!kCusfsK7hip.l=e9`R#BlueacPvkc.b(=2Z$'&YrppqCY[6?jSpQeM@V/PaD0+Vb+v$DfBM?cPOQ$[ECLU10-{|>,1<|box;x1=1340;y1=2094;x2=1442;y2=2188;w=1920;h=2880;c=0.8709677457809448|><|mask;x=0;y=0;c=0.8709677457809448;data=95,103,!!!!!iD?O%&I&MSrw/E&LKkTDqr5bXp/w+]VbsU8qa9-/VWAK)-!NHWTkPPwnFLj{M)D)UuPXdWUwG@ZphJO*6!!!|>\n",
+      "ms": 1294
+    },
+    {
+      "ingredientIndex": 19,
+      "prompt": "orange",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1201;y1=1988;x2=1294;y2=2095;w=1920;h=2880;c=0.9101123809814453|><|mask;x=0;y=0;c=0.9101123809814453;data=108,94,!!!!!nD=U!$#ls?M7%zl0O]jO)r:e4ms&Fx!5z'V'.O9DODbymtn0-z4p@j:f`9HN=.i(f%JUnk7Ya0&fKXD4%2[mnnei*g|>,1<|box;x1=1630;y1=2458;x2=1762;y2=2504;w=1920;h=2880;c=0.5631399154663086|><|mask;x=0;y=0;c=0.5631399154663086;data=47,133,!!!!!`Cfb8qXmb2'-VABQY?Xpy-5c{'H`w{2'DoQtF1h@Rp%k)9nG!RSfp#^H=V-r?sSq9ctsVzN!!|>,2<|box;x1=1574;y1=2054;x2=1700;y2=2180;w=1920;h=2880;c=0.9336099624633789|><|mask;x=0;y=0;c=0.9336099624633789;data=127,127,!!!!#!CiYEuG.V&S2?'cG-SDGZEO-MQ_$9:!vDEJ8))-Da[I/DqcvmbTP$wi(#V^h6@g-aIW#lZ0YoZhhLtSORv%fUE=OerFT`igC)^Ke`nJh+T!!|>,3<|box;x1=1591;y1=2329;x2=1698;y2=2448;w=1920;h=2880;c=0.5936508178710938|><|mask;x=0;y=0;c=0.5936508178710938;data=120,108,!!!!!rE3W`N-&V=af'a`ihP=3CvxNApK+(ay5(l77XWW==?LhEeR2aA14YKeVT`=&Vl.q'!aHGE`B?dHi?2Nsq5^hy0WoLEh52)D|>,4<|box;x1=1107;y1=1988;x2=1231;y2=2062;w=1920;h=2880;c=0.921951174736023|><|mask;x=0;y=0;c=0.921951174736023;data=75,125,!!!!!bCcl5s3gaqqPo?6y=roHFXHF[raIF4n1JmmU]#Tr8:oE?(UIw^+0niGpdHeqr_!TZ!0ArhhhV&[|>,5<|box;x1=1109;y1=2060;x2=1238;y2=2191;w=1920;h=2880;c=0.9298245906829834|><|mask;x=0;y=0;c=0.9298245906829834;data=132,130,!!!!##C7*A9stQNYhRtW?Y2a)m69^mWsJYw/1xiT2$RyGfab.Vm5U:i0)*D76:o/4ViHYl)-UVI3rjepE4m3p/U'mJUS{*P!u(812iNL+j5k:e#I{c|>,6<|box;x1=1545;y1=1972;x2=1687;y2=2056;w=1920;h=2880;c=0.9139785170555115|><|mask;x=0;y=0;c=0.9139785170555115;data=85,143,!!!!!iBAX@t+5fRzg1(s*k-vZ&0-7bVJi'KN@MMs-Hn'Rr]J)%w$N+4#aUa1NRO&{gU.7D@K:G7DB`pnQA-tvjWP+|>\n",
+      "ms": 1503
+    },
+    {
+      "ingredientIndex": 22,
+      "prompt": "apple",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1366;y1=1980;x2=1532;y2=2110;w=1920;h=2880;c=0.6404494643211365|><|mask;x=0;y=0;c=0.6404494643211365;data=131,167,!!!!#!B5'$c(*4W=)H2)Tg[k@Ag(@i$sgw0$^L@#P-86p=b+jRFS`5M_!c1_D3ZppBT%31GIbyl@F(IQRRN=t2CYS*G&X8S_R:{3GmUZ'#**%3y!!|>\n",
+      "ms": 1610
+    },
+    {
+      "ingredientIndex": 25,
+      "prompt": "red onion",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=889;y1=2389;x2=1039;y2=2520;w=1920;h=2880;c=0.8202247023582458|><|mask;x=0;y=0;c=0.8202247023582458;data=132,151,!!!!!zCJdoNZ(/{'q5.NHX05li5Wp?6C#K!GFso-kK]WESjvVGJvVLsBsvk?xPF8oWmR'=7y6(OWw%*dps5dPUMGoK[5%EY(OraEiT$%B(uNGt|>\n",
+      "ms": 1453
+    },
+    {
+      "ingredientIndex": 21,
+      "prompt": "lime",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=1464;y1=2073;x2=1569;y2=2181;w=1920;h=2880;c=0.8160918951034546|><|mask;x=0;y=0;c=0.8160918951034546;data=109,106,!!!!!nCuu(n3xR4]Lf2U7wo7_Y0Gkg5gp(A*0isKi_/ip+*qK=82@nw]WV07rmN^LeRhphoo7E&]6%sXvIC7-4/OJhO9y-k|>,1<|box;x1=1291;y1=2030;x2=1385;y2=2141;w=1920;h=2880;c=0.8476190567016602|><|mask;x=0;y=0;c=0.8476190567016602;data=112,95,!!!!!pDq*lTSJgEyo!!Pdbhh5^##Qf-W]TT7G4eF[wnw`3eMN{1A:=?xrQGDjeX[f`AF'5j.W'j0?jb%pTkyu$fg`qC75C:Y!!|>,2<|box;x1=1236;y1=2077;x2=1332;y2=2178;w=1920;h=2880;c=0.8160918951034546|><|mask;x=0;y=0;c=0.8160918951034546;data=102,97,!!!!!lDkyCW/C:rWN5i/:o=2WT`$N=UGH^4(8n*Q0q{dDR*NkuxW2$/2SYjwz)W%s#ek(#Hf)RWICfCWAqDD{PLV^{M!!|>,3<|box;x1=1341;y1=2094;x2=1442;y2=2189;w=1920;h=2880;c=0.8672199249267578|><|mask;x=0;y=0;c=0.8672199249267578;data=96,102,!!!!!mDCFPnoq$CI20@0kM:(dRnkk!^C](d-*)z=AoH#`=2TapCG=*AOJ=v5v(Vfgl1D{=Waf79Ea+(HFT9PMHnzJn0!!!|>\n",
+      "ms": 2366
+    },
+    {
+      "ingredientIndex": 17,
+      "prompt": "bacon",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 3273
+    },
+    {
+      "ingredientIndex": 23,
+      "prompt": "snow peas",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1726
+    },
+    {
+      "ingredientIndex": 27,
+      "prompt": "tomato",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1701
+    },
+    {
+      "ingredientIndex": 24,
+      "prompt": "corn",
+      "encoding": "one_bit",
+      "rawText": "<0f>0<|box;x1=493;y1=2442;x2=788;y2=2522;w=1920;h=2880;c=0.8083832263946533|><|mask;x=0;y=0;c=0.8083832263946533;data=81,296,!!!!#&B#fv1/TBw262yYP6qaFAV'hjXsjDQ]_xt`n1TLVfx[bRQ8`'?naiAmLav'F)U{ty(pcQ(Y8OY4d=2&myMgm1-oG!#)pZyw7C68^prczzmu:Z8a!!|>,1<|box;x1=515;y1=2384;x2=804;y2=2487;w=1920;h=2880;c=0.7730495929718018|><|mask;x=0;y=0;c=0.7730495929718018;data=104,290,!!!!#[DY6VnOBmjV.-]Ih0#dO-'759t$7m#&Okr/:x9`[`Gy1Er'iQC+DYJp]`V(k.*!O^w'bXEq3clM?o87]roG'UDkpL+Kk{27f[Lz6ThzQouVV%04du'uc.W86]YzE0!^D_(O$-!b(2G^-ljsqEmJBR$O%JAu`?2*LL@NiRJ/w8$+uIk|>,2<|box;x1=533;y1=2332;x2=810;y2=2417;w=1920;h=2880;c=0.7697842121124268|><|mask;x=0;y=0;c=0.7697842121124268;data=86,278,!!!!#MAz8A:mNhp4y2AlJcdTg&wR(Q/G!5LA'7Ovi2OLMlL5-bsh7&Ktp(J.RuKV/65j-{N#XLCaYpCE8aC!iV$Wc4ejO_uHCxsH-7P:tKDB.?s@/R':u#L2wcPtnP9SM_Q-eAKi5XON:u0'qg'DOOWhSIRiRFYn(|>\n",
+      "ms": 2222
+    },
+    {
+      "ingredientIndex": 26,
+      "prompt": "green beans",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1876
+    },
+    {
+      "ingredientIndex": 23,
+      "prompt": "snow pea",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1571
+    },
+    {
+      "ingredientIndex": 26,
+      "prompt": "green bean",
+      "encoding": "one_bit",
+      "rawText": "",
+      "ms": 1635
+    }
+  ],
+  "totalCostUsd": 0.11058125000000008,
+  "boxFallback": {
+    "ingredientIndexes": [
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "prompt": "<0f>21<|box;x1=1198;y1=1786;x2=1305;y2=1937;w=1920;h=2880|>,22<|box;x1=1361;y1=1757;x2=1487;y2=1842;w=1920;h=2880|>,23<|box;x1=215;y1=2169;x2=519;y2=2303;w=1920;h=2880|>,24<|box;x1=495;y1=2157;x2=819;y2=2300;w=1920;h=2880|>,25<|box;x1=883;y1=2172;x2=1045;y2=2300;w=1920;h=2880|>,26<|box;x1=1046;y1=2111;x2=1383;y2=2294;w=1920;h=2880|>,27<|box;x1=1582;y1=2143;x2=1717;y2=2300;w=1920;h=2880|>",
+    "rawText": "<0f>21<|box;x1=1196;y1=1790;x2=1313;y2=1902;w=1920;h=2880;c=0.78515625|><|mask;x=0;y=0;c=0.78515625;data=113,118,!!!!#+BaEQPONStLO6EUQov#TDt7Cis/8k{aJi+LFOK$RU5PRAxO)_XkLeA.bYk.muq{ao2Z`_4_Pn+CVe8T!Mm'M*b]h$!6TuSMkD()(Eh1ed.#hd)VEJ+3'!!!|>,22<|box;x1=1339;y1=1763;x2=1451;y2=1840;w=1920;h=2880;c=0.52734375|><|mask;x=0;y=0;c=0.52734375;data=78,113,!!!!#@FT.RZc3QEG^:_x=2Ajk(@hV(aE2:5MqRKh2V*Oql5q6ht#]s#5_pR)?D-9sLZS2.:apR+*ZogM_83+nTug)U+.w=S(%+A-i724ZV0qWlN%miyyqJ-pNGj@nR5q)A'F'dNo6r(7hj=/L|>,23<|box;x1=194;y1=2198;x2=531;y2=2292;w=1920;h=2880;c=0.59765625|><|mask;x=0;y=0;c=0.59765625;data=95,338,!!!!$+A5wTK]7.Bpqlm1mN=SNN^sCQ`UhD@uf5AaNuQbW-!AadDBFdDcfuk9NKGZSYPI)6IqJWC]bBUE[+j:nV$[BGhv.AXN9oZx7ep'?k1ILa%Q+)BUM=ktwdS3eKj)T/^Os2Pjw:#?+c&Q'5ub%H-8EqAN=#il1jAu)*`&eSSw4TBqMn/tpNO=N_R)lM{y7WxyNCiai9.fR'j?+/8V/%)&(wlbn.gSM%X'UK|>,24<|box;x1=499;y1=2162;x2=846;y2=2290;w=1920;h=2880;c=0.62109375|><|mask;x=0;y=0;c=0.62109375;data=129,348,!!!!$J@3p-6gGr.oRyJ{@_$-Js1#QK/LTaSFD4g[xve%H&b(*MRJjXl&RE70eD%.wSlO_H'$^F$6-kC+y]MFu&T`Dpnh&J{8w*k9QLId@Xj8$s@%W&sv4ANLF:XqQ0K+pDLt4mteh#wD*Geyk:aQ8PJjD]@q9aTGxp'O-Ny$fcz[EXl*8d.h$mutsV['#mgZTrAR9lJmft(*0+N!'_)d-]U&G'F*MVbSzNXe6t-#0b!z@o%8Jy5&I@`MMB0q__#I$Rddt!!!|>,25<|box;x1=863;y1=2168;x2=1064;y2=2286;w=1920;h=2880;c=0.66796875|><|mask;x=0;y=0;c=0.66796875;data=119,202,!!!!#mC36bw)fNo)p*$EhHAK@Z8Y+j/D+q-?.^!IfH7$YG9@=5a9^$/]q]&IcFxH/1t9xIAMY[wM-9OsQ)zuC6:Pw1egc8!X2QfoQiQNbvLM)F?qy8j{qkk%=wJf-gLze^ax5W#7Ni{9c7FD_ng!QQyU{f'ami6_i833#t4oyDMpo@A:QIvP&J{(XhnE&Nk`Jq8B%%{^|>,26<|box;x1=1040;y1=2120;x2=1416;y2=2285;w=1920;h=2880;c=0.67578125|><|mask;x=0;y=0;c=0.67578125;data=166,377,!!!!%(D5lz)*[pUEub-r$C-:t-F2jPWvlQ?0A8LkD)#p=owBwvD-2u]PlpHPdBg1`9:X+9zcD08OxzUMz46lqSfkb1*7i'Lavf#&r1_92cguI5!QcQ+6B(Gm`?0J#2uMz4hfMkclcVO#_GRN*-kVPnW%&gD-rJ=o$CoinH0V_Wyta%r:AWtn)'cl1kjrLQ9DTmO3p[s4bohwHr/r`EIsi-:DTsgbL]Iw6ohegJR&NRpZ/JXsjt&Qp#.o007bs2t'P{6J-J:CTdioH_6CU2v&n6$Ncj0Awj5soPB5DHt!w3j('P#.k$aD90MU$%EK^#po9c%_H3d.uGc!!|>,27<|box;x1=1588;y1=2154;x2=1724;y2=2289;w=1920;h=2880;c=0.4765625|><|mask;x=0;y=0;c=0.4765625;data=136,137,!!!!#qBNE#g]f6(^[H[y{Yr0_{--ep4`'{QR^.qm{do/QKsO'/.x#!s'cZoS%:FAFmRf4HZ/#p%K-@XqLE7x+Lg0jXS?OLE{O+AkWXx==d0Z(OmpukI]y!^:Wh.]0AXbJ_gbcKS_mZ6kq)4dx[IdzBS4S{?$)2TRVqp2U-0`ijG4Eu.Fga.-ORtx8i&l*UROw+T&'BKHZ=/N6|>\n",
+    "ms": 2330
+  }
+}
