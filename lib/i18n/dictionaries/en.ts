@@ -48,6 +48,7 @@ export const en = {
     scanFridge: "Scan my fridge",
     photos: "Photos",
     photosCount: "{n} photos",
+    incoming: "A photo is on its way from a phone…",
   },
   devices: {
     connect: "Connect a phone",

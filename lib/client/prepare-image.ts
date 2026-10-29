@@ -21,3 +21,16 @@ export async function prepareImage(file: Blob, maxSide = 1600): Promise<{ blob: 
   if (!blob) throw new Error("Could not encode the photo");
   return { blob, width, height };
 }
+
+/** A ~1 KB thumbnail sent ahead of the photo, so the other screens show it at once, blurred. */
+export async function previewOf(file: Blob, side = 40): Promise<{ dataUrl: string; width: number; height: number }> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const scale = side / Math.max(bitmap.width, bitmap.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const size = { width: bitmap.width, height: bitmap.height };
+  bitmap.close();
+  return { dataUrl: canvas.toDataURL("image/jpeg", 0.6), ...size };
+}

@@ -1,6 +1,6 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { sessionStatus } from "./schema";
+import { incomingPhoto, sessionStatus } from "./schema";
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 // No 0/O, 1/I/L: the code is read aloud and typed on a phone.
@@ -49,6 +49,7 @@ export const get = query({
       status: sessionStatus,
       locale: v.union(v.literal("en"), v.literal("fr")),
       phoneJoinedAt: v.optional(v.number()),
+      incoming: v.optional(incomingPhoto),
       pantry: v.optional(v.array(v.string())),
       expiresAt: v.number(),
     }),
@@ -61,6 +62,32 @@ export const get = query({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { joinTokenHash, ...publicFields } = session;
     return publicFields;
+  },
+});
+
+/** The phone just took a photo: its blurred thumbnail reaches the other screens before the upload ends. */
+export const announcePhoto = mutation({
+  args: { sessionId: v.id("sessions"), dataUrl: v.string(), width: v.number(), height: v.number() },
+  returns: v.null(),
+  handler: async (ctx, { sessionId, dataUrl, width, height }) => {
+    const session = await ctx.db.get(sessionId);
+    if (!session || session.expiresAt < Date.now()) throw new ConvexError({ code: "session", message: "Session expired" });
+    if (!dataUrl.startsWith("data:image/jpeg;base64,") || dataUrl.length > 6000 || ![width, height].every((n) => Number.isFinite(n) && n > 0)) {
+      throw new ConvexError({ code: "invalid", message: "Bad preview" });
+    }
+    await ctx.db.patch(sessionId, { incoming: { dataUrl, width, height, at: Date.now() } });
+    return null;
+  },
+});
+
+/** The upload failed or was cancelled: the other screens drop the thumbnail. */
+export const clearIncoming = mutation({
+  args: { sessionId: v.id("sessions") },
+  returns: v.null(),
+  handler: async (ctx, { sessionId }) => {
+    const session = await ctx.db.get(sessionId);
+    if (session?.incoming) await ctx.db.patch(sessionId, { incoming: undefined });
+    return null;
   },
 });
 

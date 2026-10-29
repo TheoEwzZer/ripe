@@ -50,6 +50,7 @@ export const fr: Dictionary = {
     scanFridge: "Scanner mon frigo",
     photos: "Photos",
     photosCount: "{n} photos",
+    incoming: "Une photo arrive du téléphone…",
   },
   devices: {
     connect: "Connecter un téléphone",

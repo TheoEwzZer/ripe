@@ -13,9 +13,9 @@ import { IngredientList } from "@/components/scan/IngredientList";
 import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from "@/components/scan/ScanCanvas";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { prepareImage } from "@/lib/client/prepare-image";
+import { prepareImage, previewOf } from "@/lib/client/prepare-image";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
-import { AddPhoto, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
+import { AddPhoto, IncomingPhoto, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
 import { PhoneCard, PresenceBar, usePresence } from "./Presence";
 
 type T = {
@@ -79,6 +79,8 @@ export function SessionWorkspace({ t }: { t: T }) {
   const tap = useMutation(api.scans.tap);
   const merge = useMutation(api.ingredients.merge);
   const unmerge = useMutation(api.ingredients.unmerge);
+  const announcePhoto = useMutation(api.sessions.announcePhoto);
+  const clearIncoming = useMutation(api.sessions.clearIncoming);
   const presence = usePresence(session ? session._id : null);
 
   // Edits show at once; Convex replaces the guess with the stored value when the write lands.
@@ -191,7 +193,15 @@ export function SessionWorkspace({ t }: { t: T }) {
     setSelected(null);
     setChosenScan(null);
     setAdding(false);
+    let announced = false;
     await attempt(async () => {
+      // The blurred thumbnail goes first: the computer shows it before the photo is even uploaded.
+      try {
+        await announcePhoto({ sessionId, ...(await previewOf(file)) });
+        announced = true;
+      } catch {
+        // Only a nicety: the upload goes on without it.
+      }
       const { blob, width, height } = await prepareImage(file);
       const uploadUrl = await generateUploadUrl({ sessionId });
       const response = await fetch(uploadUrl, {
@@ -202,11 +212,22 @@ export function SessionWorkspace({ t }: { t: T }) {
       if (!response.ok) throw new Error(`Upload failed with ${response.status}`);
       const { storageId } = (await response.json()) as { storageId: string };
       await startUpload({ sessionId, storageId: storageId as Id<"_storage">, width, height, place });
+      announced = false;
     });
+    if (announced) void clearIncoming({ sessionId }).catch(() => {});
     setBusy(null);
   }
 
+  const incoming = session.incoming;
+
   if (!kitchen || !scan) {
+    if (incoming) {
+      return (
+        <section className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+          <IncomingPhoto photo={incoming} label={t.session.incoming} large />
+        </section>
+      );
+    }
     return (
       <section className="glass flex flex-col gap-8 rounded-3xl p-6 sm:p-10 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-6">
@@ -425,6 +446,7 @@ export function SessionWorkspace({ t }: { t: T }) {
         </p>
       )}
       {canTap && <p className="-mt-2 text-sm text-ink-soft">{t.scan.tapHint}</p>}
+      {incoming && <IncomingPhoto photo={incoming} label={t.session.incoming} large={false} />}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div className="flex flex-col gap-3 lg:sticky lg:top-6">

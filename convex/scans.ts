@@ -39,7 +39,7 @@ async function launch(ctx: MutationCtx, sessionId: Id<"sessions">, scan: Pick<Do
     throw new ConvexError({ code: "busy", message: "Wait for the current analysis to finish" });
   }
   const scanId = await ctx.db.insert("scans", { sessionId, ...scan, status: "perceiving", costUsd: 0 });
-  await ctx.db.patch(sessionId, { status: "analyzing" });
+  await ctx.db.patch(sessionId, { status: "analyzing", incoming: undefined });
   await ctx.scheduler.runAfter(0, internal.pipeline.run, { scanId });
   await ctx.scheduler.runAfter(WATCHDOG_MS, internal.scans.watchdog, { scanId });
   return scanId;

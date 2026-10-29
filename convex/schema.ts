@@ -10,6 +10,8 @@ export const sessionStatus = v.union(
   v.literal("recipes"),
 );
 
+export const incomingPhoto = v.object({ dataUrl: v.string(), width: v.number(), height: v.number(), at: v.number() });
+
 export const deviceKind = v.union(v.literal("desktop"), v.literal("phone"));
 
 /** Where a photo was taken: one inventory gathers the fridge, the pantry and the freezer. */
@@ -157,6 +159,8 @@ export default defineSchema({
     /** Staple ids from lib/recipes/pantry.ts; unset means the standard pantry. */
     pantry: v.optional(v.array(v.string())),
     phoneJoinedAt: v.optional(v.number()),
+    /** A blurred thumbnail of a photo still uploading from a phone; cleared when its scan starts. */
+    incoming: v.optional(incomingPhoto),
     expiresAt: v.number(),
   })
     .index("by_code", ["code"])
