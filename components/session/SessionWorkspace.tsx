@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KitchenView } from "@/components/recipes/RecipeCard";
 import { RecipePanel } from "@/components/recipes/RecipePanel";
 import { recipeLabels } from "@/components/recipes/shared";
+import { OfferPanel } from "@/components/offer/OfferPanel";
 import { EditCard } from "@/components/scan/EditCard";
 import { IngredientList } from "@/components/scan/IngredientList";
 import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from "@/components/scan/ScanCanvas";
@@ -24,6 +25,7 @@ type T = {
   freshness: Dictionary["freshness"];
   recipes: Dictionary["recipes"];
   devices: Dictionary["devices"];
+  offer: Dictionary["offer"];
 };
 type Toast = { message: string; undo: () => Promise<unknown> };
 
@@ -120,6 +122,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   const [hoveredRecipe, setHoveredRecipe] = useState<ReadonlySet<string> | null>(null);
   const [chosenScan, setChosenScan] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [offering, setOffering] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -516,6 +519,16 @@ export function SessionWorkspace({ t }: { t: T }) {
                 onHighlight={setHoveredRecipe}
               />
             )}
+            {!showRecipes && offering && (
+              <OfferPanel
+                sessionId={sessionId}
+                locale={locale}
+                items={visible}
+                t={t.offer}
+                scanLabels={t.scan}
+                onClose={() => setOffering(false)}
+              />
+            )}
             {!showRecipes && current && (
               <EditCard
                 key={current._id}
@@ -559,6 +572,18 @@ export function SessionWorkspace({ t }: { t: T }) {
                     className="rounded-full bg-aubergine px-5 py-2.5 font-medium text-porcelaine transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.98] dark:bg-porcelaine dark:text-aubergine"
                   >
                     {t.recipes.seeRecipes}
+                  </button>
+                )}
+                {settled && !offering && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOffering(true);
+                      setSelected(null);
+                    }}
+                    className="rounded-full px-5 py-2.5 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass"
+                  >
+                    {t.offer.open}
                   </button>
                 )}
               </>

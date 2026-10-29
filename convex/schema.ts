@@ -265,6 +265,25 @@ export default defineSchema({
     .index("by_run", ["runId"])
     .index("by_session", ["sessionId"]),
 
+  /** Food offered to a neighbour through a link: names, freshness and a crop of the photo, nothing personal. */
+  offers: defineTable({
+    sessionId: v.id("sessions"),
+    items: v.array(
+      v.object({
+        ingredientId: v.id("ingredients"),
+        name: v.string(),
+        quantity: v.string(),
+        daysLeft: v.number(),
+        scanId: v.id("scans"),
+        bbox: gridBox,
+      }),
+    ),
+    note: v.string(),
+    locale,
+    claimedAt: v.optional(v.number()),
+    expiresAt: v.number(),
+  }).index("by_session", ["sessionId"]),
+
   /** Money spent on the Meta Model API per UTC day, checked before every paid call. */
   spend: defineTable({
     day: v.string(),

@@ -139,6 +139,9 @@ export const purgeExpired = internalMutation({
         }
         await ctx.db.delete(run._id);
       }
+      for (const offer of await ctx.db.query("offers").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
+        await ctx.db.delete(offer._id);
+      }
       for (const device of await ctx.db.query("devices").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
         await ctx.db.delete(device._id);
       }
