@@ -64,6 +64,22 @@ export const get = query({
   },
 });
 
+/** A phone typing the 4-character code shown on the desktop, when the QR code won't scan. */
+export const findByCode = mutation({
+  args: { code: v.string() },
+  returns: v.union(v.null(), v.id("sessions")),
+  handler: async (ctx, { code }) => {
+    const clean = code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (clean.length !== 4) return null;
+    const sessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_code", (q) => q.eq("code", clean))
+      .order("desc")
+      .take(5);
+    return sessions.find((s) => s.expiresAt > Date.now())?._id ?? null;
+  },
+});
+
 /** Removes expired sessions and everything hanging off them, in small batches. */
 export const purgeExpired = internalMutation({
   args: {},
@@ -94,6 +110,9 @@ export const purgeExpired = internalMutation({
           await ctx.db.delete(recipe._id);
         }
         await ctx.db.delete(run._id);
+      }
+      for (const device of await ctx.db.query("devices").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
+        await ctx.db.delete(device._id);
       }
       await ctx.db.delete(session._id);
     }

@@ -10,6 +10,8 @@ export const sessionStatus = v.union(
   v.literal("recipes"),
 );
 
+export const deviceKind = v.union(v.literal("desktop"), v.literal("phone"));
+
 export const scanStatus = v.union(
   v.literal("perceiving"),
   v.literal("segmenting"),
@@ -156,6 +158,19 @@ export default defineSchema({
   })
     .index("by_code", ["code"])
     .index("by_expiresAt", ["expiresAt"]),
+
+  /** A browser in the session: the desktop that decides, the phones that capture and cook. */
+  devices: defineTable({
+    sessionId: v.id("sessions"),
+    /** Random id kept in the browser's storage, so a reload is the same device. */
+    key: v.string(),
+    kind: deviceKind,
+    /** "Phone 2": the order in which phones joined. */
+    number: v.number(),
+    lastSeen: v.number(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_session_and_key", ["sessionId", "key"]),
 
   /** One photo (fridge, pantry…) inside a session. */
   scans: defineTable({

@@ -10,6 +10,7 @@
 
 import type * as cooking from "../cooking.js";
 import type * as crons from "../crons.js";
+import type * as devices from "../devices.js";
 import type * as ingredients from "../ingredients.js";
 import type * as pipeline from "../pipeline.js";
 import type * as recipes from "../recipes.js";
@@ -26,6 +27,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   cooking: typeof cooking;
   crons: typeof crons;
+  devices: typeof devices;
   ingredients: typeof ingredients;
   pipeline: typeof pipeline;
   recipes: typeof recipes;

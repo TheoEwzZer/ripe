@@ -14,6 +14,7 @@ import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage } from "@/lib/client/prepare-image";
+import { PhoneCard, PresenceBar, usePresence } from "./Presence";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 
 type T = {
@@ -21,6 +22,7 @@ type T = {
   scan: Dictionary["scan"];
   freshness: Dictionary["freshness"];
   recipes: Dictionary["recipes"];
+  devices: Dictionary["devices"];
 };
 type Toast = { message: string; undo: () => Promise<unknown> };
 
@@ -72,6 +74,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   const startUpload = useMutation(api.scans.startUpload);
   const tap = useMutation(api.scans.tap);
   const merge = useMutation(api.ingredients.merge);
+  const presence = usePresence(session ? session._id : null);
   const unmerge = useMutation(api.ingredients.unmerge);
 
   // Edits show at once; Convex replaces the guess with the stored value when the write lands.
@@ -126,6 +129,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   const sessionId = session._id;
   const running = latest?.scan.status === "perceiving" || latest?.scan.status === "segmenting";
   const live = caps?.live ?? false;
+  const phone = presence.me?.kind === "phone";
 
   const showToast = (next: Toast) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -211,21 +215,28 @@ export function SessionWorkspace({ t }: { t: T }) {
 
   if (!latest) {
     return (
-      <section className="glass flex flex-col gap-6 rounded-3xl p-6 sm:p-10">
-        <div className="flex flex-col gap-3">
-          <h1 className="font-display text-4xl font-extrabold tracking-tight wrap-break-word sm:text-5xl">{t.session.startTitle}</h1>
-          <p className="max-w-xl text-ink-soft">{t.session.startLead}</p>
+      <section className="glass flex flex-col gap-8 rounded-3xl p-6 sm:p-10 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <h1 className="font-display text-4xl font-extrabold tracking-tight wrap-break-word sm:text-5xl">{t.session.startTitle}</h1>
+            <p className="max-w-xl text-ink-soft">{t.session.startLead}</p>
+          </div>
+          {actions(false)}
+          {!live && <p className="max-w-xl text-sm text-ink-soft">{t.session.liveOff}</p>}
+          {error && (
+            <p className="text-sm text-betterave" role="alert">
+              {error}
+            </p>
+          )}
+          {phone ? (
+            <PresenceBar presence={presence} sessionId={sessionId} code={session.code} locale={locale} t={t.devices} />
+          ) : (
+            <p className="text-sm text-ink-soft">
+              {t.session.code} <span className="font-mono text-ink">{session.code}</span>
+            </p>
+          )}
         </div>
-        {actions(false)}
-        {!live && <p className="max-w-xl text-sm text-ink-soft">{t.session.liveOff}</p>}
-        {error && (
-          <p className="text-sm text-betterave" role="alert">
-            {error}
-          </p>
-        )}
-        <p className="text-sm text-ink-soft">
-          {t.session.code} <span className="font-mono text-ink">{session.code}</span>
-        </p>
+        {!phone && <PhoneCard presence={presence} sessionId={sessionId} code={session.code} locale={locale} t={t.devices} />}
       </section>
     );
   }
@@ -334,7 +345,10 @@ export function SessionWorkspace({ t }: { t: T }) {
             {seconds && ` · ${seconds} s`}
           </p>
         </div>
-        {actions(true)}
+        <div className="flex flex-wrap items-center gap-3">
+          <PresenceBar presence={presence} sessionId={sessionId} code={session.code} locale={locale} t={t.devices} />
+          {actions(true)}
+        </div>
       </div>
       {error && (
         <p className="text-sm text-betterave" role="alert">
