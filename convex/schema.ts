@@ -12,6 +12,9 @@ export const sessionStatus = v.union(
 
 export const deviceKind = v.union(v.literal("desktop"), v.literal("phone"));
 
+/** Where a photo was taken: one inventory gathers the fridge, the pantry and the freezer. */
+export const scanPlace = v.union(v.literal("fridge"), v.literal("pantry"), v.literal("freezer"));
+
 export const scanStatus = v.union(
   v.literal("perceiving"),
   v.literal("segmenting"),
@@ -176,6 +179,10 @@ export default defineSchema({
   scans: defineTable({
     sessionId: v.id("sessions"),
     source: scanSource,
+    /** Unset on scans made before places existed: the fridge. */
+    place: v.optional(scanPlace),
+    /** Set when the demo is replayed from scratch: the photo leaves the inventory. */
+    archived: v.optional(v.boolean()),
     width: v.number(),
     height: v.number(),
     status: scanStatus,

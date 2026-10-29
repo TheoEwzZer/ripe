@@ -22,6 +22,15 @@ Ignore the fridge itself, shelves, drawers and non-food objects.`;
 /** Charged when the API returns no usage; on the high side of a measured 16-item photo. */
 const UNKNOWN_USAGE_USD = 0.02;
 
+export type Place = "fridge" | "pantry" | "freezer";
+
+/** The same prompt for every photo, plus how long food keeps where it was taken. */
+const PLACE_HINTS: Record<Place, string> = {
+  fridge: "This photo shows a fridge.",
+  pantry: "This photo shows a pantry or a cupboard: dry and canned goods keep for weeks or months, fresh produce stored here still spoils.",
+  freezer: "This photo shows a freezer: frozen food keeps for months, so give frozen items many days left (up to 60) unless they show freezer burn.",
+};
+
 export type PerceiveResult = {
   model: string;
   rawText: string;
@@ -48,7 +57,7 @@ export function parsePerception(rawText: string): Perception {
  */
 export async function perceive(
   imageUrl: string,
-  opts: { contributor?: boolean; onItem?: OnPerceivedItem } = {},
+  opts: { contributor?: boolean; onItem?: OnPerceivedItem; place?: Place } = {},
 ): Promise<PerceiveResult> {
   const model = opts.contributor ? MODELS.perceiveContributor : MODELS.perceive;
   const started = Date.now();
@@ -59,7 +68,8 @@ export async function perceive(
       {
         role: "user" as const,
         content: [
-          { type: "text" as const, text: PERCEIVE_PROMPT },
+          { type: "text" as const, text: opts.place ? `${PERCEIVE_PROMPT}
+${PLACE_HINTS[opts.place]}` : PERCEIVE_PROMPT },
           { type: "image_url" as const, image_url: { url: imageUrl } },
         ],
       },

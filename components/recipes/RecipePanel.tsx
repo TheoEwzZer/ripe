@@ -17,7 +17,7 @@ import {
   type CookFilters,
 } from "@/lib/recipes/filters";
 import { cleanPantry, defaultPantry, pantryKey, staples } from "@/lib/recipes/pantry";
-import { RecipeCard, type KitchenView } from "./RecipeCard";
+import { RecipeCard, type KitchenView, type Photo } from "./RecipeCard";
 import { fill, peopleLabel, type RecipeLabels } from "./shared";
 
 type Latest = FunctionReturnType<typeof api.recipes.latest>;
@@ -45,7 +45,7 @@ export function RecipePanel({
   pantry: sessionPantry,
   canCook,
   kitchen,
-  photo,
+  photos,
   recipeHref,
   labels: t,
   attempt,
@@ -57,7 +57,7 @@ export function RecipePanel({
   pantry: string[] | undefined;
   canCook: boolean;
   kitchen: KitchenView;
-  photo: { src: string | null; width: number; height: number };
+  photos: Map<string, Photo>;
   recipeHref: (recipeId: string) => string;
   labels: RecipeLabels;
   attempt: (job: () => Promise<unknown>) => Promise<void>;
@@ -252,7 +252,7 @@ export function RecipePanel({
                   <RecipeCard
                     recipe={recipe}
                     kitchen={kitchen}
-                    photo={photo}
+                    photos={photos}
                     href={recipeHref(recipe._id)}
                     labels={t}
                     onHighlight={onHighlight}

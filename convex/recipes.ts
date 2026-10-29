@@ -4,6 +4,7 @@ import { cleanPantry, defaultPantry, stapleIds } from "../lib/recipes/pantry";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { activeScans } from "./scans";
 import { cookFilters, gridBox, locale, plate, recipeContent, runStatus, scanSource } from "./schema";
 
 const MAX_RUNS_PER_SESSION = 20;
@@ -21,16 +22,29 @@ async function openSession(ctx: QueryCtx, sessionId: Id<"sessions">): Promise<Do
   return session;
 }
 
-/** What the recipes may use: the scan's items still on the list, with a name. */
-async function kitchenOf(ctx: QueryCtx, scanId: Id<"scans">) {
+/** What the recipes may use: every photo's items still on the list, with a name, most urgent first. */
+async function kitchenOf(ctx: QueryCtx, sessionId: Id<"sessions">) {
+  const scans = new Set((await activeScans(ctx, sessionId)).map((s) => s._id));
   const items = await ctx.db
     .query("ingredients")
-    .withIndex("by_scan", (q) => q.eq("scanId", scanId))
-    .take(200);
+    .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+    .take(400);
   return items
-    .filter((i) => !i.removed && i.name.trim() !== "")
+    .filter((i) => scans.has(i.scanId) && !i.removed && i.name.trim() !== "")
+    .sort((a, b) => a.daysLeft - b.daysLeft)
     .slice(0, 60)
     .map((i) => ({ id: i._id as string, name: i.name, quantity: i.quantity, daysLeft: i.daysLeft, category: i.category }));
+}
+
+/** The photo that holds most of a recipe's ingredients: its crop, its highlight, Muse Image's source. */
+async function mainScan(ctx: QueryCtx, recipe: Doc<"recipes">, run: Doc<"recipeRuns">): Promise<Doc<"scans"> | null> {
+  const counts = new Map<Id<"scans">, number>();
+  for (const id of new Set(recipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId] : [])))) {
+    const item = await ctx.db.get(id);
+    if (item) counts.set(item.scanId, (counts.get(item.scanId) ?? 0) + 1);
+  }
+  const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return (best && (await ctx.db.get(best))) ?? (await ctx.db.get(run.scanId));
 }
 
 const kitchenItem = v.object({ id: v.string(), name: v.string(), quantity: v.string(), daysLeft: v.number(), category: v.string() });
@@ -45,7 +59,7 @@ async function recipeFor(ctx: MutationCtx, recipeId: Id<"recipes">) {
 
 // ——— Client API ———
 
-/** Three recipes for the session's latest photo; the cards fill in as Muse Wonder writes. */
+/** Three recipes for everything the session's photos show; the cards fill in as Muse Wonder writes. */
 export const start = mutation({
   args: { sessionId: v.id("sessions"), filters: cookFilters, locale },
   returns: v.id("recipeRuns"),
@@ -54,15 +68,12 @@ export const start = mutation({
     if (!Number.isInteger(filters.servings) || filters.servings < MIN_SERVINGS || filters.servings > MAX_SERVINGS) {
       throw new ConvexError({ code: "invalid", message: `Servings must be ${MIN_SERVINGS} to ${MAX_SERVINGS}` });
     }
-    const scan = await ctx.db
-      .query("scans")
-      .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
-      .order("desc")
-      .first();
-    if (!scan || (scan.status !== "done" && scan.status !== "error")) {
+    const scans = await activeScans(ctx, sessionId);
+    const scan = scans.at(-1);
+    if (!scan || scans.some((s) => s.status !== "done" && s.status !== "error")) {
       throw new ConvexError({ code: "busy", message: "Wait for the analysis to finish" });
     }
-    if ((await kitchenOf(ctx, scan._id)).length === 0) throw new ConvexError({ code: "empty", message: "Nothing to cook with" });
+    if ((await kitchenOf(ctx, sessionId)).length === 0) throw new ConvexError({ code: "empty", message: "Nothing to cook with" });
 
     const runs = await ctx.db
       .query("recipeRuns")
@@ -178,7 +189,7 @@ export const latest = query({
       .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
       .order("desc")
       .first();
-    if (!run) return null;
+    if (!run || (await ctx.db.get(run.scanId))?.archived) return null;
     const rows = await ctx.db
       .query("recipes")
       .withIndex("by_run", (q) => q.eq("runId", run._id))
@@ -214,7 +225,15 @@ export const get = query({
       run: v.object({ source: v.union(v.literal("live"), v.literal("replay")), locale, replayed: v.boolean() }),
       photo: v.object({ src: v.union(v.string(), v.null()), width: v.number(), height: v.number() }),
       items: v.array(
-        v.object({ _id: v.id("ingredients"), name: v.string(), daysLeft: v.number(), removed: v.boolean(), bbox: gridBox }),
+        v.object({
+          _id: v.id("ingredients"),
+          name: v.string(),
+          daysLeft: v.number(),
+          removed: v.boolean(),
+          bbox: gridBox,
+          /** On the photo shown in the sheet; the others were seen on another photo. */
+          onPhoto: v.boolean(),
+        }),
       ),
     }),
   ),
@@ -225,12 +244,14 @@ export const get = query({
     const session = await ctx.db.get(sessionId);
     const recipe = await ctx.db.get(recipeId);
     const run = recipe && (await ctx.db.get(recipe.runId));
-    const scan = run && (await ctx.db.get(run.scanId));
+    const scan = recipe && run && (await mainScan(ctx, recipe, run));
     if (!session || session.expiresAt < Date.now() || !recipe || !run || !scan || recipe.sessionId !== sessionId) return null;
     const items = [];
     for (const id of new Set(recipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId] : [])))) {
       const item = await ctx.db.get(id);
-      if (item) items.push({ _id: item._id, name: item.name, daysLeft: item.daysLeft, removed: item.removed, bbox: item.bbox });
+      if (item) {
+        items.push({ _id: item._id, name: item.name, daysLeft: item.daysLeft, removed: item.removed, bbox: item.bbox, onPhoto: item.scanId === scan._id });
+      }
     }
     const src = scan.source.kind === "replay" ? scan.source.imageSrc : await ctx.storage.getUrl(scan.source.storageId);
     return {
@@ -325,7 +346,7 @@ export const forRun = internalQuery({
       pantry: run.pantry,
       locale: run.locale,
       scanSource: scan.source,
-      kitchen: await kitchenOf(ctx, run.scanId),
+      kitchen: await kitchenOf(ctx, run.sessionId),
       liveRuns: runs.filter((r) => r._id !== runId && r.source === "live").length,
     };
   },
@@ -464,7 +485,7 @@ export const forPlate = internalQuery({
   handler: async (ctx, { recipeId }) => {
     const recipe = await ctx.db.get(recipeId);
     const run = recipe && (await ctx.db.get(recipe.runId));
-    const scan = run && (await ctx.db.get(run.scanId));
+    const scan = recipe && run && (await mainScan(ctx, recipe, run));
     if (!recipe || !run || !scan) return null;
     return {
       imagining: recipe.plate?.status === "imagining",
@@ -527,7 +548,7 @@ export const forSwap = internalQuery({
       filters: run.filters,
       pantry: run.pantry,
       locale: run.locale,
-      kitchen: await kitchenOf(ctx, run.scanId),
+      kitchen: await kitchenOf(ctx, run.sessionId),
     };
   },
 });

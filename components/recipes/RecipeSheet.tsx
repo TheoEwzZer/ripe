@@ -76,7 +76,7 @@ export function RecipeSheet({
   const factor = recipe.servings > 0 ? people / recipe.servings : 1;
   const swapping = recipe.swap?.status === "swapping" ? recipe.swap.ingredient : null;
   const plate = recipe.plate;
-  const crop = <PhotoCrop photo={photo} boxes={items.map((i) => i.bbox)} alt={fill(t.cropAlt, { title: recipe.title })} />;
+  const crop = <PhotoCrop photo={photo} boxes={items.filter((i) => i.onPhoto).map((i) => i.bbox)} alt={fill(t.cropAlt, { title: recipe.title })} />;
 
   const copy = async () => {
     try {

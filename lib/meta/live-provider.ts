@@ -1,6 +1,6 @@
 import type { VisionProvider } from "../pipeline/types";
 import { SAM_USD_PER_IMAGE } from "./models";
-import { perceive } from "./perceive";
+import { perceive, type Place } from "./perceive";
 import { segmentBoxes, segmentConcept } from "./segment";
 
 /** Worst-case estimate reserved before a perception call; settled with the measured token cost. */
@@ -12,17 +12,19 @@ export type LiveOptions = {
   /** Replaces an estimate with the measured cost once usage comes back. */
   settle?: (label: string, estimateUsd: number, actualUsd: number) => Promise<void> | void;
   contributor?: boolean;
+  /** Where the photo was taken, so Muse Spark judges shelf life accordingly. */
+  place?: Place;
 };
 
 /** The Meta Model API behind the pipeline's provider interface. `imageUrl` may be https or a data URL. */
 export function liveProvider(imageUrl: string, options: LiveOptions): VisionProvider {
-  const { reserve, settle, contributor } = options;
+  const { reserve, settle, contributor, place } = options;
 
   return {
     kind: "live",
     async perceive(onItem) {
       await reserve("perceive", PERCEIVE_RESERVE_USD);
-      const result = await perceive(imageUrl, { contributor, onItem });
+      const result = await perceive(imageUrl, { contributor, onItem, place });
       await settle?.("perceive", PERCEIVE_RESERVE_USD, result.usage.costUsd);
       return {
         model: result.model,

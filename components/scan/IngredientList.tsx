@@ -65,6 +65,7 @@ export function IngredientList({
           >
             <Pip daysLeft={item.daysLeft} />
             <span className="min-w-0 flex-1 truncate">{displayName(item, labels)}</span>
+            {item.tag && <span className="shrink-0 rounded-full px-1.5 text-[11px] text-ink-soft ring-1 ring-hairline">{item.tag}</span>}
             {(item.segmentation === "pending" || (item.segmentation === "point" && !item.name)) && (
               <span className="ghost-pulse text-xs text-ink-soft" aria-label={labels.pending}>
                 ···

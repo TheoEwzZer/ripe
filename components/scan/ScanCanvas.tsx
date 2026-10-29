@@ -18,6 +18,8 @@ export type CanvasIngredient = {
   bbox: GridBox;
   segmentation: Segmentation;
   removed?: boolean;
+  /** Where the item was seen, when the inventory gathers several photos. */
+  tag?: string;
 };
 
 export type CanvasMask = {

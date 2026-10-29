@@ -65,7 +65,7 @@ export const restore = mutation({
 });
 
 /**
- * Folds duplicates into one item: their outlines move over, the most urgent
+ * Folds duplicates into one item, on the same photo or another one: outlines on the same photo move over, the most urgent
  * freshness wins and the quantities add up. Undo with `unmerge`.
  */
 export const merge = mutation({
@@ -81,20 +81,24 @@ export const merge = mutation({
     const duplicates: Doc<"ingredients">[] = [];
     for (const id of ids) {
       const dup = await ctx.db.get(id);
-      if (!dup || dup.scanId !== keep.scanId || dup.removed) throw new ConvexError({ code: "invalid", message: "A duplicate is gone" });
+      if (!dup || dup.sessionId !== keep.sessionId || dup.removed) throw new ConvexError({ code: "invalid", message: "A duplicate is gone" });
       duplicates.push(dup);
     }
 
     const siblings = await ctx.db
       .query("ingredients")
-      .withIndex("by_scan", (q) => q.eq("scanId", keep.scanId))
-      .take(200);
+      .withIndex("by_session", (q) => q.eq("sessionId", keep.sessionId))
+      .take(400);
     for (const dup of duplicates) {
       // Outlines remember their first owner, so one undo puts every merge back.
-      const masks = await ctx.db
-        .query("masks")
-        .withIndex("by_ingredient", (q) => q.eq("ingredientId", dup._id))
-        .take(100);
+      // A duplicate on another photo keeps its outline there.
+      const masks =
+        dup.scanId === keep.scanId
+          ? await ctx.db
+              .query("masks")
+              .withIndex("by_ingredient", (q) => q.eq("ingredientId", dup._id))
+              .take(100)
+          : [];
       for (const mask of masks) await ctx.db.patch(mask._id, { ingredientId: keepId, mergedFrom: mask.mergedFrom ?? dup._id });
       // Items already folded into this duplicate now hang off the kept one.
       for (const child of siblings) if (child.mergedInto === dup._id) await ctx.db.patch(child._id, { mergedInto: keepId });
@@ -127,8 +131,8 @@ export const unmerge = mutation({
     }
     const siblings = await ctx.db
       .query("ingredients")
-      .withIndex("by_scan", (q) => q.eq("scanId", keep.scanId))
-      .take(200);
+      .withIndex("by_session", (q) => q.eq("sessionId", keep.sessionId))
+      .take(400);
     for (const dup of siblings) {
       if (dup.mergedInto !== keepId) continue;
       // A duplicate that had absorbed others gets its own values back too.

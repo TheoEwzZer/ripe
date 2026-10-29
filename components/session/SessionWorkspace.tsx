@@ -14,8 +14,9 @@ import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage } from "@/lib/client/prepare-image";
-import { PhoneCard, PresenceBar, usePresence } from "./Presence";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
+import { AddPhoto, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
+import { PhoneCard, PresenceBar, usePresence } from "./Presence";
 
 type T = {
   session: Dictionary["session"];
@@ -43,6 +44,8 @@ function errorText(error: unknown, { session: t, recipes }: T): string {
       return t.errSession;
     case "busy":
       return t.errBusy;
+    case "recording":
+      return t.errNoDemo;
     case "empty":
       return recipes.errEmpty;
     default:
@@ -60,31 +63,32 @@ const nameKey = (name: string) =>
     .toLowerCase()
     .replace(/(es|s)$/, "");
 
+const analysing = (status: string) => status === "perceiving" || status === "segmenting";
+
 export function SessionWorkspace({ t }: { t: T }) {
   const { id, lang } = useParams<{ id: string; lang: string }>();
   const locale = lang === "fr" ? "fr" : "en";
   const pathname = usePathname();
   const session = useQuery(api.sessions.get, { sessionId: id });
   const recipes = useQuery(api.recipes.latest, { sessionId: id });
-  const latest = useQuery(api.scans.latest, { sessionId: id });
-  const masks = useQuery(api.scans.masks, latest ? { scanId: latest.scan._id } : "skip");
+  const kitchen = useQuery(api.scans.kitchen, { sessionId: id });
   const caps = useQuery(api.scans.capabilities);
   const startDemo = useMutation(api.scans.startDemo);
   const generateUploadUrl = useMutation(api.scans.generateUploadUrl);
   const startUpload = useMutation(api.scans.startUpload);
   const tap = useMutation(api.scans.tap);
   const merge = useMutation(api.ingredients.merge);
-  const presence = usePresence(session ? session._id : null);
   const unmerge = useMutation(api.ingredients.unmerge);
+  const presence = usePresence(session ? session._id : null);
 
   // Edits show at once; Convex replaces the guess with the stored value when the write lands.
-  type Latest = NonNullable<typeof latest>;
-  type Patch = Partial<Pick<Latest["ingredients"][number], "name" | "daysLeft" | "removed">>;
+  type Kitchen = NonNullable<typeof kitchen>;
+  type Patch = Partial<Pick<Kitchen["ingredients"][number], "name" | "daysLeft" | "removed">>;
   const patchLocal = (store: OptimisticLocalStore, ingredientId: string, patch: Patch) => {
-    const current = store.getQuery(api.scans.latest, { sessionId: id });
+    const current = store.getQuery(api.scans.kitchen, { sessionId: id });
     if (!current) return;
     store.setQuery(
-      api.scans.latest,
+      api.scans.kitchen,
       { sessionId: id },
       {
         ...current,
@@ -112,8 +116,9 @@ export function SessionWorkspace({ t }: { t: T }) {
   const [toast, setToast] = useState<Toast | null>(null);
   const [tab, setTab] = useState<"inventory" | "recipes">("inventory");
   const [hoveredRecipe, setHoveredRecipe] = useState<ReadonlySet<string> | null>(null);
+  const [chosenScan, setChosenScan] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
   useEffect(
     () => () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -121,15 +126,40 @@ export function SessionWorkspace({ t }: { t: T }) {
     [],
   );
 
-  if (session === undefined || latest === undefined) {
+  const scans = kitchen?.scans ?? [];
+  const all = kitchen?.ingredients ?? [];
+  const byId = new Map(all.map((i) => [i._id as string, i]));
+
+  // A recipe open in the sheet shows the photo holding most of its ingredients.
+  const openRecipeId = /\/r\/([^/]+)$/.exec(pathname)?.[1];
+  const openRecipe = openRecipeId ? recipes?.recipes.find((r) => r._id === openRecipeId) : undefined;
+  const recipeScan = (() => {
+    if (!openRecipe) return undefined;
+    const counts = new Map<string, number>();
+    for (const use of openRecipe.uses) {
+      const scanId = use.ingredientId && byId.get(use.ingredientId)?.scanId;
+      if (scanId) counts.set(scanId, (counts.get(scanId) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  })();
+  const scan =
+    scans.find((s) => analysing(s.status)) ??
+    scans.find((s) => s._id === recipeScan) ??
+    scans.find((s) => s._id === chosenScan) ??
+    scans.at(-1);
+  const masks = useQuery(api.scans.masks, scan ? { scanId: scan._id } : "skip");
+
+  if (session === undefined || kitchen === undefined) {
     return <div className="h-72 animate-pulse rounded-3xl bg-glass" aria-busy="true" />;
   }
   if (session === null) return <p className="text-ink-soft">{t.session.expired}</p>;
 
   const sessionId = session._id;
-  const running = latest?.scan.status === "perceiving" || latest?.scan.status === "segmenting";
+  const running = scans.some((s) => analysing(s.status));
   const live = caps?.live ?? false;
   const phone = presence.me?.kind === "phone";
+  const usedDemos = new Set(scans.flatMap((s) => (s.recordingId ? [s.recordingId] : [])));
+  const demoLeft = scans.length > 0 && scans.every((s) => !s.live) && (caps?.demos ?? []).some((d) => !usedDemos.has(d));
 
   const showToast = (next: Toast) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -146,16 +176,21 @@ export function SessionWorkspace({ t }: { t: T }) {
     }
   };
 
-  async function runDemo() {
+  async function runDemo(fresh: boolean, place?: Place) {
     setBusy("demo");
     setSelected(null);
-    await attempt(() => startDemo({ sessionId }));
+    setChosenScan(null);
+    setAdding(false);
+    if (fresh) setTab("inventory");
+    await attempt(() => startDemo({ sessionId, fresh, place }));
     setBusy(null);
   }
 
-  async function runUpload(file: File) {
+  async function runUpload(file: File, place: Place) {
     setBusy("upload");
     setSelected(null);
+    setChosenScan(null);
+    setAdding(false);
     await attempt(async () => {
       const { blob, width, height } = await prepareImage(file);
       const uploadUrl = await generateUploadUrl({ sessionId });
@@ -166,54 +201,12 @@ export function SessionWorkspace({ t }: { t: T }) {
       });
       if (!response.ok) throw new Error(`Upload failed with ${response.status}`);
       const { storageId } = (await response.json()) as { storageId: string };
-      await startUpload({
-        sessionId,
-        storageId: storageId as Id<"_storage">,
-        width,
-        height,
-      });
+      await startUpload({ sessionId, storageId: storageId as Id<"_storage">, width, height, place });
     });
     setBusy(null);
-    if (fileInput.current) fileInput.current.value = "";
   }
 
-  const actions = (compact: boolean) => (
-    <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        onClick={runDemo}
-        disabled={busy !== null || running}
-        className={`rounded-full font-medium transition-[transform,opacity] duration-150 active:scale-[0.98] disabled:opacity-50 ${
-          compact
-            ? "px-4 py-2 text-sm ring-1 ring-hairline hover:bg-glass"
-            : "bg-aubergine px-6 py-3 text-porcelaine hover:opacity-90 dark:bg-porcelaine dark:text-aubergine"
-        }`}
-      >
-        {latest ? t.session.replayAgain : t.session.demo}
-      </button>
-      <label
-        className={`rounded-full font-medium ring-1 ring-hairline transition-colors ${compact ? "px-4 py-2 text-sm" : "px-6 py-3"} ${
-          live && busy === null && !running ? "cursor-pointer hover:bg-glass" : "cursor-not-allowed opacity-50"
-        }`}
-      >
-        {busy === "upload" ? t.session.uploading : latest ? t.session.another : t.session.upload}
-        <input
-          ref={fileInput}
-          type="file"
-          // Leaving HEIC out makes iOS hand over a JPEG.
-          accept="image/jpeg,image/png,image/webp"
-          className="sr-only"
-          disabled={!live || busy !== null || running}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void runUpload(file);
-          }}
-        />
-      </label>
-    </div>
-  );
-
-  if (!latest) {
+  if (!kitchen || !scan) {
     return (
       <section className="glass flex flex-col gap-8 rounded-3xl p-6 sm:p-10 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-6">
@@ -221,7 +214,24 @@ export function SessionWorkspace({ t }: { t: T }) {
             <h1 className="font-display text-4xl font-extrabold tracking-tight wrap-break-word sm:text-5xl">{t.session.startTitle}</h1>
             <p className="max-w-xl text-ink-soft">{t.session.startLead}</p>
           </div>
-          {actions(false)}
+          <div className="flex flex-wrap items-center gap-3">
+            {phone && (
+              <PhotoButton label={busy === "upload" ? t.session.uploading : t.session.scanFridge} camera primary disabled={!live || busy !== null} onFile={(file) => void runUpload(file, "fridge")} />
+            )}
+            <button
+              type="button"
+              onClick={() => void runDemo(true)}
+              disabled={busy !== null}
+              className={`rounded-full px-6 py-3 font-medium transition-[transform,opacity] duration-150 active:scale-[0.98] disabled:opacity-50 ${
+                phone ? "ring-1 ring-hairline hover:bg-glass" : "bg-aubergine text-porcelaine hover:opacity-90 dark:bg-porcelaine dark:text-aubergine"
+              }`}
+            >
+              {t.session.demo}
+            </button>
+            {!phone && (
+              <PhotoButton label={busy === "upload" ? t.session.uploading : t.session.upload} camera={false} disabled={!live || busy !== null} onFile={(file) => void runUpload(file, "fridge")} />
+            )}
+          </div>
           {!live && <p className="max-w-xl text-sm text-ink-soft">{t.session.liveOff}</p>}
           {error && (
             <p className="text-sm text-betterave" role="alert">
@@ -241,15 +251,37 @@ export function SessionWorkspace({ t }: { t: T }) {
     );
   }
 
-  const { scan } = latest;
-  const settled = scan.status === "done" || scan.status === "error";
-  const ingredients: CanvasIngredient[] = latest.ingredients.map((i) => ({
+  const settled = !running;
+  const visible = all.filter((i) => !i.removed);
+  const several = scans.length > 1;
+  // "Fridge", or "Fridge 1" and "Fridge 2" when two photos share a place.
+  const scanLabels = new Map(
+    scans.map((s) => {
+      const same = scans.filter((o) => o.place === s.place);
+      const label = placeLabel(s.place, t.session);
+      return [s._id as string, same.length > 1 ? `${label} ${same.indexOf(s) + 1}` : label];
+    }),
+  );
+
+  // The shown photo's items. A duplicate folded into an item seen on another photo stays drawn here, as that item.
+  const aliasOf = new Map<string, string>();
+  const ingredients: CanvasIngredient[] = all
+    .filter((i) => i.scanId === scan._id)
+    .map((i) => {
+      const keep = i.mergedInto ? byId.get(i.mergedInto) : undefined;
+      if (keep && keep.scanId !== i.scanId && !keep.removed) {
+        aliasOf.set(i._id, keep._id);
+        return { key: i._id, name: keep.name, daysLeft: keep.daysLeft, bbox: i.bbox, segmentation: i.segmentation, removed: false };
+      }
+      return { key: i._id, name: i.name, daysLeft: i.daysLeft, bbox: i.bbox, segmentation: i.segmentation, removed: i.removed };
+    });
+  const listed: CanvasIngredient[] = visible.map((i) => ({
     key: i._id,
     name: i.name,
     daysLeft: i.daysLeft,
     bbox: i.bbox,
     segmentation: i.segmentation,
-    removed: i.removed,
+    tag: several ? scanLabels.get(i.scanId) : undefined,
   }));
   const canvasMasks: CanvasMask[] = (masks ?? []).map((m) => ({
     key: m._id,
@@ -260,11 +292,13 @@ export function SessionWorkspace({ t }: { t: T }) {
     height: m.height,
     bounds: m.bounds,
   }));
-  const visible = latest.ingredients.filter((i) => !i.removed);
-  const outlined = ingredients.filter((i) => i.segmentation !== "pending").length;
+  const counts = new Map<string, number>();
+  for (const i of visible) counts.set(i.scanId, (counts.get(i.scanId) ?? 0) + 1);
+  const shownItems = ingredients.filter((i) => !i.removed);
+  const outlined = shownItems.filter((i) => i.segmentation !== "pending").length;
   const seconds = scan.finishedAt ? ((scan.finishedAt - scan._creationTime) / 1000).toFixed(1) : null;
 
-  // Duplicates: same name once plurals are folded, only once the analysis has settled.
+  // Duplicates: same name once plurals are folded, across every photo, once the analysis has settled.
   const groups = new Map<string, Id<"ingredients">[]>();
   if (settled) {
     for (const item of visible) {
@@ -281,21 +315,29 @@ export function SessionWorkspace({ t }: { t: T }) {
   const firstDuplicate = [...groups.values()].find((ids) => ids.length > 1)?.[0] ?? null;
 
   const current = visible.find((i) => i._id === selected) ?? null;
+  const select = (key: string | null) => {
+    const target = key ? (aliasOf.get(key) ?? key) : null;
+    setSelected(target);
+    const item = target ? byId.get(target) : undefined;
+    if (item && item.scanId !== scan._id && !aliasOf.has(key ?? "")) setChosenScan(item.scanId);
+  };
 
   // A recipe under the pointer, or the one open in the sheet, lights its ingredients on the photo.
-  const openRecipeId = /\/r\/([^/]+)$/.exec(pathname)?.[1];
-  const openRecipe = openRecipeId ? recipes?.recipes.find((r) => r._id === openRecipeId) : undefined;
-  const highlight =
-    hoveredRecipe ?? (openRecipe ? new Set(openRecipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId as string] : []))) : null);
-  const kitchen: KitchenView = new Map(visible.map((i) => [i._id as string, { name: i.name, daysLeft: i.daysLeft, bbox: i.bbox }]));
+  const lit = hoveredRecipe ?? (openRecipe ? new Set(openRecipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId as string] : []))) : null);
+  // Aliases light up with the item they were folded into.
+  const highlight = lit ? new Set([...lit, ...[...aliasOf].filter(([, keep]) => lit.has(keep)).map(([alias]) => alias)]) : null;
+  const kitchenView: KitchenView = new Map(
+    visible.map((i) => [i._id as string, { name: i.name, daysLeft: i.daysLeft, bbox: i.bbox, scanId: i.scanId as string }]),
+  );
+  const photos = new Map(scans.map((s) => [s._id as string, { src: s.imageUrl, width: s.width, height: s.height }]));
   const canCook = settled && visible.some((i) => i.name.trim() !== "");
   const showRecipes = tab === "recipes" && settled;
 
   const removeItem = (itemId: string) => {
-    const item = latest.ingredients.find((i) => i._id === itemId);
+    const item = byId.get(aliasOf.get(itemId) ?? itemId);
     if (!item) return;
     const ingredientId = item._id;
-    if (selected === itemId) setSelected(null);
+    if (selected === ingredientId) setSelected(null);
     void attempt(async () => {
       await remove({ ingredientId });
       showToast({
@@ -324,11 +366,11 @@ export function SessionWorkspace({ t }: { t: T }) {
 
   const status =
     scan.status === "perceiving"
-      ? ingredients.length > 0
-        ? fill(t.scan.perceivingCount, { n: ingredients.length })
+      ? shownItems.length > 0
+        ? fill(t.scan.perceivingCount, { n: shownItems.length })
         : t.scan.perceiving
       : scan.status === "segmenting"
-        ? fill(t.scan.segmenting, { done: outlined, total: ingredients.length })
+        ? fill(t.scan.segmenting, { done: outlined, total: shownItems.length })
         : scan.status === "error"
           ? fill(t.scan.failed, { message: scan.error ?? "" })
           : fill(t.scan.done, { total: visible.length });
@@ -337,19 +379,46 @@ export function SessionWorkspace({ t }: { t: T }) {
     <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1" aria-live="polite">
-          <p className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>
-            {status}
-          </p>
+          <p className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>{status}</p>
           <p className="font-mono text-xs text-ink-soft">
+            {several && settled ? `${fill(t.session.photosCount, { n: scans.length })} · ` : ""}
             {scan.live ? t.scan.liveBadge : t.scan.demoBadge}
             {seconds && ` · ${seconds} s`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <PresenceBar presence={presence} sessionId={sessionId} code={session.code} locale={locale} t={t.devices} />
-          {actions(true)}
+          <button
+            type="button"
+            aria-expanded={adding}
+            onClick={() => setAdding((a) => !a)}
+            disabled={busy !== null || running}
+            className="rounded-full bg-aubergine px-4 py-2 text-sm font-medium text-porcelaine transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 dark:bg-porcelaine dark:text-aubergine"
+          >
+            {busy === "upload" ? t.session.uploading : t.session.addPhoto}
+          </button>
+          <button
+            type="button"
+            onClick={() => void runDemo(true)}
+            disabled={busy !== null || running}
+            className="rounded-full px-4 py-2 text-sm font-medium ring-1 ring-hairline transition-[transform,opacity] duration-150 hover:bg-glass active:scale-[0.98] disabled:opacity-50"
+          >
+            {t.session.replayAgain}
+          </button>
         </div>
       </div>
+      {adding && (
+        <AddPhoto
+          t={t.session}
+          live={live}
+          phone={phone}
+          demoLeft={demoLeft}
+          disabled={busy !== null || running}
+          onDemo={() => void runDemo(false)}
+          onFile={(file, place) => void runUpload(file, place)}
+          onClose={() => setAdding(false)}
+        />
+      )}
       {error && (
         <p className="text-sm text-betterave" role="alert">
           {error}
@@ -358,26 +427,36 @@ export function SessionWorkspace({ t }: { t: T }) {
       {canTap && <p className="-mt-2 text-sm text-ink-soft">{t.scan.tapHint}</p>}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-        <div className="lg:sticky lg:top-6">
+        <div className="flex flex-col gap-3 lg:sticky lg:top-6">
+          {several && (
+            <PhotoStrip
+              scans={scans}
+              shown={scan._id}
+              counts={counts}
+              labels={scanLabels}
+              t={t.session}
+              onShow={(scanId) => {
+                setChosenScan(scanId);
+                setSelected(null);
+              }}
+            />
+          )}
           <ScanCanvas
-            image={{
-              src: scan.imageUrl,
-              width: scan.width,
-              height: scan.height,
-            }}
+            key={scan._id}
+            image={{ src: scan.imageUrl, width: scan.width, height: scan.height }}
             ingredients={ingredients}
             masks={canvasMasks}
-            scanning={running}
+            scanning={analysing(scan.status)}
             active={active}
             onActive={setActive}
             labels={t.scan}
             onTap={onTap}
             selected={selected}
-            onSelect={setSelected}
+            onSelect={select}
             highlight={highlight}
           />
         </div>
-        {ingredients.length > 0 && (
+        {visible.length > 0 && (
           <aside className="glass flex flex-col gap-3 rounded-3xl p-4">
             {settled && (
               <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1 ring-1 ring-hairline" role="tablist">
@@ -407,12 +486,8 @@ export function SessionWorkspace({ t }: { t: T }) {
                 data={recipes}
                 pantry={session.pantry}
                 canCook={canCook}
-                kitchen={kitchen}
-                photo={{
-                  src: scan.imageUrl,
-                  width: scan.width,
-                  height: scan.height,
-                }}
+                kitchen={kitchenView}
+                photos={photos}
                 recipeHref={(recipeId) => `/${locale}/s/${sessionId}/r/${recipeId}`}
                 labels={recipeLabels(t)}
                 attempt={attempt}
@@ -437,22 +512,18 @@ export function SessionWorkspace({ t }: { t: T }) {
                 <div className="flex flex-wrap items-baseline justify-between gap-2 px-2">
                   <p className="text-sm text-ink-soft">{t.scan.cookFirst}</p>
                   {duplicateTotal > 0 && firstDuplicate && (
-                    <button
-                      type="button"
-                      onClick={() => setSelected(firstDuplicate)}
-                      className="text-sm font-medium underline-offset-4 hover:underline"
-                    >
+                    <button type="button" onClick={() => select(firstDuplicate)} className="text-sm font-medium underline-offset-4 hover:underline">
                       {duplicateTotal === 1 ? t.scan.duplicateOne : fill(t.scan.duplicates, { n: duplicateTotal })}
                     </button>
                   )}
                 </div>
                 <IngredientList
-                  ingredients={ingredients}
+                  ingredients={listed}
                   active={active}
                   onActive={setActive}
                   labels={t.scan}
                   selected={selected}
-                  onSelect={settled ? setSelected : undefined}
+                  onSelect={settled ? select : undefined}
                   onRemove={settled ? removeItem : undefined}
                 />
                 {settled && !current && <p className="px-2 text-xs text-ink-soft">{t.scan.selectHint}</p>}
@@ -475,11 +546,7 @@ export function SessionWorkspace({ t }: { t: T }) {
       </div>
 
       {toast && (
-        <div
-          role="status"
-          className="fixed inset-x-0 z-20 flex justify-center px-4"
-          style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
-        >
+        <div role="status" className="fixed inset-x-0 z-20 flex justify-center px-4" style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom))" }}>
           <div className="flex items-center gap-3 rounded-full bg-aubergine py-2 pr-2 pl-4 text-sm text-porcelaine shadow-lg dark:bg-porcelaine dark:text-aubergine">
             <span>{toast.message}</span>
             <button

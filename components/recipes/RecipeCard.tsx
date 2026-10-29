@@ -20,7 +20,8 @@ export type CardRecipe = {
   swap?: { status: "swapping" | "failed" };
 };
 
-export type KitchenView = Map<string, { name: string; daysLeft: number; bbox: GridBox }>;
+export type KitchenView = Map<string, { name: string; daysLeft: number; bbox: GridBox; scanId: string }>;
+export type Photo = { src: string | null; width: number; height: number };
 
 const MAX_CHIPS = 3;
 
@@ -28,14 +29,14 @@ const MAX_CHIPS = 3;
 export function RecipeCard({
   recipe,
   kitchen,
-  photo,
+  photos,
   href,
   labels: t,
   onHighlight,
 }: {
   recipe: CardRecipe;
   kitchen: KitchenView;
-  photo: { src: string | null; width: number; height: number };
+  photos: Map<string, Photo>;
   href: string;
   labels: RecipeLabels;
   onHighlight: (keys: ReadonlySet<string> | null) => void;
@@ -43,6 +44,11 @@ export function RecipeCard({
   const used = [...new Set(recipe.uses.flatMap((u) => (u.ingredientId && kitchen.has(u.ingredientId) ? [u.ingredientId] : [])))];
   const items = used.map((id) => ({ id, ...kitchen.get(id)! })).sort((a, b) => a.daysLeft - b.daysLeft);
   const plate = recipe.plate?.status === "ready" ? recipe.plate.url : null;
+  // The thumbnail crops the photo that holds most of the recipe.
+  const counts = new Map<string, number>();
+  for (const i of items) counts.set(i.scanId, (counts.get(i.scanId) ?? 0) + 1);
+  const scanId = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const photo = (scanId && photos.get(scanId)) || photos.values().next().value || { src: null, width: 16, height: 9 };
   const writing = recipe.status === "writing";
   const busy = recipe.status === "fixing" || recipe.swap?.status === "swapping";
 
@@ -50,7 +56,7 @@ export function RecipeCard({
     // eslint-disable-next-line @next/next/no-img-element
     <img src={plate} alt={fill(t.plateAlt, { title: recipe.title })} className="aspect-video w-full object-cover" />
   ) : (
-    <PhotoCrop photo={photo} boxes={items.map((i) => i.bbox)} alt="" className={writing ? "animate-pulse" : ""} />
+    <PhotoCrop photo={photo} boxes={items.filter((i) => i.scanId === scanId).map((i) => i.bbox)} alt="" className={writing ? "animate-pulse" : ""} />
   );
 
   const body = (

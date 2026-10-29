@@ -1,9 +1,9 @@
 import { ConvexError, v } from "convex/values";
-import { defaultRecordingId, recordings } from "../lib/replay/catalog";
+import { demoRecordingIds, recordings } from "../lib/replay/catalog";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
-import { gridBox, maskFields, maskVia, perceivedFields, scanSource, scanStatus, segmentation } from "./schema";
+import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { gridBox, maskFields, maskVia, perceivedFields, scanPlace, scanSource, scanStatus, segmentation } from "./schema";
 
 const MAX_SCANS_PER_SESSION = 12;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -23,7 +23,21 @@ async function openSession(ctx: MutationCtx, sessionId: Id<"sessions">): Promise
   return session;
 }
 
-async function launch(ctx: MutationCtx, sessionId: Id<"sessions">, scan: Pick<Doc<"scans">, "source" | "width" | "height">) {
+/** The photos that make up the session's inventory, oldest first. */
+export async function activeScans(ctx: QueryCtx, sessionId: Id<"sessions">) {
+  const scans = await ctx.db
+    .query("scans")
+    .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+    .take(MAX_SCANS_PER_SESSION);
+  return scans.filter((s) => !s.archived);
+}
+
+const analysing = (scans: Doc<"scans">[]) => scans.some((s) => s.status === "perceiving" || s.status === "segmenting");
+
+async function launch(ctx: MutationCtx, sessionId: Id<"sessions">, scan: Pick<Doc<"scans">, "source" | "width" | "height" | "place">) {
+  if (analysing(await activeScans(ctx, sessionId))) {
+    throw new ConvexError({ code: "busy", message: "Wait for the current analysis to finish" });
+  }
   const scanId = await ctx.db.insert("scans", { sessionId, ...scan, status: "perceiving", costUsd: 0 });
   await ctx.db.patch(sessionId, { status: "analyzing" });
   await ctx.scheduler.runAfter(0, internal.pipeline.run, { scanId });
@@ -34,19 +48,28 @@ async function launch(ctx: MutationCtx, sessionId: Id<"sessions">, scan: Pick<Do
 /** What this deployment can do: live analysis needs MODEL_API_KEY in the Convex environment. */
 export const capabilities = query({
   args: {},
-  returns: v.object({ live: v.boolean() }),
-  handler: async () => ({ live: liveEnabled() }),
+  returns: v.object({ live: v.boolean(), demos: v.array(v.string()) }),
+  handler: async () => ({ live: liveEnabled(), demos: demoRecordingIds }),
 });
 
-/** Replays a bundled recording through the real pipeline, at $0. */
+/**
+ * Replays a bundled recording through the real pipeline, at $0. `fresh` starts
+ * the demo over; otherwise the next demo photo joins the inventory.
+ */
 export const startDemo = mutation({
-  args: { sessionId: v.id("sessions"), recordingId: v.optional(v.string()) },
+  args: { sessionId: v.id("sessions"), fresh: v.boolean(), place: v.optional(scanPlace) },
   returns: v.id("scans"),
-  handler: async (ctx, { sessionId, recordingId = defaultRecordingId }) => {
+  handler: async (ctx, { sessionId, fresh, place = "fridge" }) => {
     await openSession(ctx, sessionId);
-    const recording = recordings[recordingId];
-    if (!recording) throw new ConvexError({ code: "recording", message: `Unknown recording ${recordingId}` });
+    const active = await activeScans(ctx, sessionId);
+    if (analysing(active)) throw new ConvexError({ code: "busy", message: "Wait for the current analysis to finish" });
+    if (fresh) for (const scan of active) await ctx.db.patch(scan._id, { archived: true });
+    const used = new Set(fresh ? [] : active.flatMap((s) => (s.source.kind === "replay" ? [s.source.recordingId] : [])));
+    const recordingId = demoRecordingIds.find((id) => !used.has(id));
+    const recording = recordingId ? recordings[recordingId] : undefined;
+    if (!recordingId || !recording) throw new ConvexError({ code: "recording", message: "No demo photo left" });
     return launch(ctx, sessionId, {
+      place,
       source: { kind: "replay", recordingId, imageSrc: recording.image.src },
       width: recording.image.width,
       height: recording.image.height,
@@ -66,9 +89,9 @@ export const generateUploadUrl = mutation({
 
 /** Starts a live analysis of an uploaded photo. Width and height are the pixels SAM will see. */
 export const startUpload = mutation({
-  args: { sessionId: v.id("sessions"), storageId: v.id("_storage"), width: v.number(), height: v.number() },
+  args: { sessionId: v.id("sessions"), storageId: v.id("_storage"), width: v.number(), height: v.number(), place: v.optional(scanPlace) },
   returns: v.id("scans"),
-  handler: async (ctx, { sessionId, storageId, width, height }) => {
+  handler: async (ctx, { sessionId, storageId, width, height, place = "fridge" }) => {
     if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Live analysis is not enabled" });
     await openSession(ctx, sessionId);
     const file = await ctx.db.system.get(storageId);
@@ -81,7 +104,7 @@ export const startUpload = mutation({
       if (file) await ctx.storage.delete(storageId);
       throw new ConvexError({ code: "upload", message: "Send a JPEG, PNG or WebP photo under 8 MB" });
     }
-    return launch(ctx, sessionId, { source: { kind: "upload", storageId }, width, height });
+    return launch(ctx, sessionId, { source: { kind: "upload", storageId }, width, height, place });
   },
 });
 
@@ -93,52 +116,57 @@ const scanView = v.object({
   width: v.number(),
   height: v.number(),
   imageUrl: v.union(v.string(), v.null()),
+  place: scanPlace,
+  recordingId: v.optional(v.string()),
   live: v.boolean(),
   finishedAt: v.optional(v.number()),
 });
 
 const ingredientView = v.object({
   _id: v.id("ingredients"),
+  scanId: v.id("scans"),
+  /** A duplicate folded into an item, possibly on another photo; it stays drawn on its own photo. */
+  mergedInto: v.optional(v.id("ingredients")),
   order: v.number(),
   ...perceivedFields,
   segmentation,
   removed: v.boolean(),
 });
 
-/** The session's most recent scan with its inventory; masks come from `masks` so this stays light. */
-export const latest = query({
+/** Every photo of the session with one shared inventory; masks come from `masks` so this stays light. */
+export const kitchen = query({
   args: { sessionId: v.string() },
-  returns: v.union(v.null(), v.object({ scan: scanView, ingredients: v.array(ingredientView) })),
+  returns: v.union(v.null(), v.object({ scans: v.array(scanView), ingredients: v.array(ingredientView) })),
   handler: async (ctx, args) => {
     const sessionId = ctx.db.normalizeId("sessions", args.sessionId);
     if (!sessionId) return null;
-    const scan = await ctx.db
-      .query("scans")
-      .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
-      .order("desc")
-      .first();
-    if (!scan) return null;
-    const imageUrl = scan.source.kind === "replay" ? scan.source.imageSrc : await ctx.storage.getUrl(scan.source.storageId);
-    const ingredients = await ctx.db
-      .query("ingredients")
-      .withIndex("by_scan", (q) => q.eq("scanId", scan._id))
-      .take(100);
-    return {
-      scan: {
+    const active = await activeScans(ctx, sessionId);
+    if (active.length === 0) return null;
+    const scans = [];
+    const ingredients = [];
+    for (const scan of active) {
+      scans.push({
         _id: scan._id,
         _creationTime: scan._creationTime,
         status: scan.status,
         error: scan.error,
         width: scan.width,
         height: scan.height,
-        imageUrl,
+        imageUrl: scan.source.kind === "replay" ? scan.source.imageSrc : await ctx.storage.getUrl(scan.source.storageId),
+        place: scan.place ?? "fridge",
+        recordingId: scan.source.kind === "replay" ? scan.source.recordingId : undefined,
         live: scan.source.kind === "upload",
         finishedAt: scan.finishedAt,
-      },
-      ingredients: ingredients
-        .sort((a, b) => a.order - b.order)
-        .map((i) => ({
+      });
+      const items = await ctx.db
+        .query("ingredients")
+        .withIndex("by_scan", (q) => q.eq("scanId", scan._id))
+        .take(100);
+      for (const i of items.sort((a, b) => a.order - b.order)) {
+        ingredients.push({
           _id: i._id,
+          scanId: i.scanId,
+          mergedInto: i.mergedInto,
           order: i.order,
           name: i.name,
           samPrompt: i.samPrompt,
@@ -150,8 +178,10 @@ export const latest = query({
           bbox: i.bbox,
           segmentation: i.segmentation,
           removed: i.removed,
-        })),
-    };
+        });
+      }
+    }
+    return { scans, ingredients };
   },
 });
 
@@ -303,11 +333,11 @@ export const forPipeline = internalQuery({
   args: { scanId: v.id("scans") },
   returns: v.union(
     v.null(),
-    v.object({ status: scanStatus, source: scanSource, width: v.number(), height: v.number() }),
+    v.object({ status: scanStatus, source: scanSource, width: v.number(), height: v.number(), place: v.optional(scanPlace) }),
   ),
   handler: async (ctx, { scanId }) => {
     const scan = await ctx.db.get(scanId);
-    return scan && { status: scan.status, source: scan.source, width: scan.width, height: scan.height };
+    return scan && { status: scan.status, source: scan.source, width: scan.width, height: scan.height, place: scan.place };
   },
 });
 

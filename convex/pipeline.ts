@@ -71,7 +71,7 @@ export const run = internalAction({
         await ctx.runMutation(internal.scans.fail, { scanId, message: "The photo is gone" });
         return null;
       }
-      provider = liveProvider(imageUrl, guard);
+      provider = liveProvider(imageUrl, { ...guard, place: scan.place ?? "fridge" });
     }
 
     const ids: Id<"ingredients">[] = [];
