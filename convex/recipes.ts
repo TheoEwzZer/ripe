@@ -380,6 +380,8 @@ export const forRun = internalQuery({
       locale,
       scanSource,
       kitchen: v.array(kitchenItem),
+      /** Demo recordings behind the session's photos, oldest first: where recorded recipes come from. */
+      recordingIds: v.array(v.string()),
       liveRuns: v.number(),
     }),
   ),
@@ -398,6 +400,7 @@ export const forRun = internalQuery({
       locale: run.locale,
       scanSource: scan.source,
       kitchen: await kitchenOf(ctx, run.sessionId),
+      recordingIds: (await activeScans(ctx, run.sessionId)).flatMap((s) => (s.source.kind === "replay" ? [s.source.recordingId] : [])),
       liveRuns: runs.filter((r) => r._id !== runId && r.source === "live").length,
     };
   },

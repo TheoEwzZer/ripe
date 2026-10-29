@@ -94,7 +94,8 @@ export const run = internalAction({
     if (!data || data.status !== "cooking") return null;
     const req: CookRequest = { kitchen: data.kitchen, pantry: data.pantry, filters: data.filters, locale: data.locale };
 
-    const recordingId = data.scanSource.kind === "replay" ? data.scanSource.recordingId : undefined;
+    // The first demo photo with recorded recipes, even when a second demo photo joined the inventory.
+    const recordingId = data.recordingIds.find((id) => (recordings[id]?.cooking?.length ?? 0) > 0);
     const recording = recordingId ? recordings[recordingId] : undefined;
     const replayOf = (recorded: NonNullable<ReturnType<typeof closestCooking>>) =>
       recordingId && recording ? { recordingId, cooking: recording.cooking!.indexOf(recorded) } : undefined;
