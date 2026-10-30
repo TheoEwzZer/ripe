@@ -1,10 +1,10 @@
 import { ConvexError, v, type Infer } from "convex/values";
-import { MAX_SERVINGS, MIN_SERVINGS } from "../lib/recipes/filters";
+import { MAX_SERVINGS, MIN_SERVINGS, defaultFilters, type CookFilters } from "../lib/recipes/filters";
 import { cleanPantry, defaultPantry, stapleIds } from "../lib/recipes/pantry";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { activeScans } from "./scans";
+import { activeScans, imageOf } from "./scans";
 import { cookFilters, gridBox, locale, plate, recipeContent, runStatus, scanSource } from "./schema";
 
 const MAX_RUNS_PER_SESSION = 20;
@@ -43,8 +43,11 @@ async function mainScan(ctx: QueryCtx, recipe: Doc<"recipes">, run: Doc<"recipeR
     const item = await ctx.db.get(id);
     if (item) counts.set(item.scanId, (counts.get(item.scanId) ?? 0) + 1);
   }
-  const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  return (best && (await ctx.db.get(best))) ?? (await ctx.db.get(run.scanId));
+  for (const [scanId] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
+    const scan = await ctx.db.get(scanId);
+    if (scan && scan.source.kind !== "list") return scan;
+  }
+  return await ctx.db.get(run.scanId);
 }
 
 const kitchenItem = v.object({ id: v.string(), name: v.string(), quantity: v.string(), daysLeft: v.number(), category: v.string() });
@@ -59,48 +62,61 @@ async function recipeFor(ctx: MutationCtx, recipeId: Id<"recipes">) {
 
 // ——— Client API ———
 
+/** Starts a recipe request; also used when the filters are spoken (convex/voice.ts). */
+export async function startRun(ctx: MutationCtx, sessionId: Id<"sessions">, filters: CookFilters, locale: "en" | "fr"): Promise<Id<"recipeRuns">> {
+  const session = await openSession(ctx, sessionId);
+  if (!Number.isInteger(filters.servings) || filters.servings < MIN_SERVINGS || filters.servings > MAX_SERVINGS) {
+    throw new ConvexError({ code: "invalid", message: `Servings must be ${MIN_SERVINGS} to ${MAX_SERVINGS}` });
+  }
+  const scans = await activeScans(ctx, sessionId);
+  const scan = scans.filter((s) => s.source.kind !== "list").at(-1) ?? scans.at(-1);
+  if (!scan || scans.some((s) => s.status !== "done" && s.status !== "error")) {
+    throw new ConvexError({ code: "busy", message: "Wait for the analysis to finish" });
+  }
+  if ((await kitchenOf(ctx, sessionId)).length === 0) throw new ConvexError({ code: "empty", message: "Nothing to cook with" });
+
+  const runs = await ctx.db
+    .query("recipeRuns")
+    .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+    .take(MAX_RUNS_PER_SESSION);
+  if (runs.some((r) => r.status === "cooking" || r.status === "fixing")) {
+    throw new ConvexError({ code: "busy", message: "Recipes are already cooking" });
+  }
+  if (runs.length >= MAX_RUNS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many recipe requests in this session" });
+
+  const runId = await ctx.db.insert("recipeRuns", {
+    sessionId,
+    scanId: scan._id,
+    filters: { ...filters, diet: [...new Set(filters.diet)] },
+    pantry: cleanPantry(session.pantry ?? defaultPantry),
+    locale,
+    status: "cooking",
+    source: "live",
+    approximate: false,
+    swaps: 0,
+    costUsd: 0,
+  });
+  await ctx.db.patch(sessionId, { status: "recipes" });
+  await ctx.scheduler.runAfter(0, internal.cooking.run, { runId });
+  await ctx.scheduler.runAfter(RUN_WATCHDOG_MS, internal.recipes.runWatchdog, { runId });
+  return runId;
+}
+
+/** The filters of the session's latest request, the starting point for spoken changes. */
+export async function latestFilters(ctx: QueryCtx, sessionId: Id<"sessions">): Promise<CookFilters> {
+  const run = await ctx.db
+    .query("recipeRuns")
+    .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+    .order("desc")
+    .first();
+  return run?.filters ?? defaultFilters;
+}
+
 /** Three recipes for everything the session's photos show; the cards fill in as Muse Wonder writes. */
 export const start = mutation({
   args: { sessionId: v.id("sessions"), filters: cookFilters, locale },
   returns: v.id("recipeRuns"),
-  handler: async (ctx, { sessionId, filters, locale }) => {
-    const session = await openSession(ctx, sessionId);
-    if (!Number.isInteger(filters.servings) || filters.servings < MIN_SERVINGS || filters.servings > MAX_SERVINGS) {
-      throw new ConvexError({ code: "invalid", message: `Servings must be ${MIN_SERVINGS} to ${MAX_SERVINGS}` });
-    }
-    const scans = await activeScans(ctx, sessionId);
-    const scan = scans.at(-1);
-    if (!scan || scans.some((s) => s.status !== "done" && s.status !== "error")) {
-      throw new ConvexError({ code: "busy", message: "Wait for the analysis to finish" });
-    }
-    if ((await kitchenOf(ctx, sessionId)).length === 0) throw new ConvexError({ code: "empty", message: "Nothing to cook with" });
-
-    const runs = await ctx.db
-      .query("recipeRuns")
-      .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
-      .take(MAX_RUNS_PER_SESSION);
-    if (runs.some((r) => r.status === "cooking" || r.status === "fixing")) {
-      throw new ConvexError({ code: "busy", message: "Recipes are already cooking" });
-    }
-    if (runs.length >= MAX_RUNS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many recipe requests in this session" });
-
-    const runId = await ctx.db.insert("recipeRuns", {
-      sessionId,
-      scanId: scan._id,
-      filters: { ...filters, diet: [...new Set(filters.diet)] },
-      pantry: cleanPantry(session.pantry ?? defaultPantry),
-      locale,
-      status: "cooking",
-      source: "live",
-      approximate: false,
-      swaps: 0,
-      costUsd: 0,
-    });
-    await ctx.db.patch(sessionId, { status: "recipes" });
-    await ctx.scheduler.runAfter(0, internal.cooking.run, { runId });
-    await ctx.scheduler.runAfter(RUN_WATCHDOG_MS, internal.recipes.runWatchdog, { runId });
-    return runId;
-  },
+  handler: async (ctx, { sessionId, filters, locale }) => startRun(ctx, sessionId, filters, locale),
 });
 
 /** What the kitchen always has, for every recipe of this session. */
@@ -255,7 +271,7 @@ export const get = query({
         items.push({ _id: item._id, name: item.name, daysLeft: item.daysLeft, removed: item.removed, bbox: item.bbox, onPhoto: item.scanId === scan._id });
       }
     }
-    const src = scan.source.kind === "replay" ? scan.source.imageSrc : await ctx.storage.getUrl(scan.source.storageId);
+    const src = await imageOf(ctx, scan.source);
     return {
       recipe: await viewOf(ctx, recipe),
       // A recorded plate exists only for an untouched recorded recipe.

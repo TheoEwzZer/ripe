@@ -28,6 +28,8 @@ export const scanStatus = v.union(
 export const scanSource = v.union(
   v.object({ kind: v.literal("replay"), recordingId: v.string(), imageSrc: v.string() }),
   v.object({ kind: v.literal("upload"), storageId: v.id("_storage") }),
+  /** No photo: items said aloud or read from a receipt, kept in the same inventory. */
+  v.object({ kind: v.literal("list"), origin: v.union(v.literal("voice"), v.literal("receipt")) }),
 );
 
 export const category = v.union(
@@ -159,6 +161,8 @@ export default defineSchema({
     /** Staple ids from lib/recipes/pantry.ts; unset means the standard pantry. */
     pantry: v.optional(v.array(v.string())),
     phoneJoinedAt: v.optional(v.number()),
+    /** Sentences sent to Muse Voice in this session, against a per-session cap. */
+    voiceClips: v.optional(v.number()),
     /** A blurred thumbnail of a photo still uploading from a phone; cleared when its scan starts. */
     incoming: v.optional(incomingPhoto),
     /** The recipe the desktop sent to the phones; each phone opens cooking mode when `at` changes. */

@@ -22,6 +22,9 @@ import { defaultPantry } from "../lib/recipes/pantry";
 import { runCooking } from "../lib/recipes/run";
 import { scaleAmount } from "../lib/recipes/scale";
 import { clock, timersIn } from "../lib/recipes/timers";
+import { downsample, encodeWav } from "../lib/client/voice";
+import { cookCommand } from "../lib/voice/commands";
+import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
 import { readRecipeStream } from "../lib/recipes/stream";
 import { antiWasteScore, checkRecipe, matchIngredient, type KitchenItem } from "../lib/recipes/validate";
@@ -241,6 +244,44 @@ async function main() {
     assert.deepEqual(timersIn("Chauffez le four à 200°C. Coupez 2 tomates."), []);
     assert.equal(clock(90), "1:30");
     assert.equal(clock(3600), "1:00:00");
+  });
+
+  await check("voice: cooking mode hears its commands without a model, in French and English", () => {
+    assert.deepEqual(cookCommand("next"), { kind: "next" });
+    assert.deepEqual(cookCommand("Suivant !"), { kind: "next" });
+    assert.deepEqual(cookCommand("timer five minutes"), { kind: "timer", seconds: 300 });
+    assert.deepEqual(cookCommand("Lance un minuteur de 10 minutes"), { kind: "timer", seconds: 600 });
+    assert.deepEqual(cookCommand("minuteur"), { kind: "timer", seconds: 0 });
+    assert.deepEqual(cookCommand("Arrête le minuteur"), { kind: "stopTimer" });
+    assert.deepEqual(cookCommand("can you repeat that?"), { kind: "repeat" });
+    assert.deepEqual(cookCommand("Répète"), { kind: "repeat" });
+    assert.deepEqual(cookCommand("On revient en arrière, précédent"), { kind: "previous" });
+    assert.equal(cookCommand("le chat dort"), null);
+  });
+
+  await check("voice: a sentence's changes are read leniently and filters keep the chosen servings", () => {
+    const intent = parseKitchenIntent(
+      JSON.stringify({ add: [{ name: " rice ", quantity: "a bowl", category: "leftover", daysLeft: 2.4 }, { name: "" }], remove: ["spinach", "spinach"], filters: null, reply: "Done." }),
+    );
+    assert.deepEqual(intent.add, [{ name: "rice", quantity: "a bowl", category: "leftover", daysLeft: 2 }]);
+    assert.deepEqual(intent.remove, ["spinach"]);
+    assert.deepEqual(parseKitchenIntent("not json"), { add: [], remove: [], filters: null, reply: "" });
+    const chosen = filtersFrom({ emergency: false, maxMinutes: 15, equipment: "one-pan", diet: ["vegetarian"], fewDishes: false, servings: null }, defaultFilters);
+    assert.equal(chosen.servings, 2);
+    assert.equal(chosen.maxMinutes, 15);
+  });
+
+  await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {
+    const tone = new Float32Array(48_000).map((_, i) => Math.sin(i / 10) * 0.5);
+    const down = downsample(tone, 48_000);
+    assert.equal(down.length, 16_000);
+    const wav = new Uint8Array(await encodeWav(down).arrayBuffer());
+    const view = new DataView(wav.buffer);
+    assert.equal(new TextDecoder().decode(wav.slice(0, 4)), "RIFF");
+    assert.equal(view.getUint16(22, true), 1);
+    assert.equal(view.getUint32(24, true), 16_000);
+    assert.equal(view.getUint16(34, true), 16);
+    assert.equal(wav.length, 44 + 16_000 * 2);
   });
 
   await check("recipes: the stream shows each title before its recipe, however the text is split", async () => {

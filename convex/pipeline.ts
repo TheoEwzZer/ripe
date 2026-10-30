@@ -65,13 +65,15 @@ export const run = internalAction({
         return null;
       }
       provider = replayProvider(recording);
-    } else {
+    } else if (scan.source.kind === "upload") {
       const imageUrl = await ctx.storage.getUrl(scan.source.storageId);
       if (!imageUrl) {
         await ctx.runMutation(internal.scans.fail, { scanId, message: "The photo is gone" });
         return null;
       }
       provider = liveProvider(imageUrl, { ...guard, place: scan.place ?? "fridge" });
+    } else {
+      return null;
     }
 
     const ids: Id<"ingredients">[] = [];
@@ -111,6 +113,7 @@ export const run = internalAction({
  */
 export async function publicImageUrl(ctx: ActionCtx, source: Doc<"scans">["source"]): Promise<string | null> {
   if (source.kind === "upload") return await ctx.storage.getUrl(source.storageId);
+  if (source.kind === "list") return null;
   const site = process.env.PUBLIC_SITE_URL;
   return site ? new URL(source.imageSrc, site).href : null;
 }

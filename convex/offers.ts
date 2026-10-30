@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { imageOf } from "./scans";
 import { gridBox, locale } from "./schema";
 
 const MAX_ITEMS = 10;
@@ -66,8 +67,8 @@ export const get = query({
     for (const scanId of new Set(offer.items.map((i) => i.scanId))) {
       const scan = await ctx.db.get(scanId);
       if (!scan) continue;
-      const src = scan.source.kind === "replay" ? scan.source.imageSrc : await ctx.storage.getUrl(scan.source.storageId);
-      photos.push({ scanId, src, width: scan.width, height: scan.height });
+      const src = await imageOf(ctx, scan.source);
+      if (src) photos.push({ scanId, src, width: scan.width, height: scan.height });
     }
     return {
       items: offer.items.map(({ name, quantity, daysLeft, bbox, scanId }) => ({ name, quantity, daysLeft, bbox, scanId })),

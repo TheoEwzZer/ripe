@@ -23,6 +23,28 @@ async function openSession(ctx: MutationCtx, sessionId: Id<"sessions">): Promise
   return session;
 }
 
+/** A scan's picture as the browser loads it: a bundled file, Convex storage, or none for a list. */
+export async function imageOf(ctx: QueryCtx, source: Doc<"scans">["source"]): Promise<string | null> {
+  if (source.kind === "replay") return source.imageSrc;
+  if (source.kind === "upload") return await ctx.storage.getUrl(source.storageId);
+  return null;
+}
+
+/** The session's list of items without a photo (said aloud, or from receipts), made on first use. */
+export async function listScan(ctx: MutationCtx, sessionId: Id<"sessions">, origin: "voice" | "receipt"): Promise<Id<"scans">> {
+  const existing = (await activeScans(ctx, sessionId)).find((s) => s.source.kind === "list" && s.source.origin === origin);
+  if (existing) return existing._id;
+  return await ctx.db.insert("scans", {
+    sessionId,
+    source: { kind: "list", origin },
+    width: 1000,
+    height: 1000,
+    status: "done",
+    costUsd: 0,
+    finishedAt: Date.now(),
+  });
+}
+
 /** The photos that make up the session's inventory, oldest first. */
 export async function activeScans(ctx: QueryCtx, sessionId: Id<"sessions">) {
   const scans = await ctx.db
@@ -117,6 +139,8 @@ const scanView = v.object({
   height: v.number(),
   imageUrl: v.union(v.string(), v.null()),
   place: scanPlace,
+  /** Set on the photo-less lists of items said aloud or read from receipts. */
+  list: v.optional(v.union(v.literal("voice"), v.literal("receipt"))),
   recordingId: v.optional(v.string()),
   live: v.boolean(),
   finishedAt: v.optional(v.number()),
@@ -152,7 +176,8 @@ export const kitchen = query({
         error: scan.error,
         width: scan.width,
         height: scan.height,
-        imageUrl: scan.source.kind === "replay" ? scan.source.imageSrc : await ctx.storage.getUrl(scan.source.storageId),
+        imageUrl: await imageOf(ctx, scan.source),
+        list: scan.source.kind === "list" ? scan.source.origin : undefined,
         place: scan.place ?? "fridge",
         recordingId: scan.source.kind === "replay" ? scan.source.recordingId : undefined,
         live: scan.source.kind === "upload",

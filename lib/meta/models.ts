@@ -6,6 +6,7 @@ export const MODELS = {
   segment: "sam-3.1",
   cook: "muse-wonder-1.0",
   plate: "muse-image-1.0",
+  transcribe: "muse-voice-transcribe-1.0",
 } as const;
 
 const TOKEN_PRICES: Record<string, { input: number; output: number }> = {
@@ -16,6 +17,8 @@ const TOKEN_PRICES: Record<string, { input: number; output: number }> = {
 
 export const SAM_USD_PER_IMAGE = 2.5 / 1000;
 export const IMAGE_USD_PER_IMAGE = 0.01;
+/** Billed per whole second of audio, streaming or not (dev.meta.ai/docs/speech-to-text). */
+export const VOICE_USD_PER_HOUR = 0.18;
 
 export function tokenCostUsd(model: string, inputTokens: number, outputTokens: number): number {
   const price = TOKEN_PRICES[model];
