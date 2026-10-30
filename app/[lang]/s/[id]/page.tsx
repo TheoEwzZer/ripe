@@ -12,7 +12,7 @@ export default async function SessionPage() {
 
   return (
     <Suspense fallback={<div className="h-72 rounded-3xl bg-glass" />}>
-      <SessionWorkspace t={{ session: t.session, scan: t.scan, freshness: t.freshness, recipes: t.recipes, devices: t.devices, offer: t.offer, voice: t.voice }} />
+      <SessionWorkspace t={{ session: t.session, scan: t.scan, freshness: t.freshness, recipes: t.recipes, devices: t.devices, offer: t.offer, voice: t.voice, dates: t.dates }} />
     </Suspense>
   );
 }

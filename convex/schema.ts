@@ -163,6 +163,8 @@ export default defineSchema({
     phoneJoinedAt: v.optional(v.number()),
     /** Sentences sent to Muse Voice in this session, against a per-session cap. */
     voiceClips: v.optional(v.number()),
+    /** Printed dates read by Muse Spark in this session, against a per-session cap. */
+    labelReads: v.optional(v.number()),
     /** A blurred thumbnail of a photo still uploading from a phone; cleared when its scan starts. */
     incoming: v.optional(incomingPhoto),
     /** The recipe the desktop sent to the phones; each phone opens cooking mode when `at` changes. */

@@ -9,6 +9,7 @@ import type { KitchenView } from "@/components/recipes/RecipeCard";
 import { RecipePanel } from "@/components/recipes/RecipePanel";
 import { recipeLabels } from "@/components/recipes/shared";
 import { OfferPanel } from "@/components/offer/OfferPanel";
+import { DateReader } from "@/components/scan/DateReader";
 import { EditCard } from "@/components/scan/EditCard";
 import { IngredientList } from "@/components/scan/IngredientList";
 import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from "@/components/scan/ScanCanvas";
@@ -28,6 +29,7 @@ type T = {
   devices: Dictionary["devices"];
   offer: Dictionary["offer"];
   voice: Dictionary["voice"];
+  dates: Dictionary["dates"];
 };
 type Toast = { message: string; undo: () => Promise<unknown> };
 
@@ -577,7 +579,18 @@ export function SessionWorkspace({ t }: { t: T }) {
                 onRemove={() => removeItem(current._id)}
                 onMerge={() => mergeInto(current._id)}
                 onClose={() => setSelected(null)}
-              />
+              >
+                {live && (
+                  <DateReader
+                    key={current._id}
+                    sessionId={sessionId}
+                    ingredientId={current._id}
+                    onPhoto={!listOf.has(current.scanId)}
+                    phone={phone}
+                    t={t.dates}
+                  />
+                )}
+              </EditCard>
             )}
             {!showRecipes && (
               <>

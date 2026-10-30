@@ -10,11 +10,13 @@
 
 import type * as cooking from "../cooking.js";
 import type * as crons from "../crons.js";
+import type * as dates from "../dates.js";
 import type * as devices from "../devices.js";
 import type * as ingredients from "../ingredients.js";
 import type * as listening from "../listening.js";
 import type * as offers from "../offers.js";
 import type * as pipeline from "../pipeline.js";
+import type * as reading from "../reading.js";
 import type * as recipes from "../recipes.js";
 import type * as scans from "../scans.js";
 import type * as sessions from "../sessions.js";
@@ -30,11 +32,13 @@ import type {
 declare const fullApi: ApiFromModules<{
   cooking: typeof cooking;
   crons: typeof crons;
+  dates: typeof dates;
   devices: typeof devices;
   ingredients: typeof ingredients;
   listening: typeof listening;
   offers: typeof offers;
   pipeline: typeof pipeline;
+  reading: typeof reading;
   recipes: typeof recipes;
   scans: typeof scans;
   sessions: typeof sessions;

@@ -37,6 +37,7 @@ export function EditCard({
   onRemove,
   onMerge,
   onClose,
+  children,
 }: {
   item: EditableItem;
   duplicateCount: number;
@@ -46,6 +47,8 @@ export function EditCard({
   onRemove: () => void;
   onMerge: () => void;
   onClose: () => void;
+  /** Extra tools for this item, such as reading its printed date. */
+  children?: React.ReactNode;
 }) {
   const [draftName, setDraftName] = useState<string | null>(null);
   const [draftDays, setDraftDays] = useState<number | null>(null);
@@ -147,6 +150,8 @@ export function EditCard({
           )}
         </dl>
       )}
+
+      {children}
 
       <div className="flex flex-wrap gap-2">
         {duplicateCount > 0 && (

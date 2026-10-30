@@ -23,6 +23,7 @@ import { runCooking } from "../lib/recipes/run";
 import { scaleAmount } from "../lib/recipes/scale";
 import { clock, timersIn } from "../lib/recipes/timers";
 import { downsample, encodeWav } from "../lib/client/voice";
+import { daysUntil, parsePrintedDate } from "../lib/meta/dates";
 import { cookCommand } from "../lib/voice/commands";
 import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
@@ -269,6 +270,15 @@ async function main() {
     const chosen = filtersFrom({ emergency: false, maxMinutes: 15, equipment: "one-pan", diet: ["vegetarian"], fewDishes: false, servings: null }, defaultFilters);
     assert.equal(chosen.servings, 2);
     assert.equal(chosen.maxMinutes, 15);
+  });
+
+  await check("dates: a printed use-by date becomes days left; packing dates and guesses do not", () => {
+    const read = parsePrintedDate(JSON.stringify({ found: true, date: "2026-11-04", kind: "use_by", text: "04/11/2026" }));
+    assert.equal(daysUntil(read, "2026-10-30"), 5);
+    assert.equal(daysUntil({ ...read, date: "2026-10-20" }, "2026-10-30"), 0);
+    assert.equal(daysUntil({ ...read, kind: "packed" }, "2026-10-30"), null);
+    assert.equal(parsePrintedDate(JSON.stringify({ found: true, date: "04/11", kind: "use_by", text: "04/11" })).found, false);
+    assert.equal(parsePrintedDate("{").found, false);
   });
 
   await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {

@@ -59,9 +59,9 @@ export const get = query({
     const sessionId = ctx.db.normalizeId("sessions", args.sessionId);
     const session = sessionId && (await ctx.db.get(sessionId));
     if (!session || session.expiresAt < Date.now()) return null;
-    // Never expose the join token hash; the voice counter is server bookkeeping.
+    // Never expose the join token hash; the usage counters are server bookkeeping.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { joinTokenHash, voiceClips, ...publicFields } = session;
+    const { joinTokenHash, voiceClips, labelReads, ...publicFields } = session;
     return publicFields;
   },
 });
