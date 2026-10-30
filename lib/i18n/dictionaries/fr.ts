@@ -52,6 +52,11 @@ export const fr: Dictionary = {
     photos: "Photos",
     photosCount: "{n} photos",
     incoming: "Une photo arrive du téléphone…",
+    receiptLead: "Retour de courses ?",
+    receipt: "Scanner le ticket de caisse",
+    receiptReading: "Lecture du ticket…",
+    receiptAdded: "{n} courses ajoutées depuis le ticket",
+    receiptNone: "Aucun aliment trouvé sur ce ticket.",
   },
   devices: {
     connect: "Connecter un téléphone",

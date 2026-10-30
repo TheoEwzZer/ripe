@@ -1,7 +1,7 @@
 "use client";
 
 import type { OptimisticLocalStore } from "convex/browser";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -87,6 +87,9 @@ export function SessionWorkspace({ t }: { t: T }) {
   const unmerge = useMutation(api.ingredients.unmerge);
   const announcePhoto = useMutation(api.sessions.announcePhoto);
   const clearIncoming = useMutation(api.sessions.clearIncoming);
+  const receiptUploadUrl = useMutation(api.dates.uploadUrl);
+  const readReceipt = useAction(api.reading.readReceipt);
+  const undoVoice = useMutation(api.voice.undo);
   const presence = usePresence(session ? session._id : null);
 
   // Edits show at once; Convex replaces the guess with the stored value when the write lands.
@@ -117,7 +120,7 @@ export function SessionWorkspace({ t }: { t: T }) {
     patchLocal(store, ingredientId, { removed: false }),
   );
 
-  const [busy, setBusy] = useState<"demo" | "upload" | null>(null);
+  const [busy, setBusy] = useState<"demo" | "upload" | "receipt" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -194,6 +197,29 @@ export function SessionWorkspace({ t }: { t: T }) {
     setAdding(false);
     if (fresh) setTab("inventory");
     await attempt(() => startDemo({ sessionId, fresh, place }));
+    setBusy(null);
+  }
+
+  async function runReceipt(file: File) {
+    setBusy("receipt");
+    setAdding(false);
+    await attempt(async () => {
+      // Receipts are tall and the print is small: keep more pixels than a fridge photo.
+      const { blob } = await prepareImage(file, 2200);
+      const url = await receiptUploadUrl({ sessionId });
+      const response = await fetch(url, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+      if (!response.ok) throw new Error(`Upload failed with ${response.status}`);
+      const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
+      const { added } = await readReceipt({ sessionId, storageId });
+      if (added.length === 0) {
+        setError(t.session.receiptNone);
+        return;
+      }
+      showToast({
+        message: fill(t.session.receiptAdded, { n: added.length }),
+        undo: () => undoVoice({ sessionId, added: added.map((a) => a.id), removed: [] }),
+      });
+    });
     setBusy(null);
   }
 
@@ -457,7 +483,7 @@ export function SessionWorkspace({ t }: { t: T }) {
             disabled={busy !== null || running}
             className="rounded-full bg-aubergine px-4 py-2 text-sm font-medium text-porcelaine transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 dark:bg-porcelaine dark:text-aubergine"
           >
-            {busy === "upload" ? t.session.uploading : t.session.addPhoto}
+            {busy === "upload" ? t.session.uploading : busy === "receipt" ? t.session.receiptReading : t.session.addPhoto}
           </button>
           <button
             type="button"
@@ -478,6 +504,7 @@ export function SessionWorkspace({ t }: { t: T }) {
           disabled={busy !== null || running}
           onDemo={() => void runDemo(false)}
           onFile={(file, place) => void runUpload(file, place)}
+          onReceipt={(file) => void runReceipt(file)}
           onClose={() => setAdding(false)}
         />
       )}

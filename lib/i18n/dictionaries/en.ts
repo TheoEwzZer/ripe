@@ -50,6 +50,11 @@ export const en = {
     photos: "Photos",
     photosCount: "{n} photos",
     incoming: "A photo is on its way from a phone…",
+    receiptLead: "Back from the shops?",
+    receipt: "Scan the receipt",
+    receiptReading: "Reading the receipt…",
+    receiptAdded: "{n} items added from the receipt",
+    receiptNone: "No food found on this receipt.",
   },
   devices: {
     connect: "Connect a phone",

@@ -2,6 +2,8 @@
 
 import { ConvexError, v } from "convex/values";
 import { DATE_RESERVE_USD, daysUntil, readPrintedDate } from "../lib/meta/dates";
+import { RECEIPT_RESERVE_USD, readReceipt as readReceiptLines } from "../lib/meta/receipt";
+import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { action } from "./_generated/server";
 import { publicImageUrl } from "./pipeline";
@@ -39,6 +41,38 @@ export const readDate = action({
     } finally {
       // The close-up was only needed for this read.
       if (storageId) await ctx.storage.delete(storageId);
+    }
+  },
+});
+
+type ReceiptResult = { added: { id: Id<"ingredients">; name: string }[]; date: string | null; store: string };
+
+/** A receipt photo: its food lines join the inventory with the freshness left since the purchase. */
+export const readReceipt = action({
+  args: { sessionId: v.id("sessions"), storageId: v.id("_storage") },
+  returns: v.object({
+    added: v.array(v.object({ id: v.id("ingredients"), name: v.string() })),
+    date: v.union(v.string(), v.null()),
+    store: v.string(),
+  }),
+  handler: async (ctx, { sessionId, storageId }): Promise<ReceiptResult> => {
+    try {
+      if (!process.env.MODEL_API_KEY) throw new ConvexError({ code: "live_disabled", message: "Reading receipts needs the Meta API key" });
+      await ctx.runMutation(internal.receipts.begin, { sessionId });
+      const imageUrl = await ctx.storage.getUrl(storageId);
+      if (!imageUrl) throw new ConvexError({ code: "upload", message: "The receipt photo is gone" });
+      await ctx.runMutation(internal.spend.reserve, { label: "receipt", usd: RECEIPT_RESERVE_USD });
+      let result;
+      try {
+        result = await readReceiptLines(imageUrl, new Date().toISOString().slice(0, 10));
+      } finally {
+        await ctx.runMutation(internal.spend.settle, { estimateUsd: RECEIPT_RESERVE_USD, actualUsd: result?.costUsd ?? 0 });
+      }
+      const added = await ctx.runMutation(internal.receipts.add, { sessionId, items: result.receipt.items });
+      return { added, date: result.receipt.date, store: result.receipt.store };
+    } finally {
+      // Receipts carry personal details: the photo is not kept once read.
+      await ctx.storage.delete(storageId);
     }
   },
 });

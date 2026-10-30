@@ -60,6 +60,7 @@ export function AddPhoto({
   disabled,
   onDemo,
   onFile,
+  onReceipt,
   onClose,
 }: {
   t: Dictionary["session"];
@@ -70,6 +71,8 @@ export function AddPhoto({
   /** The example photos are fridges, whatever place is picked. */
   onDemo: () => void;
   onFile: (file: File, place: Place) => void;
+  /** A receipt photo: its food lines join the inventory, no outlines. */
+  onReceipt: (file: File) => void;
   onClose: () => void;
 }) {
   const [place, setPlace] = useState<Place>("pantry");
@@ -115,6 +118,10 @@ export function AddPhoto({
             {t.examplePhoto}
           </button>
         )}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 border-t border-hairline pt-3">
+        <p className="text-sm text-ink-soft">{t.receiptLead}</p>
+        <PhotoButton label={t.receipt} camera={phone} compact disabled={!live || disabled} onFile={onReceipt} />
       </div>
       {!live && <p className="text-xs text-ink-soft">{t.liveOff}</p>}
     </div>
@@ -165,7 +172,15 @@ export function PhotoStrip({
 }
 
 /** The ~1 KB thumbnail a phone sends before its photo: shown blurred while the upload runs. */
-export function IncomingPhoto({ photo, label, large }: { photo: { dataUrl: string; width: number; height: number }; label: string; large: boolean }) {
+export function IncomingPhoto({
+  photo,
+  label,
+  large,
+}: {
+  photo: { dataUrl: string; width: number; height: number };
+  label: string;
+  large: boolean;
+}) {
   return (
     <div
       className={`relative overflow-hidden rounded-3xl bg-scene ${large ? "mx-auto h-[60vh] max-w-full" : "h-28 shrink-0 self-start"}`}
@@ -175,7 +190,9 @@ export function IncomingPhoto({ photo, label, large }: { photo: { dataUrl: strin
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photo.dataUrl} alt="" className="absolute inset-0 size-full scale-110 object-cover blur-xl" />
       <div className="scan-beam absolute inset-0" aria-hidden="true" />
-      <p className="absolute inset-x-3 bottom-3 rounded-full bg-nuit/70 px-3 py-1.5 text-center text-xs text-porcelaine backdrop-blur-md">{label}</p>
+      <p className="absolute inset-x-3 bottom-3 rounded-full bg-nuit/70 px-3 py-1.5 text-center text-xs text-porcelaine backdrop-blur-md">
+        {label}
+      </p>
     </div>
   );
 }

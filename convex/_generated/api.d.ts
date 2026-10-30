@@ -17,6 +17,7 @@ import type * as listening from "../listening.js";
 import type * as offers from "../offers.js";
 import type * as pipeline from "../pipeline.js";
 import type * as reading from "../reading.js";
+import type * as receipts from "../receipts.js";
 import type * as recipes from "../recipes.js";
 import type * as scans from "../scans.js";
 import type * as sessions from "../sessions.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   offers: typeof offers;
   pipeline: typeof pipeline;
   reading: typeof reading;
+  receipts: typeof receipts;
   recipes: typeof recipes;
   scans: typeof scans;
   sessions: typeof sessions;

@@ -24,6 +24,7 @@ import { scaleAmount } from "../lib/recipes/scale";
 import { clock, timersIn } from "../lib/recipes/timers";
 import { downsample, encodeWav } from "../lib/client/voice";
 import { daysUntil, parsePrintedDate } from "../lib/meta/dates";
+import { parseReceipt } from "../lib/meta/receipt";
 import { cookCommand } from "../lib/voice/commands";
 import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
@@ -82,7 +83,7 @@ async function main() {
       const stream = new ArrayItemStream("ingredients");
       const got: unknown[] = [];
       let rng = seed;
-      for (let i = 0; i < raw.length; ) {
+      for (let i = 0; i < raw.length;) {
         rng = (rng * 1103515245 + 12345) % 2147483648;
         const n = 1 + (rng % 37);
         got.push(...stream.push(raw.slice(i, i + n)));
@@ -194,7 +195,10 @@ async function main() {
 
   await check("recipes: a clean recipe passes; spaghetti, time, oven and diet are caught", () => {
     assert.deepEqual(checkRecipe(dish(), req).issues, []);
-    const strict = { ...req, filters: { ...defaultFilters, maxMinutes: 15 as const, equipment: "one-pan" as const, diet: ["vegan" as const] } };
+    const strict = {
+      ...req,
+      filters: { ...defaultFilters, maxMinutes: 15 as const, equipment: "one-pan" as const, diet: ["vegan" as const] },
+    };
     const bad = dish({
       equipment: ["oven"],
       uses: [...dish().uses, { ingredient: "spaghetti", amount: "200 g", share: 1 }, { ingredient: "mozzarella", amount: "1", share: 1 }],
@@ -207,7 +211,12 @@ async function main() {
   await check("recipes: emergency mode needs two of the most urgent items, ties included", () => {
     const urgent = { ...req, filters: { ...defaultFilters, emergency: true } };
     assert.deepEqual(checkRecipe(dish(), urgent).issues, []);
-    const lazy = dish({ uses: [{ ingredient: "lime", amount: "1", share: 1 }, { ingredient: "spinach", amount: "1", share: 0.5 }] });
+    const lazy = dish({
+      uses: [
+        { ingredient: "lime", amount: "1", share: 1 },
+        { ingredient: "spinach", amount: "1", share: 0.5 },
+      ],
+    });
     assert.deepEqual(checkRecipe(lazy, urgent).issues, [{ code: "urgent", used: 1 }]);
   });
 
@@ -238,10 +247,22 @@ async function main() {
   });
 
   await check("cooking mode: steps offer timers for the durations they mention", () => {
-    assert.deepEqual(timersIn("Rôtissez 30 minutes en remuant à mi-cuisson.").map((t) => t.seconds), [1800]);
-    assert.deepEqual(timersIn("Simmer for 10 to 12 min, then rest 5 minutes").map((t) => t.seconds), [600, 300]);
-    assert.deepEqual(timersIn("Cuire 1 h à 180°C").map((t) => t.seconds), [3600]);
-    assert.deepEqual(timersIn("Faites revenir 2 minutes, puis 30 sec de plus").map((t) => t.seconds), [120, 30]);
+    assert.deepEqual(
+      timersIn("Rôtissez 30 minutes en remuant à mi-cuisson.").map((t) => t.seconds),
+      [1800],
+    );
+    assert.deepEqual(
+      timersIn("Simmer for 10 to 12 min, then rest 5 minutes").map((t) => t.seconds),
+      [600, 300],
+    );
+    assert.deepEqual(
+      timersIn("Cuire 1 h à 180°C").map((t) => t.seconds),
+      [3600],
+    );
+    assert.deepEqual(
+      timersIn("Faites revenir 2 minutes, puis 30 sec de plus").map((t) => t.seconds),
+      [120, 30],
+    );
     assert.deepEqual(timersIn("Chauffez le four à 200°C. Coupez 2 tomates."), []);
     assert.equal(clock(90), "1:30");
     assert.equal(clock(3600), "1:00:00");
@@ -262,12 +283,20 @@ async function main() {
 
   await check("voice: a sentence's changes are read leniently and filters keep the chosen servings", () => {
     const intent = parseKitchenIntent(
-      JSON.stringify({ add: [{ name: " rice ", quantity: "a bowl", category: "leftover", daysLeft: 2.4 }, { name: "" }], remove: ["spinach", "spinach"], filters: null, reply: "Done." }),
+      JSON.stringify({
+        add: [{ name: " rice ", quantity: "a bowl", category: "leftover", daysLeft: 2.4 }, { name: "" }],
+        remove: ["spinach", "spinach"],
+        filters: null,
+        reply: "Done.",
+      }),
     );
     assert.deepEqual(intent.add, [{ name: "rice", quantity: "a bowl", category: "leftover", daysLeft: 2 }]);
     assert.deepEqual(intent.remove, ["spinach"]);
     assert.deepEqual(parseKitchenIntent("not json"), { add: [], remove: [], filters: null, reply: "" });
-    const chosen = filtersFrom({ emergency: false, maxMinutes: 15, equipment: "one-pan", diet: ["vegetarian"], fewDishes: false, servings: null }, defaultFilters);
+    const chosen = filtersFrom(
+      { emergency: false, maxMinutes: 15, equipment: "one-pan", diet: ["vegetarian"], fewDishes: false, servings: null },
+      defaultFilters,
+    );
     assert.equal(chosen.servings, 2);
     assert.equal(chosen.maxMinutes, 15);
   });
@@ -279,6 +308,30 @@ async function main() {
     assert.equal(daysUntil({ ...read, kind: "packed" }, "2026-10-30"), null);
     assert.equal(parsePrintedDate(JSON.stringify({ found: true, date: "04/11", kind: "use_by", text: "04/11" })).found, false);
     assert.equal(parsePrintedDate("{").found, false);
+  });
+
+  await check("receipts: food lines are read leniently, capped and cleaned", () => {
+    const receipt = parseReceipt(
+      JSON.stringify({
+        date: "2026-10-28",
+        store: "Marché",
+        items: [
+          { name: " tomato ", quantity: "1 kg", category: "produce", daysLeft: 5.4 },
+          { name: "", quantity: "1" },
+          { name: "yogurt", category: "nope", daysLeft: 99 },
+        ],
+      }),
+    );
+    assert.equal(receipt.date, "2026-10-28");
+    assert.deepEqual(
+      receipt.items.map((i) => [i.name, i.category, i.daysLeft]),
+      [
+        ["tomato", "produce", 5],
+        ["yogurt", "other", 60],
+      ],
+    );
+    assert.equal(parseReceipt(JSON.stringify({ date: "28/10", items: [] })).date, null);
+    assert.deepEqual(parseReceipt("oops").items, []);
   });
 
   await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {

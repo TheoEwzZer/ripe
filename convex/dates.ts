@@ -6,7 +6,7 @@ const MAX_READS_PER_SESSION = 40;
 
 const liveEnabled = () => Boolean(process.env.MODEL_API_KEY);
 
-/** Where a close-up of a label goes before Muse Spark reads its date. */
+/** Where a close-up of a label, or a receipt, goes before Muse Spark reads it. */
 export const uploadUrl = mutation({
   args: { sessionId: v.id("sessions") },
   returns: v.string(),

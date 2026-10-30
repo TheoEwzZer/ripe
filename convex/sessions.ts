@@ -61,7 +61,7 @@ export const get = query({
     if (!session || session.expiresAt < Date.now()) return null;
     // Never expose the join token hash; the usage counters are server bookkeeping.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { joinTokenHash, voiceClips, labelReads, ...publicFields } = session;
+    const { joinTokenHash, voiceClips, labelReads, receiptReads, ...publicFields } = session;
     return publicFields;
   },
 });
