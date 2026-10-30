@@ -17,6 +17,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage, previewOf } from "@/lib/client/prepare-image";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { AddPhoto, IncomingPhoto, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
+import { VoiceButton } from "@/components/voice/VoiceButton";
 import { PhoneCard, PresenceBar, usePresence } from "./Presence";
 
 type T = {
@@ -26,6 +27,7 @@ type T = {
   recipes: Dictionary["recipes"];
   devices: Dictionary["devices"];
   offer: Dictionary["offer"];
+  voice: Dictionary["voice"];
 };
 type Toast = { message: string; undo: () => Promise<unknown> };
 
@@ -131,7 +133,9 @@ export function SessionWorkspace({ t }: { t: T }) {
     [],
   );
 
-  const scans = kitchen?.scans ?? [];
+  const allScans = kitchen?.scans ?? [];
+  const scans = allScans.filter((s) => !s.list);
+  const listOf = new Map(allScans.flatMap((s) => (s.list ? [[s._id as string, s.list] as const] : [])));
   const all = kitchen?.ingredients ?? [];
   const byId = new Map(all.map((i) => [i._id as string, i]));
 
@@ -160,7 +164,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   if (session === null) return <p className="text-ink-soft">{t.session.expired}</p>;
 
   const sessionId = session._id;
-  const running = scans.some((s) => analysing(s.status));
+  const running = allScans.some((s) => analysing(s.status));
   const live = caps?.live ?? false;
   const phone = presence.me?.kind === "phone";
   const usedDemos = new Set(scans.flatMap((s) => (s.recordingId ? [s.recordingId] : [])));
@@ -240,20 +244,33 @@ export function SessionWorkspace({ t }: { t: T }) {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {phone && (
-              <PhotoButton label={busy === "upload" ? t.session.uploading : t.session.scanFridge} camera primary disabled={!live || busy !== null} onFile={(file) => void runUpload(file, "fridge")} />
+              <PhotoButton
+                label={busy === "upload" ? t.session.uploading : t.session.scanFridge}
+                camera
+                primary
+                disabled={!live || busy !== null}
+                onFile={(file) => void runUpload(file, "fridge")}
+              />
             )}
             <button
               type="button"
               onClick={() => void runDemo(true)}
               disabled={busy !== null}
               className={`rounded-full px-6 py-3 font-medium transition-[transform,opacity] duration-150 active:scale-[0.98] disabled:opacity-50 ${
-                phone ? "ring-1 ring-hairline hover:bg-glass" : "bg-aubergine text-porcelaine hover:opacity-90 dark:bg-porcelaine dark:text-aubergine"
+                phone
+                  ? "ring-1 ring-hairline hover:bg-glass"
+                  : "bg-aubergine text-porcelaine hover:opacity-90 dark:bg-porcelaine dark:text-aubergine"
               }`}
             >
               {t.session.demo}
             </button>
             {!phone && (
-              <PhotoButton label={busy === "upload" ? t.session.uploading : t.session.upload} camera={false} disabled={!live || busy !== null} onFile={(file) => void runUpload(file, "fridge")} />
+              <PhotoButton
+                label={busy === "upload" ? t.session.uploading : t.session.upload}
+                camera={false}
+                disabled={!live || busy !== null}
+                onFile={(file) => void runUpload(file, "fridge")}
+              />
             )}
           </div>
           {!live && <p className="max-w-xl text-sm text-ink-soft">{t.session.liveOff}</p>}
@@ -277,7 +294,6 @@ export function SessionWorkspace({ t }: { t: T }) {
 
   const settled = !running;
   const visible = all.filter((i) => !i.removed);
-  const several = scans.length > 1;
   // "Fridge", or "Fridge 1" and "Fridge 2" when two photos share a place.
   const scanLabels = new Map(
     scans.map((s) => {
@@ -305,7 +321,14 @@ export function SessionWorkspace({ t }: { t: T }) {
     daysLeft: i.daysLeft,
     bbox: i.bbox,
     segmentation: i.segmentation,
-    tag: several ? scanLabels.get(i.scanId) : undefined,
+    offPhoto: listOf.has(i.scanId),
+    tag: listOf.has(i.scanId)
+      ? listOf.get(i.scanId) === "voice"
+        ? t.voice.spokenTag
+        : t.voice.receiptTag
+      : scans.length > 1
+        ? scanLabels.get(i.scanId)
+        : undefined,
   }));
   const canvasMasks: CanvasMask[] = (masks ?? []).map((m) => ({
     key: m._id,
@@ -347,7 +370,8 @@ export function SessionWorkspace({ t }: { t: T }) {
   };
 
   // A recipe under the pointer, or the one open in the sheet, lights its ingredients on the photo.
-  const lit = hoveredRecipe ?? (openRecipe ? new Set(openRecipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId as string] : []))) : null);
+  const lit =
+    hoveredRecipe ?? (openRecipe ? new Set(openRecipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId as string] : []))) : null);
   // Aliases light up with the item they were folded into.
   const highlight = lit ? new Set([...lit, ...[...aliasOf].filter(([, keep]) => lit.has(keep)).map(([alias]) => alias)]) : null;
   const kitchenView: KitchenView = new Map(
@@ -403,15 +427,27 @@ export function SessionWorkspace({ t }: { t: T }) {
     <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1" aria-live="polite">
-          <p className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>{status}</p>
+          <p className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>
+            {status}
+          </p>
           <p className="font-mono text-xs text-ink-soft">
-            {several && settled ? `${fill(t.session.photosCount, { n: scans.length })} · ` : ""}
+            {scans.length > 1 && settled ? `${fill(t.session.photosCount, { n: scans.length })} · ` : ""}
             {scan.live ? t.scan.liveBadge : t.scan.demoBadge}
             {seconds && ` · ${seconds} s`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <PresenceBar presence={presence} sessionId={sessionId} code={session.code} locale={locale} t={t.devices} />
+          {live && settled && (
+            <VoiceButton
+              sessionId={sessionId}
+              locale={locale}
+              t={t.voice}
+              onHeard={(heard) => {
+                if (heard.runStarted) setTab("recipes");
+              }}
+            />
+          )}
           <button
             type="button"
             aria-expanded={adding}
@@ -453,7 +489,7 @@ export function SessionWorkspace({ t }: { t: T }) {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div className="flex flex-col gap-3 lg:sticky lg:top-6">
-          {several && (
+          {scans.length > 1 && (
             <PhotoStrip
               scans={scans}
               shown={scan._id}
@@ -506,6 +542,7 @@ export function SessionWorkspace({ t }: { t: T }) {
             )}
             {showRecipes && recipes !== undefined && (
               <RecipePanel
+                key={recipes?.run._id ?? "none"}
                 sessionId={sessionId}
                 locale={locale}
                 data={recipes}
@@ -547,7 +584,11 @@ export function SessionWorkspace({ t }: { t: T }) {
                 <div className="flex flex-wrap items-baseline justify-between gap-2 px-2">
                   <p className="text-sm text-ink-soft">{t.scan.cookFirst}</p>
                   {duplicateTotal > 0 && firstDuplicate && (
-                    <button type="button" onClick={() => select(firstDuplicate)} className="text-sm font-medium underline-offset-4 hover:underline">
+                    <button
+                      type="button"
+                      onClick={() => select(firstDuplicate)}
+                      className="text-sm font-medium underline-offset-4 hover:underline"
+                    >
                       {duplicateTotal === 1 ? t.scan.duplicateOne : fill(t.scan.duplicates, { n: duplicateTotal })}
                     </button>
                   )}
@@ -593,7 +634,11 @@ export function SessionWorkspace({ t }: { t: T }) {
       </div>
 
       {toast && (
-        <div role="status" className="fixed inset-x-0 z-20 flex justify-center px-4" style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom))" }}>
+        <div
+          role="status"
+          className="fixed inset-x-0 z-20 flex justify-center px-4"
+          style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+        >
           <div className="flex items-center gap-3 rounded-full bg-aubergine py-2 pr-2 pl-4 text-sm text-porcelaine shadow-lg dark:bg-porcelaine dark:text-aubergine">
             <span>{toast.message}</span>
             <button

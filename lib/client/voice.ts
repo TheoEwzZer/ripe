@@ -104,6 +104,8 @@ export async function listenOnce(stream: MediaStream, options: ListenOptions = {
   const source = context.createMediaStreamSource(stream);
   const tap = new AudioWorkletNode(context, "ripe-tap");
   source.connect(tap);
+  // A node the destination does not pull is never run; the tap writes silence, so nothing is heard.
+  tap.connect(context.destination);
 
   const rate = context.sampleRate;
   const blocks: Float32Array[] = [];
@@ -122,6 +124,7 @@ export async function listenOnce(stream: MediaStream, options: ListenOptions = {
       tap.disconnect();
       void context.close();
       signal?.removeEventListener("abort", onAbort);
+      clearTimeout(guard);
       if (!keep || speechAt < 0) {
         resolve(null);
         return;
@@ -140,6 +143,8 @@ export async function listenOnce(stream: MediaStream, options: ListenOptions = {
     };
     const onAbort = () => finish(speechAt >= 0);
     signal?.addEventListener("abort", onAbort);
+    // If the microphone sends nothing at all, stop anyway.
+    const guard = setTimeout(() => finish(true), waitMs + maxMs);
 
     tap.port.onmessage = (event: MessageEvent<Float32Array>) => {
       const block = event.data;

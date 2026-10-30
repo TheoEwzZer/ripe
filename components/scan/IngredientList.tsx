@@ -71,7 +71,7 @@ export function IngredientList({
                 ···
               </span>
             )}
-            {item.segmentation === "none" && (
+            {item.segmentation === "none" && !item.offPhoto && (
               <span className="text-xs text-ink-soft" title={labels.approximate} aria-label={labels.approximate}>
                 ≈
               </span>

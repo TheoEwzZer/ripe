@@ -20,6 +20,8 @@ export type CanvasIngredient = {
   removed?: boolean;
   /** Where the item was seen, when the inventory gathers several photos. */
   tag?: string;
+  /** Said aloud or read from a receipt: there is no outline to qualify. */
+  offPhoto?: boolean;
 };
 
 export type CanvasMask = {
