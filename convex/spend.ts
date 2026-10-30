@@ -21,16 +21,20 @@ async function todayRow(ctx: MutationCtx) {
 }
 
 /** Reserves an estimate before a paid call; throws once the day's cap would be exceeded. */
+export async function reserveSpend(ctx: MutationCtx, label: string, usd: number): Promise<void> {
+  if (!Number.isFinite(usd) || usd < 0 || usd > 1) throw new Error(`Invalid estimate ${usd} for ${label}`);
+  const row = await todayRow(ctx);
+  if (row.usd + usd > dailyCapUsd()) {
+    throw new ConvexError({ code: "budget", message: `Daily Meta API budget of $${dailyCapUsd()} reached` });
+  }
+  await ctx.db.patch(row._id, { usd: row.usd + usd });
+}
+
 export const reserve = internalMutation({
   args: { label: v.string(), usd: v.number() },
   returns: v.null(),
   handler: async (ctx, { label, usd }) => {
-    if (!Number.isFinite(usd) || usd < 0 || usd > 1) throw new Error(`Invalid estimate ${usd} for ${label}`);
-    const row = await todayRow(ctx);
-    if (row.usd + usd > dailyCapUsd()) {
-      throw new ConvexError({ code: "budget", message: `Daily Meta API budget of $${dailyCapUsd()} reached` });
-    }
-    await ctx.db.patch(row._id, { usd: row.usd + usd });
+    await reserveSpend(ctx, label, usd);
     return null;
   },
 });

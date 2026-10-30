@@ -177,6 +177,7 @@ export const fr: Dictionary = {
     cookMode: "Mode cuisine",
     readAloud: "Lire à voix haute",
     handsFree: "Mains libres",
+    liveListening: "Temps réel",
     handsFreeHint: "J'écoute : dis « suivant », « répète », « minuteur 5 minutes » ou « stop ».",
     handsFreeHearing: "Je transcris…",
     heardCommand: "Entendu : {text}",

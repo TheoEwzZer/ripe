@@ -6,9 +6,12 @@ import { say } from "@/lib/client/voice";
 import { cookCommand, type CookCommand } from "@/lib/voice/commands";
 import { fill, type RecipeLabels } from "@/components/recipes/shared";
 import { MicIcon } from "@/components/voice/VoiceButton";
+import { useLiveListening } from "@/components/voice/useLiveListening";
 import { useVoice } from "@/components/voice/useVoice";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const COOK_KEYWORDS = ["suivant", "précédent", "répète", "minuteur", "stop", "next", "back", "repeat", "timer"];
 
 function SpeakerIcon({ className = "size-4" }: { className?: string }) {
   return (
@@ -50,6 +53,7 @@ export function CookVoice({
   onCommand: (command: CookCommand) => void;
 }) {
   const voice = useVoice(sessionId as Id<"sessions">, locale, { keepMic: true });
+  const stream = useLiveListening(sessionId, locale, COOK_KEYWORDS);
   const [reading, setReading] = useState(false);
   const [handsFree, setHandsFree] = useState(false);
   const [heard, setHeard] = useState<{ text: string; understood: boolean } | null>(null);
@@ -67,6 +71,7 @@ export function CookVoice({
   useEffect(
     () => () => {
       handsFreeOn.current = false;
+      stream.stop();
       voice.stop();
       voice.release();
       if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
@@ -76,6 +81,16 @@ export function CookVoice({
     [],
   );
 
+  /** One finished sentence, from the realtime stream or a recorded clip. */
+  const act = async (text: string) => {
+    const command = cookCommand(text);
+    setHeard({ text, understood: command !== null });
+    if (!command) return;
+    if (command.kind === "repeat") await say(latest.current.stepText, locale);
+    else latest.current.onCommand(command);
+  };
+
+  // Without the relay (local dev, or no key on the server), each sentence is recorded and sent as a clip.
   const listen = async () => {
     while (handsFreeOn.current) {
       // Never listen to our own voice reading a step.
@@ -92,11 +107,7 @@ export function CookVoice({
         if (error) await sleep(1500);
         continue;
       }
-      const command = cookCommand(result.transcript);
-      setHeard({ text: result.transcript, understood: command !== null });
-      if (!command) continue;
-      if (command.kind === "repeat") await say(latest.current.stepText, locale);
-      else latest.current.onCommand(command);
+      await act(result.transcript);
     }
   };
 
@@ -104,6 +115,7 @@ export function CookVoice({
     if (handsFreeOn.current) {
       handsFreeOn.current = false;
       setHandsFree(false);
+      stream.stop();
       voice.stop();
       voice.release();
       return;
@@ -113,7 +125,11 @@ export function CookVoice({
     setHeard(null);
     // Reading pairs naturally with listening: the phone talks, the cook answers.
     setReading(true);
-    void listen();
+    void stream
+      .start((text) => void act(text))
+      .then((streaming) => {
+        if (!streaming && handsFreeOn.current) void listen();
+      });
   };
 
   const toggle = (on: boolean) =>
@@ -150,10 +166,17 @@ export function CookVoice({
             {t.handsFree}
           </button>
         )}
+        {handsFree && stream.state === "live" && (
+          <span className="flex items-center gap-1.5 text-xs text-ink-soft">
+            <span className="size-2 animate-pulse rounded-full bg-pousse" aria-hidden="true" />
+            {t.liveListening}
+          </span>
+        )}
       </div>
       {handsFree && (
         <p className="text-sm text-ink-soft" aria-live="polite">
           {voice.state === "hearing" ? t.handsFreeHearing : t.handsFreeHint}
+          {stream.partial && <span className="block text-ink">… {stream.partial}</span>}
           {heard && (
             <span className={`block ${heard.understood ? "text-ink" : ""}`}>
               {fill(heard.understood ? t.heardCommand : t.notACommand, { text: heard.text })}

@@ -92,12 +92,11 @@ export async function openMic(): Promise<MediaStream> {
   });
 }
 
-/**
- * Listens for one sentence. Resolves with the clip, or null if nobody spoke
- * (or the signal aborted before any speech).
- */
-export async function listenOnce(stream: MediaStream, options: ListenOptions = {}): Promise<Clip | null> {
-  const { silenceMs = 900, waitMs = 7000, maxMs = 12_000, onLevel, onSpeech, signal } = options;
+/** Hands each block of microphone samples to `onBlock`, at the device's own sample rate, until closed. */
+export async function tapMicrophone(
+  stream: MediaStream,
+  onBlock: (block: Float32Array) => void,
+): Promise<{ rate: number; close: () => void }> {
   const context = new AudioContext();
   workletUrl ??= URL.createObjectURL(new Blob([WORKLET], { type: "application/javascript" }));
   await context.audioWorklet.addModule(workletUrl);
@@ -106,8 +105,37 @@ export async function listenOnce(stream: MediaStream, options: ListenOptions = {
   source.connect(tap);
   // A node the destination does not pull is never run; the tap writes silence, so nothing is heard.
   tap.connect(context.destination);
+  tap.port.onmessage = (event: MessageEvent<Float32Array>) => onBlock(event.data);
+  return {
+    rate: context.sampleRate,
+    close: () => {
+      tap.port.onmessage = null;
+      source.disconnect();
+      tap.disconnect();
+      void context.close();
+    },
+  };
+}
 
-  const rate = context.sampleRate;
+/** 16-bit little-endian PCM, the realtime stream's format. */
+export function toPcm16(samples: Float32Array): ArrayBuffer {
+  const out = new Int16Array(samples.length);
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  return out.buffer;
+}
+
+/**
+ * Listens for one sentence. Resolves with the clip, or null if nobody spoke
+ * (or the signal aborted before any speech).
+ */
+export async function listenOnce(stream: MediaStream, options: ListenOptions = {}): Promise<Clip | null> {
+  const { silenceMs = 900, waitMs = 7000, maxMs = 12_000, onLevel, onSpeech, signal } = options;
+  let onBlock: (block: Float32Array) => void = () => {};
+  const tap = await tapMicrophone(stream, (block) => onBlock(block));
+  const rate = tap.rate;
   const blocks: Float32Array[] = [];
   let total = 0;
   let floor = 0.004;
@@ -119,10 +147,7 @@ export async function listenOnce(stream: MediaStream, options: ListenOptions = {
     const finish = (keep: boolean) => {
       if (done) return;
       done = true;
-      tap.port.onmessage = null;
-      source.disconnect();
-      tap.disconnect();
-      void context.close();
+      tap.close();
       signal?.removeEventListener("abort", onAbort);
       clearTimeout(guard);
       if (!keep || speechAt < 0) {
@@ -146,8 +171,7 @@ export async function listenOnce(stream: MediaStream, options: ListenOptions = {
     // If the microphone sends nothing at all, stop anyway.
     const guard = setTimeout(() => finish(true), waitMs + maxMs);
 
-    tap.port.onmessage = (event: MessageEvent<Float32Array>) => {
-      const block = event.data;
+    onBlock = (block) => {
       blocks.push(block);
       let sum = 0;
       for (let i = 0; i < block.length; i++) sum += block[i] * block[i];

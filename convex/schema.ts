@@ -167,6 +167,8 @@ export default defineSchema({
     labelReads: v.optional(v.number()),
     /** Receipts read by Muse Spark in this session, against a per-session cap. */
     receiptReads: v.optional(v.number()),
+    /** Realtime listening streams opened through the relay, each paid for up front. */
+    listenStreams: v.optional(v.number()),
     /** A blurred thumbnail of a photo still uploading from a phone; cleared when its scan starts. */
     incoming: v.optional(incomingPhoto),
     /** The recipe the desktop sent to the phones; each phone opens cooking mode when `at` changes. */

@@ -175,6 +175,7 @@ export const en = {
     cookMode: "Cooking mode",
     readAloud: "Read aloud",
     handsFree: "Hands-free",
+    liveListening: "Realtime",
     handsFreeHint: "Listening: say “next”, “repeat”, “timer 5 minutes” or “stop”.",
     handsFreeHearing: "Writing it down…",
     heardCommand: "Heard: {text}",

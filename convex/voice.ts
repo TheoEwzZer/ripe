@@ -1,9 +1,11 @@
 import { ConvexError, v } from "convex/values";
+import { voiceCostUsd } from "../lib/meta/voice";
 import { filtersFrom } from "../lib/voice/kitchen";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation } from "./_generated/server";
 import { latestFilters, startRun } from "./recipes";
 import { activeScans, listScan } from "./scans";
+import { reserveSpend } from "./spend";
 import { category, cookFilters, locale } from "./schema";
 
 const MAX_CLIPS_PER_SESSION = 150;
@@ -24,6 +26,30 @@ export const uploadUrl = mutation({
     if (clips >= MAX_CLIPS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many voice requests in this session" });
     await ctx.db.patch(sessionId, { voiceClips: clips + 1 });
     return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/** One relay connection lasts at most this long (Vercel Hobby functions stop at 300 s); then the phone reconnects. */
+export const STREAM_SECONDS = 280;
+const MAX_STREAMS_PER_SESSION = 40;
+
+/**
+ * The relay opens a realtime Muse Voice stream for a session: the audio it
+ * may carry is paid for up front against the daily cap, so the relay needs
+ * no secret of its own.
+ */
+export const openStream = mutation({
+  args: { sessionId: v.id("sessions") },
+  returns: v.object({ seconds: v.number() }),
+  handler: async (ctx, { sessionId }) => {
+    if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Voice needs the Meta API key" });
+    const session = await ctx.db.get(sessionId);
+    if (!session || session.expiresAt < Date.now()) throw new ConvexError({ code: "session", message: "Session expired" });
+    const streams = session.listenStreams ?? 0;
+    if (streams >= MAX_STREAMS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too much listening in this session" });
+    await reserveSpend(ctx, "listen", voiceCostUsd(STREAM_SECONDS * 1000));
+    await ctx.db.patch(sessionId, { listenStreams: streams + 1 });
+    return { seconds: STREAM_SECONDS };
   },
 });
 
