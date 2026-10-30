@@ -27,16 +27,29 @@ Without a key, everything runs on **recordings** in `fixtures/recordings/`: raw 
 ```bash
 npm run fixtures:mock    # rebuild the synthetic recording (hand-placed boxes, real SAM wire format)
 npm run probe            # with a key: one real pass, capped by META_BUDGET_USD (default $0.25)
-npm run probe -- --steps perceive,segment,cook,plate
+npm run probe -- --steps perceive        # stop after Muse Spark
+npm run record:recipes -- --locale en --plates   # real recipes and plates for the demo photo
 ```
 
 `/lab` shows the newest recording as a freshness map.
 
+## Voice
+
+Sentences are recorded in the browser (16 kHz WAV, stopped by silence) and transcribed by `muse-voice-transcribe-1.0` through Convex; Muse Spark turns them into inventory changes or recipe filters. Hands-free cooking prefers Meta's realtime transcription, which takes the API key in its first frame, so it goes through a relay: `app/api/listen` on Vercel (needs `MODEL_API_KEY` in the Vercel environment too). `next dev` cannot upgrade WebSockets, so locally:
+
+```bash
+npm run listen-relay                                         # ws://localhost:8790
+NEXT_PUBLIC_LISTEN_URL=ws://localhost:8790 npm run dev:frontend
+```
+
+Without the relay, hands-free cooking falls back to one recorded clip per sentence.
+
 ## Layout
 
 - `app/[lang]/` — routes, EN default with FR toggle (`proxy.ts` picks the locale)
-- `convex/` — schema (sessions, scans, ingredients, masks, recipeRuns, recipes) and functions
-- `lib/meta/` — Meta Model API calls: `perceive` (muse-spark-1.3), `segment` (sam-3.1), `cook` (muse-wonder-1.0), `plate` (muse-image-1.0), budget guard
+- `convex/` — schema (sessions, devices, scans, ingredients, masks, recipeRuns, recipes, offers) and functions
+- `lib/meta/` — Meta Model API calls: `perceive` (muse-spark-1.3), `segment` (sam-3.1), `cook` (muse-wonder-1.0), `plate` (muse-image-1.0), `voice` (muse-voice-transcribe-1.0), `dates` and `receipt` (muse-spark-1.3), budget guard
+- `lib/voice/` — spoken commands, sentence interpretation, the realtime relay
 - `lib/pantry/` — Zod schemas and freshness rules
 - `lib/replay/` — recordings and replay
 - `brand/` — logo files
