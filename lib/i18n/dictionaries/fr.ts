@@ -155,6 +155,13 @@ export const fr: Dictionary = {
   },
   recipes: {
     cookMode: "Mode cuisine",
+    readAloud: "Lire à voix haute",
+    handsFree: "Mains libres",
+    handsFreeHint: "J'écoute : dis « suivant », « répète », « minuteur 5 minutes » ou « stop ».",
+    handsFreeHearing: "Je transcris…",
+    heardCommand: "Entendu : {text}",
+    notACommand: "Pas une commande : {text}",
+    micBlocked: "Le micro est bloqué : autorise-le dans le navigateur pour cuisiner mains libres.",
     sendToPhone: "Envoyer au téléphone",
     sentToPhone: "Envoyée au téléphone",
     noPhone: "Connecte un téléphone pour cuisiner avec",

@@ -153,6 +153,13 @@ export const en = {
   },
   recipes: {
     cookMode: "Cooking mode",
+    readAloud: "Read aloud",
+    handsFree: "Hands-free",
+    handsFreeHint: "Listening: say “next”, “repeat”, “timer 5 minutes” or “stop”.",
+    handsFreeHearing: "Writing it down…",
+    heardCommand: "Heard: {text}",
+    notACommand: "Not a command: {text}",
+    micBlocked: "The microphone is blocked: allow it in the browser to cook hands-free.",
     sendToPhone: "Send to the phone",
     sentToPhone: "Sent to the phone",
     noPhone: "Connect a phone to cook from it",

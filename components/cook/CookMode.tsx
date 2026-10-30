@@ -7,6 +7,8 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { stapleLabel } from "@/lib/recipes/pantry";
 import { clock, timersIn } from "@/lib/recipes/timers";
+import type { CookCommand } from "@/lib/voice/commands";
+import { CookVoice } from "./CookVoice";
 import { fill, type RecipeLabels } from "@/components/recipes/shared";
 
 type Timer = { id: number; step: number; total: number; endsAt: number };
@@ -76,6 +78,7 @@ export function CookMode({
   labels: RecipeLabels;
 }) {
   const data = useQuery(api.recipes.get, { sessionId, recipeId });
+  const caps = useQuery(api.scans.capabilities);
   const markCooked = useMutation(api.recipes.markCooked);
   const unmarkCooked = useMutation(api.recipes.unmarkCooked);
   const awake = useWakeLock();
@@ -145,6 +148,22 @@ export function CookMode({
   };
   const stop = (id: number) => setAllTimers(timersRef.current.filter((timer) => timer.id !== id));
 
+  // What the voice loop asks for; "repeat" is handled by the loop itself.
+  const onCommand = (command: CookCommand) => {
+    if (command.kind === "next") setStep((s) => Math.min(s + 1, steps.length));
+    else if (command.kind === "previous") setStep((s) => Math.max(s - 1, 0));
+    else if (command.kind === "done") setStep(steps.length);
+    else if (command.kind === "ingredients") setShowIngredients(true);
+    else if (command.kind === "stopTimer") {
+      const ringing = timersRef.current.filter((timer) => rung.current.has(timer.id));
+      const target = ringing[0] ?? timersRef.current.at(-1);
+      if (target) stop(target.id);
+    } else if (command.kind === "timer") {
+      const seconds = command.seconds || timersIn(steps[step] ?? "")[0]?.seconds;
+      if (seconds) start(seconds);
+    }
+  };
+
   const plate = recipe.plate?.status === "ready" ? recipe.plate.url : null;
   const cookedText = (n: number) => (n === 0 ? t.cookedNone : n === 1 ? t.cookedOne : fill(t.cookedCount, { n }));
 
@@ -164,6 +183,15 @@ export function CookMode({
           </p>
         )}
       </div>
+
+      <CookVoice
+        sessionId={sessionId}
+        locale={locale}
+        live={caps?.live ?? false}
+        stepText={finished ? t.readyTitle : (steps[step] ?? "")}
+        labels={t}
+        onCommand={onCommand}
+      />
 
       <header className="flex flex-col gap-3">
         <h1 className="font-display text-2xl leading-tight font-extrabold tracking-tight text-balance">{recipe.title}</h1>

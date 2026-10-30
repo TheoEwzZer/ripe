@@ -31,6 +31,13 @@ export function useVoice(sessionId: Id<"sessions"> | null, locale: "en" | "fr", 
   const [error, setError] = useState<VoiceError | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const abort = useRef<AbortController | null>(null);
+  // Loops (hands-free cooking) read the outcome right away, before React re-renders.
+  const lastError = useRef<VoiceError | null>(null);
+  const fail = (next: VoiceError) => {
+    lastError.current = next;
+    setError(next);
+    setState("error");
+  };
 
   const release = () => {
     stream.current?.getTracks().forEach((t) => t.stop());
@@ -41,10 +48,10 @@ export function useVoice(sessionId: Id<"sessions"> | null, locale: "en" | "fr", 
   const capture = async (purpose: "kitchen" | "cook", options: Omit<ListenOptions, "onLevel" | "signal"> = {}): Promise<Heard | null> => {
     if (!sessionId) return null;
     if (!micSupported()) {
-      setError("unsupported");
-      setState("error");
+      fail("unsupported");
       return null;
     }
+    lastError.current = null;
     setError(null);
     try {
       stream.current ??= await openMic();
@@ -54,8 +61,8 @@ export function useVoice(sessionId: Id<"sessions"> | null, locale: "en" | "fr", 
       setLevel(0);
       if (!keepMic) release();
       if (!clip) {
-        setState(keepMic ? "idle" : "error");
-        if (!keepMic) setError("silence");
+        if (keepMic) setState("idle");
+        else fail("silence");
         return null;
       }
       setState("hearing");
@@ -69,8 +76,7 @@ export function useVoice(sessionId: Id<"sessions"> | null, locale: "en" | "fr", 
     } catch (e) {
       if (!keepMic) release();
       setLevel(0);
-      setError(errorOf(e));
-      setState("error");
+      fail(errorOf(e));
       return null;
     }
   };
@@ -83,5 +89,5 @@ export function useVoice(sessionId: Id<"sessions"> | null, locale: "en" | "fr", 
     setState("idle");
   };
 
-  return { state, level, error, capture, stop, release, reset };
+  return { state, level, error, capture, stop, release, reset, lastError: () => lastError.current };
 }
