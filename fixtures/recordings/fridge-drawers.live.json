@@ -203,5 +203,21 @@
         }
       ]
     }
+  ],
+  "tips": [
+    {
+      "locale": "en",
+      "key": "broccoli|eggplant|kiwi|spinach|tomato|zucchini",
+      "rawText": "{\"tips\": [{\"extraDays\": 3, \"how\": \"Pat dry, layer with dry paper towel in box and keep in crisper.\", \"item\": \"spinach\", \"tooLate\": {\"action\": \"cook_today\", \"how\": \"Wilt today into soup, pasta or omelette before leaves get slimy.\"}, \"where\": \"crisper\"}, {\"extraDays\": 2, \"how\": \"Wrap head loosely in a damp tea towel in the crisper unwashed.\", \"item\": \"broccoli\", \"tooLate\": {\"action\": \"freeze\", \"how\": \"Blanch florets 3 minutes, ice bath, drain well and freeze in portions.\"}, \"where\": \"crisper\"}, {\"extraDays\": 3, \"how\": \"Keep ripe tomatoes stem-side up uncovered in fridge.\", \"item\": \"tomato\", \"tooLate\": {\"action\": \"transform\", \"how\": \"Roast or simmer into a quick tomato sauce to use up today.\"}, \"where\": \"fridge\"}, {\"extraDays\": 2, \"how\": \"Keep unwashed and uncovered in the crisper away from fruit.\", \"item\": \"eggplant\", \"tooLate\": {\"action\": \"cook_today\", \"how\": \"Cube and roast or grill today with oil and salt.\"}, \"where\": \"crisper\"}, {\"extraDays\": 3, \"how\": \"Store unwashed in an open perforated bag in the crisper.\", \"item\": \"zucchini\", \"tooLate\": {\"action\": \"transform\", \"how\": \"Grate into soup, fritters or cake batter to use up.\"}, \"where\": \"crisper\"}, {\"extraDays\": 4, \"how\": \"Keep ripe kiwi alone in the fridge away from other fruit.\", \"item\": \"kiwi\", \"tooLate\": {\"action\": \"freeze\", \"how\": \"Peel, slice and freeze in single layer for smoothies.\"}, \"where\": \"fridge\"}]}",
+      "ms": 5092,
+      "costUsd": 0.005921
+    },
+    {
+      "locale": "fr",
+      "key": "broccoli|eggplant|kiwi|spinach|tomato|zucchini",
+      "rawText": "{\"tips\": [{\"extraDays\": 2, \"how\": \"Tapissez la boite de papier absorbant sec et gardez les feuilles non lavées au frais.\", \"item\": \"spinach\", \"tooLate\": {\"action\": \"transform\", \"how\": \"Mixez en soupe ou en pesto avec ail, huile et parmesan.\"}, \"where\": \"crisper\"}, {\"extraDays\": 4, \"how\": \"Enveloppez la t\\u00eate enti\\u00e8re non lav\\u00e9e dans un torchon humide au bac \\u00e0 l\\u00e9gumes.\", \"item\": \"broccoli\", \"tooLate\": {\"action\": \"freeze\", \"how\": \"Blanchissez 3 minutes, refroidissez dans l'eau glac\\u00e9e puis congelez en fleurettes.\"}, \"where\": \"crisper\"}, {\"extraDays\": 3, \"how\": \"Gardez-les non lav\\u00e9es, p\\u00e9doncule en haut, dans le bac \\u00e0 l\\u00e9gumes.\", \"item\": \"tomato\", \"tooLate\": {\"action\": \"transform\", \"how\": \"Mixez en sauce tomate cuite 20 minutes avec ail et huile d'olive.\"}, \"where\": \"fridge\"}, {\"extraDays\": 2, \"how\": \"Gardez-les enti\\u00e8res non lav\\u00e9es dans le bac \\u00e0 l\\u00e9gumes, loin des fruits.\", \"item\": \"eggplant\", \"tooLate\": {\"action\": \"cook_today\", \"how\": \"Coupez en tranches et r\\u00f4tissez 25 minutes au four avec huile et sel.\"}, \"where\": \"crisper\"}, {\"extraDays\": 3, \"how\": \"Gardez-les enti\\u00e8res non lav\\u00e9es dans un sac perfor\\u00e9 au bac \\u00e0 l\\u00e9gumes.\", \"item\": \"zucchini\", \"tooLate\": {\"action\": \"freeze\", \"how\": \"Blanchissez en rondelles 2 minutes puis congelez \\u00e0 plat en portions.\"}, \"where\": \"crisper\"}, {\"extraDays\": 4, \"how\": \"Gardez-le m\\u00fbr au r\\u00e9frig\\u00e9rateur, \\u00e0 l'\\u00e9cart des pommes et bananes.\", \"item\": \"kiwi\", \"tooLate\": {\"action\": \"transform\", \"how\": \"Mixez en smoothie ou en compote avec pomme et jus de citron.\"}, \"where\": \"fridge\"}]}",
+      "ms": 7763,
+      "costUsd": 0.0070005
+    }
   ]
 }

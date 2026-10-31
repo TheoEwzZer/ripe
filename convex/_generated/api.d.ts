@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as advice from "../advice.js";
 import type * as cooking from "../cooking.js";
 import type * as crons from "../crons.js";
 import type * as dates from "../dates.js";
@@ -23,6 +24,7 @@ import type * as recipes from "../recipes.js";
 import type * as scans from "../scans.js";
 import type * as sessions from "../sessions.js";
 import type * as spend from "../spend.js";
+import type * as tips from "../tips.js";
 import type * as voice from "../voice.js";
 
 import type {
@@ -32,6 +34,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  advice: typeof advice;
   cooking: typeof cooking;
   crons: typeof crons;
   dates: typeof dates;
@@ -47,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   scans: typeof scans;
   sessions: typeof sessions;
   spend: typeof spend;
+  tips: typeof tips;
   voice: typeof voice;
 }>;
 

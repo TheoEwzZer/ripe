@@ -15,7 +15,8 @@
     "check:pipeline": "tsx scripts/check-pipeline.ts",
     "fake-meta": "tsx scripts/fake-meta.ts",
     "record:recipes": "tsx scripts/record-recipes.ts",
-    "listen-relay": "tsx scripts/listen-relay.ts"
+    "listen-relay": "tsx scripts/listen-relay.ts",
+    "record:tips": "tsx scripts/record-tips.ts"
   },
   "dependencies": {
     "@meta-sam/graphics": "^0.1.13",

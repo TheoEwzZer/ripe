@@ -26,6 +26,7 @@ import { downsample, encodeWav } from "../lib/client/voice";
 import { daysUntil, parsePrintedDate } from "../lib/meta/dates";
 import { parseReceipt } from "../lib/meta/receipt";
 import { factorFor, impactOf, weightKg } from "../lib/impact";
+import { parseTips, pickUrgent, tipsKey } from "../lib/meta/tips";
 import { cookCommand } from "../lib/voice/commands";
 import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
@@ -344,6 +345,34 @@ async function main() {
     assert.equal(factorFor({ name: "mystery stew", category: "leftover" }).co2e, 2);
     const beef = impactOf({ name: "beef steak", quantity: "250 g", category: "meat" }, 0.5);
     assert.ok(Math.abs(beef.kg - 0.125) < 1e-9 && Math.abs(beef.co2e - 0.125 * 28.01) < 1e-9);
+  });
+
+  await check("tips: the most urgent items, once each; answers outside the list are dropped", () => {
+    const urgent = pickUrgent([
+      { name: "milk", daysLeft: 6 },
+      { name: "spinach", daysLeft: 3 },
+      { name: "tomato", daysLeft: 3 },
+      { name: "spinach", daysLeft: 5 },
+      { name: "", daysLeft: 0 },
+    ]);
+    assert.deepEqual(
+      urgent.map((i) => i.name),
+      ["spinach", "tomato", "milk"],
+    );
+    assert.equal(tipsKey(["tomato", "spinach"]), tipsKey(["spinach", "tomato"]));
+    const tips = parseTips(
+      JSON.stringify({
+        tips: [
+          { item: "spinach", where: "crisper", how: " Dry it. ", extraDays: 2.6, tooLate: { action: "freeze", how: "Blanch." } },
+          { item: "spinach", where: "fridge", how: "Again", extraDays: 1, tooLate: { action: "compost", how: "" } },
+          { item: "caviar", where: "fridge", how: "Not ours", extraDays: 1, tooLate: { action: "freeze", how: "" } },
+        ],
+      }),
+      ["spinach", "tomato"],
+    );
+    assert.deepEqual(tips, [
+      { item: "spinach", where: "crisper", how: "Dry it.", extraDays: 3, tooLate: { action: "freeze", how: "Blanch." } },
+    ]);
   });
 
   await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {

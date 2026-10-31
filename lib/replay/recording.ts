@@ -32,6 +32,8 @@ export type Recording = {
   /** The batched box prompt for ingredients the concept prompts missed. */
   boxFallback?: { ingredientIndexes: number[]; prompt: string; rawText: string; ms: number };
   cooking?: RecordedCooking[];
+  /** Storage tips for this photo's most urgent items (lib/meta/tips.ts tipsKey), per language. */
+  tips?: { locale: "en" | "fr"; key: string; rawText: string; ms: number; costUsd: number }[];
   totalCostUsd: number;
 };
 

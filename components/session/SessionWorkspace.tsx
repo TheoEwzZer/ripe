@@ -9,6 +9,7 @@ import type { KitchenView } from "@/components/recipes/RecipeCard";
 import { RecipePanel } from "@/components/recipes/RecipePanel";
 import { recipeLabels } from "@/components/recipes/shared";
 import { ImpactStrip } from "@/components/impact/ImpactStrip";
+import { TipCard, TipsPanel } from "@/components/tips/TipsPanel";
 import { OfferPanel } from "@/components/offer/OfferPanel";
 import { DateReader } from "@/components/scan/DateReader";
 import { EditCard } from "@/components/scan/EditCard";
@@ -32,6 +33,7 @@ type T = {
   voice: Dictionary["voice"];
   dates: Dictionary["dates"];
   impact: Dictionary["impact"];
+  tips: Dictionary["tips"];
 };
 type Toast = { message: string; undo: () => Promise<unknown> };
 
@@ -81,6 +83,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   const recipes = useQuery(api.recipes.latest, { sessionId: id });
   const kitchen = useQuery(api.scans.kitchen, { sessionId: id });
   const caps = useQuery(api.scans.capabilities);
+  const tipsData = useQuery(api.tips.forSession, { sessionId: id, locale });
   const startDemo = useMutation(api.scans.startDemo);
   const generateUploadUrl = useMutation(api.scans.generateUploadUrl);
   const startUpload = useMutation(api.scans.startUpload);
@@ -134,6 +137,7 @@ export function SessionWorkspace({ t }: { t: T }) {
   const [chosenScan, setChosenScan] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [offering, setOffering] = useState(false);
+  const [keeping, setKeeping] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -591,6 +595,9 @@ export function SessionWorkspace({ t }: { t: T }) {
                 onHighlight={setHoveredRecipe}
               />
             )}
+            {!showRecipes && keeping && (
+              <TipsPanel sessionId={sessionId} locale={locale} items={visible} t={t.tips} onClose={() => setKeeping(false)} />
+            )}
             {!showRecipes && offering && (
               <OfferPanel
                 sessionId={sessionId}
@@ -622,6 +629,11 @@ export function SessionWorkspace({ t }: { t: T }) {
                 onMerge={() => mergeInto(current._id)}
                 onClose={() => setSelected(null)}
               >
+                {tipsData?.status === "ready" &&
+                  (() => {
+                    const tip = tipsData.tips.find((x) => x.item === current.name);
+                    return tip ? <TipCard tip={tip} daysLeft={current.daysLeft} t={t.tips} /> : null;
+                  })()}
                 {live && (
                   <DateReader
                     key={current._id}
@@ -668,6 +680,18 @@ export function SessionWorkspace({ t }: { t: T }) {
                     className="rounded-full bg-aubergine px-5 py-2.5 font-medium text-porcelaine transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.98] dark:bg-porcelaine dark:text-aubergine"
                   >
                     {t.recipes.seeRecipes}
+                  </button>
+                )}
+                {settled && !keeping && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKeeping(true);
+                      setSelected(null);
+                    }}
+                    className="rounded-full px-5 py-2.5 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass"
+                  >
+                    {t.tips.open}
                   </button>
                 )}
                 {settled && !offering && (

@@ -12,6 +12,18 @@ export const sessionStatus = v.union(
 
 export const incomingPhoto = v.object({ dataUrl: v.string(), width: v.number(), height: v.number(), at: v.number() });
 
+/** lib/meta/tips.ts Tip. */
+export const storageTip = v.object({
+  item: v.string(),
+  where: v.union(v.literal("fridge"), v.literal("crisper"), v.literal("freezer"), v.literal("counter"), v.literal("pantry")),
+  how: v.string(),
+  extraDays: v.number(),
+  tooLate: v.object({
+    action: v.union(v.literal("cook_today"), v.literal("freeze"), v.literal("transform"), v.literal("compost")),
+    how: v.string(),
+  }),
+});
+
 export const deviceKind = v.union(v.literal("desktop"), v.literal("phone"));
 
 /** Where a photo was taken: one inventory gathers the fridge, the pantry and the freezer. */
@@ -276,6 +288,17 @@ export default defineSchema({
   })
     .index("by_run", ["runId"])
     .index("by_session", ["sessionId"]),
+
+  /** Muse Spark's storage tips and last-minute rescues for the session's most urgent items. */
+  tips: defineTable({
+    sessionId: v.id("sessions"),
+    locale,
+    key: v.string(),
+    status: v.union(v.literal("writing"), v.literal("ready"), v.literal("error")),
+    source: v.union(v.literal("live"), v.literal("replay")),
+    tips: v.array(storageTip),
+    costUsd: v.number(),
+  }).index("by_session", ["sessionId"]),
 
   /** Food offered to a neighbour through a link: names, freshness and a crop of the photo, nothing personal. */
   offers: defineTable({
