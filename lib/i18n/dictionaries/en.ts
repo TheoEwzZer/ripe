@@ -184,6 +184,16 @@ export const en = {
     compost: "Compost it",
     close: "Close",
   },
+  story: {
+    tagline: "Cook what's ripe.",
+    minutes: "{n} min",
+    score: "anti-waste score {n}/100",
+    saved: "Saved from the bin",
+    footer: "Made with Ripe · {site}",
+    share: "Share the card",
+    sharing: "Making the card…",
+    shareText: "Saved from the bin with Ripe",
+  },
   scan: {
     perceiving: "Reading the photo…",
     perceivingCount: "Reading the photo… {n} found",
@@ -221,6 +231,9 @@ export const en = {
   },
   recipes: {
     cookMode: "Cooking mode",
+    shareStory: "Share the card",
+    sharingStory: "Making the card…",
+    shareStoryText: "Saved from the bin with Ripe",
     ideasMode: "3 ideas",
     planMode: "3-day plan",
     planCook: "Plan 3 days",

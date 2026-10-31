@@ -186,6 +186,16 @@ export const fr: Dictionary = {
     compost: "Composte-le",
     close: "Fermer",
   },
+  story: {
+    tagline: "Cuisine ce qui presse.",
+    minutes: "{n} min",
+    score: "score anti-gaspi {n}/100",
+    saved: "Sauvés de la poubelle",
+    footer: "Fait avec Ripe · {site}",
+    share: "Partager la carte",
+    sharing: "Préparation de la carte…",
+    shareText: "Sauvés de la poubelle avec Ripe",
+  },
   scan: {
     perceiving: "Lecture de la photo…",
     perceivingCount: "Lecture de la photo… {n} trouvés",
@@ -223,6 +233,9 @@ export const fr: Dictionary = {
   },
   recipes: {
     cookMode: "Mode cuisine",
+    shareStory: "Partager la carte",
+    sharingStory: "Préparation de la carte…",
+    shareStoryText: "Sauvés de la poubelle avec Ripe",
     ideasMode: "3 idées",
     planMode: "Plan 3 jours",
     planCook: "Planifier 3 jours",

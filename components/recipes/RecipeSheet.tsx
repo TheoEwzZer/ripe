@@ -11,6 +11,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { MAX_SERVINGS, MIN_SERVINGS } from "@/lib/recipes/filters";
 import { stapleLabel } from "@/lib/recipes/pantry";
 import { scaleAmount } from "@/lib/recipes/scale";
+import { ShareStory } from "./ShareStory";
 import { PhotoCrop, ScoreRing, applianceLabel, dishesLabel, fill, issueLabel, peopleLabel, type RecipeLabels } from "./shared";
 
 /**
@@ -48,7 +49,8 @@ export function RecipeSheet({
 
   // One plate per version of the recipe: a swap clears it, so the new dish gets its own.
   const version = data ? `${data.recipe._id}:${data.recipe.title}` : null;
-  const needsPlate = data !== undefined && data !== null && data.recipe.status === "ready" && !data.recipe.plate && (data.run.replayed || live);
+  const needsPlate =
+    data !== undefined && data !== null && data.recipe.status === "ready" && !data.recipe.plate && (data.run.replayed || live);
   useEffect(() => {
     if (!needsPlate || !version || asked.current === version) return;
     asked.current = version;
@@ -56,11 +58,18 @@ export function RecipeSheet({
   }, [needsPlate, version, imagine, recipeId]);
 
   const close = onClose ? (
-    <button type="button" onClick={onClose} className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-glass hover:text-ink">
+    <button
+      type="button"
+      onClick={onClose}
+      className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-glass hover:text-ink"
+    >
       {t.close}
     </button>
   ) : (
-    <Link href={`/${locale}/s/${sessionId}`} className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-glass hover:text-ink">
+    <Link
+      href={`/${locale}/s/${sessionId}`}
+      className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-glass hover:text-ink"
+    >
       ← {t.back}
     </Link>
   );
@@ -81,7 +90,9 @@ export function RecipeSheet({
   const factor = recipe.servings > 0 ? people / recipe.servings : 1;
   const swapping = recipe.swap?.status === "swapping" ? recipe.swap.ingredient : null;
   const plate = recipe.plate;
-  const crop = <PhotoCrop photo={photo} boxes={items.filter((i) => i.onPhoto).map((i) => i.bbox)} alt={fill(t.cropAlt, { title: recipe.title })} />;
+  const crop = (
+    <PhotoCrop photo={photo} boxes={items.filter((i) => i.onPhoto).map((i) => i.bbox)} alt={fill(t.cropAlt, { title: recipe.title })} />
+  );
 
   const copy = async () => {
     try {
@@ -105,7 +116,13 @@ export function RecipeSheet({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={plate.url} alt={fill(t.plateAlt, { title: recipe.title })} className="aspect-square w-full object-cover" />
         ) : (
-          <div className={plate?.status === "imagining" ? "[&_img]:blur-[2px] [&_img]:scale-105 [&_img]:transition-[filter,transform] [&_img]:duration-700" : ""}>
+          <div
+            className={
+              plate?.status === "imagining"
+                ? "[&_img]:blur-[2px] [&_img]:scale-105 [&_img]:transition-[filter,transform] [&_img]:duration-700"
+                : ""
+            }
+          >
             {crop}
           </div>
         )}
@@ -171,6 +188,12 @@ export function RecipeSheet({
           >
             {t.cookMode}
           </Link>
+          <ShareStory
+            sessionId={sessionId}
+            recipeId={recipe._id}
+            title={recipe.title}
+            labels={{ share: t.shareStory, sharing: t.sharingStory, shareText: t.shareStoryText }}
+          />
           {deviceKind() === "desktop" && phones === 0 && <p className="text-xs text-ink-soft">{t.noPhone}</p>}
         </div>
       )}
@@ -218,14 +241,22 @@ export function RecipeSheet({
             </button>
           </div>
         </div>
-        {swapping && <p className="text-sm text-ink-soft" aria-live="polite">{fill(t.swapping, { name: swapping })}</p>}
+        {swapping && (
+          <p className="text-sm text-ink-soft" aria-live="polite">
+            {fill(t.swapping, { name: swapping })}
+          </p>
+        )}
         {recipe.swap?.status === "failed" && <p className="text-sm text-betterave">{t.swapFailed}</p>}
         <ul className="flex flex-col divide-y divide-hairline rounded-2xl ring-1 ring-hairline">
           {recipe.uses.map((use, i) => {
             const item = use.ingredientId ? byId.get(use.ingredientId) : undefined;
             return (
               <li key={`${use.ingredient}-${i}`} className="flex items-center gap-3 px-3 py-2.5">
-                {item ? <Pip daysLeft={item.daysLeft} /> : <span className="size-4 shrink-0 rounded-full ring-1 ring-hairline" aria-hidden="true" />}
+                {item ? (
+                  <Pip daysLeft={item.daysLeft} />
+                ) : (
+                  <span className="size-4 shrink-0 rounded-full ring-1 ring-hairline" aria-hidden="true" />
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{item?.name ?? use.ingredient}</p>
                   {use.amount && <p className="text-sm text-ink-soft">{scaleAmount(use.amount, factor, locale)}</p>}
@@ -287,7 +318,11 @@ export function RecipeSheet({
                 {item}
               </span>
             ))}
-            <button type="button" onClick={copy} className="rounded-full px-3 py-1 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass">
+            <button
+              type="button"
+              onClick={copy}
+              className="rounded-full px-3 py-1 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass"
+            >
               {copied ? t.copied : t.copy}
             </button>
           </div>

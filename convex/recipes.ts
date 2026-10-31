@@ -1,5 +1,6 @@
 import { ConvexError, v, type Infer } from "convex/values";
 import { MAX_SERVINGS, MIN_SERVINGS, defaultFilters, type CookFilters } from "../lib/recipes/filters";
+import { addImpact, impactOf, noImpact } from "../lib/impact";
 import { arrangePlan } from "../lib/recipes/plan";
 import { cleanPantry, defaultPantry, stapleIds } from "../lib/recipes/pantry";
 import { internal } from "./_generated/api";
@@ -295,6 +296,50 @@ export const get = query({
       run: { source: run.source, locale: run.locale, replayed: run.replayOf !== undefined && recipe.previous === undefined },
       photo: { src, width: scan.width, height: scan.height },
       items,
+    };
+  },
+});
+
+/** What the shareable story card shows: the dish, its plate or the fridge, and what cooking it saved. */
+export const story = query({
+  args: { sessionId: v.string(), recipeId: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      title: v.string(),
+      minutes: v.number(),
+      score: v.number(),
+      image: v.union(v.string(), v.null()),
+      items: v.array(v.string()),
+      impact: v.object({ kg: v.number(), eur: v.number(), co2e: v.number() }),
+      locale,
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const sessionId = ctx.db.normalizeId("sessions", args.sessionId);
+    const recipeId = ctx.db.normalizeId("recipes", args.recipeId);
+    const recipe = recipeId && (await ctx.db.get(recipeId));
+    const run = recipe && (await ctx.db.get(recipe.runId));
+    if (!recipe || !run || recipe.sessionId !== sessionId) return null;
+    let impact = noImpact;
+    const items: string[] = [];
+    for (const use of recipe.uses) {
+      const item = use.ingredientId && (await ctx.db.get(use.ingredientId));
+      if (!item) continue;
+      items.push(item.name);
+      impact = addImpact(impact, impactOf(item, use.share));
+    }
+    const plateView = await plateUrl(ctx, recipe.plate);
+    const scan = await mainScan(ctx, recipe, run);
+    const image = plateView?.status === "ready" && plateView.url ? plateView.url : scan ? await imageOf(ctx, scan.source) : null;
+    return {
+      title: recipe.title,
+      minutes: recipe.minutes,
+      score: recipe.score,
+      image,
+      items: [...new Set(items)],
+      impact,
+      locale: run.locale,
     };
   },
 });
