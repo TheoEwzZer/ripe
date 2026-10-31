@@ -22,7 +22,7 @@ import { prepareImage, previewOf } from "@/lib/client/prepare-image";
 import { UnreadableVideo, firstFrame, uploadWithProgress } from "@/lib/client/video";
 import { VideoTracks } from "@/components/scan/VideoTracks";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
-import { AddPhoto, IncomingPhoto, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
+import { AddPhoto, GALLERY_ACCEPT, IncomingPhoto, isVideo, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
 import { VoiceButton } from "@/components/voice/VoiceButton";
 import { PhoneCard, PresenceBar, usePresence } from "./Presence";
 
@@ -380,6 +380,15 @@ export function SessionWorkspace({ t }: { t: T }) {
                 accept="video/mp4,video/quicktime"
                 disabled={busy !== null}
                 onFile={(file) => void runVideo(file, "fridge")}
+              />
+            )}
+            {live && phone && (
+              <PhotoButton
+                label={t.session.fromGallery}
+                camera={false}
+                accept={GALLERY_ACCEPT}
+                disabled={busy !== null}
+                onFile={(file) => void (isVideo(file) ? runVideo(file, "fridge") : runUpload(file, "fridge"))}
               />
             )}
           </div>

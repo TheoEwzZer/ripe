@@ -53,6 +53,7 @@ export const fr: Dictionary = {
     photosCount: "{n} photos",
     incoming: "Une photo arrive du téléphone…",
     filmFridge: "Filmer le frigo",
+    fromGallery: "Depuis la galerie",
     videoTooLong: "Filme {n} secondes au plus.",
     videoReading: "Lecture de la vidéo…",
     videoSending: "Envoi de la vidéo… {n} %",

@@ -54,6 +54,10 @@ export function PhotoButton({
   );
 }
 
+/** What the gallery button takes: a photo or a clip, sorted by its type once picked. */
+export const GALLERY_ACCEPT = "image/jpeg,image/png,image/webp,video/mp4,video/quicktime";
+export const isVideo = (file: File) => file.type.startsWith("video/");
+
 /** One more photo for the same inventory: where it was taken, then the camera, a file or an example photo. */
 export function AddPhoto({
   t,
@@ -122,6 +126,16 @@ export function AddPhoto({
           disabled={!live || disabled}
           onFile={(file) => onVideo(file, place)}
         />
+        {phone && (
+          <PhotoButton
+            label={t.fromGallery}
+            camera={false}
+            compact
+            accept={GALLERY_ACCEPT}
+            disabled={!live || disabled}
+            onFile={(file) => (isVideo(file) ? onVideo(file, place) : onFile(file, place))}
+          />
+        )}
         {demoLeft && (
           <button
             type="button"

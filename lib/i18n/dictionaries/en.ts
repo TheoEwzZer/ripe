@@ -51,6 +51,7 @@ export const en = {
     photosCount: "{n} photos",
     incoming: "A photo is on its way from a phone…",
     filmFridge: "Film the fridge",
+    fromGallery: "From the gallery",
     videoTooLong: "Film {n} seconds at most.",
     videoReading: "Reading the video…",
     videoSending: "Sending the video… {n} %",
