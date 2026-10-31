@@ -4,6 +4,7 @@ import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
+import { householdKey } from "@/lib/client/device";
 import type { Locale } from "@/lib/i18n/config";
 
 type Labels = { start: string; starting: string };
@@ -20,7 +21,7 @@ function ConnectedButton({ locale, labels }: { locale: Locale; labels: Labels })
       onClick={async () => {
         setPending(true);
         try {
-          const { sessionId } = await create({ locale });
+          const { sessionId } = await create({ locale, household: householdKey() ?? undefined });
           router.push(`/${locale}/s/${sessionId}`);
         } catch {
           setPending(false);

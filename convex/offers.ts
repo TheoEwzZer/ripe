@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { recordImpact } from "./impact";
 import { imageOf } from "./scans";
 import { gridBox, locale } from "./schema";
 
@@ -90,6 +91,17 @@ export const claim = mutation({
     if (!offer || offer.expiresAt < Date.now()) throw new ConvexError({ code: "gone", message: "This offer has ended" });
     if (offer.claimedAt !== undefined) return false;
     await ctx.db.patch(offerId, { claimedAt: Date.now() });
+    // Given away is saved too: the items count for the giver's household.
+    const session = await ctx.db.get(offer.sessionId);
+    if (session) {
+      await recordImpact(
+        ctx,
+        session,
+        "offered",
+        offer.items.map((i) => ({ item: { name: i.name, quantity: i.quantity, category: "other" }, share: 1 })),
+        { offerId },
+      );
+    }
     return true;
   },
 });

@@ -4,6 +4,7 @@ import { cleanPantry, defaultPantry, stapleIds } from "../lib/recipes/pantry";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { forgetImpact, recordImpact } from "./impact";
 import { activeScans, imageOf } from "./scans";
 import { cookFilters, gridBox, locale, plate, recipeContent, runStatus, scanSource } from "./schema";
 
@@ -357,14 +358,19 @@ export const markCooked = mutation({
     const { recipe } = await recipeFor(ctx, recipeId);
     if (recipe.cookedAt) return 0;
     let count = 0;
+    const saved = [];
     for (const use of recipe.uses) {
-      if (!use.ingredientId || use.share < USED_UP_SHARE) continue;
-      const item = await ctx.db.get(use.ingredientId);
+      const item = use.ingredientId && (await ctx.db.get(use.ingredientId));
       if (!item || item.removed || item.sessionId !== recipe.sessionId) continue;
+      // Every bit the dish used was saved; only what it used up leaves the list.
+      saved.push({ item, share: use.share });
+      if (use.share < USED_UP_SHARE) continue;
       await ctx.db.patch(item._id, { removed: true, cookedIn: recipeId });
       count++;
     }
     await ctx.db.patch(recipeId, { cookedAt: Date.now() });
+    const session = await ctx.db.get(recipe.sessionId);
+    if (session) await recordImpact(ctx, session, "cooked", saved, { recipeId, title: recipe.title });
     return count;
   },
 });
@@ -379,6 +385,7 @@ export const unmarkCooked = mutation({
       if (item && item.cookedIn === recipeId) await ctx.db.patch(item._id, { removed: false, cookedIn: undefined });
     }
     await ctx.db.patch(recipeId, { cookedAt: undefined });
+    await forgetImpact(ctx, recipe.sessionId, (e) => e.recipeId === recipeId);
     return null;
   },
 });

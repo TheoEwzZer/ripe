@@ -12,6 +12,7 @@ import type * as cooking from "../cooking.js";
 import type * as crons from "../crons.js";
 import type * as dates from "../dates.js";
 import type * as devices from "../devices.js";
+import type * as impact from "../impact.js";
 import type * as ingredients from "../ingredients.js";
 import type * as listening from "../listening.js";
 import type * as offers from "../offers.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   dates: typeof dates;
   devices: typeof devices;
+  impact: typeof impact;
   ingredients: typeof ingredients;
   listening: typeof listening;
   offers: typeof offers;

@@ -14,9 +14,9 @@ function randomCode(): string {
 
 /** Desktop opens a session; the QR code and the 4-character code both point at it. */
 export const create = mutation({
-  args: { locale: v.union(v.literal("en"), v.literal("fr")) },
+  args: { locale: v.union(v.literal("en"), v.literal("fr")), household: v.optional(v.string()) },
   returns: v.object({ sessionId: v.id("sessions"), code: v.string() }),
-  handler: async (ctx, { locale }) => {
+  handler: async (ctx, { locale, household }) => {
     const now = Date.now();
     let code = randomCode();
     for (let attempt = 0; attempt < 8; attempt++) {
@@ -31,6 +31,7 @@ export const create = mutation({
       code,
       status: "waiting",
       locale,
+      ...(household && /^[A-Za-z0-9_-]{8,64}$/.test(household) ? { household } : {}),
       expiresAt: now + SESSION_TTL_MS,
     });
     return { sessionId, code };
@@ -61,7 +62,7 @@ export const get = query({
     if (!session || session.expiresAt < Date.now()) return null;
     // Never expose the join token hash; the usage counters are server bookkeeping.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { joinTokenHash, voiceClips, labelReads, receiptReads, listenStreams, ...publicFields } = session;
+    const { joinTokenHash, voiceClips, labelReads, receiptReads, listenStreams, household, ...publicFields } = session;
     return publicFields;
   },
 });
@@ -138,6 +139,10 @@ export const purgeExpired = internalMutation({
           await ctx.db.delete(recipe._id);
         }
         await ctx.db.delete(run._id);
+      }
+      // The household history outlives the session (30 days); only its link to the session goes.
+      for (const event of await ctx.db.query("impactEvents").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(200)) {
+        if (!event.household) await ctx.db.delete(event._id);
       }
       for (const offer of await ctx.db.query("offers").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
         await ctx.db.delete(offer._id);

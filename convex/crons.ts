@@ -4,5 +4,6 @@ import { internal } from "./_generated/api";
 const crons = cronJobs();
 
 crons.interval("purge expired sessions", { minutes: 30 }, internal.sessions.purgeExpired, {});
+crons.interval("forget household history after 30 days", { hours: 6 }, internal.impact.purgeOld, {});
 
 export default crons;

@@ -17,3 +17,18 @@ export function deviceKey(): string {
 export function deviceKind(): "desktop" | "phone" {
   return matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820 ? "phone" : "desktop";
 }
+
+const HOUSEHOLD = "ripe.household";
+
+/** The household this device belongs to: an anonymous id, never tied to a person. */
+export function householdKey(): string | null {
+  try {
+    const known = localStorage.getItem(HOUSEHOLD);
+    if (known) return known;
+    const fresh = crypto.randomUUID().replace(/-/g, "");
+    localStorage.setItem(HOUSEHOLD, fresh);
+    return fresh;
+  } catch {
+    return null;
+  }
+}

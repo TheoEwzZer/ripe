@@ -35,9 +35,11 @@ export function EditCard({
   onRename,
   onDays,
   onRemove,
+  onWaste,
   onMerge,
   onClose,
   children,
+  wasteLabel,
 }: {
   item: EditableItem;
   duplicateCount: number;
@@ -45,6 +47,9 @@ export function EditCard({
   onRename: (name: string) => void;
   onDays: (daysLeft: number) => void;
   onRemove: () => void;
+  /** "I threw it away": counts against the zero-waste streak. */
+  onWaste?: () => void;
+  wasteLabel?: string;
   onMerge: () => void;
   onClose: () => void;
   /** Extra tools for this item, such as reading its printed date. */
@@ -53,9 +58,12 @@ export function EditCard({
   const [draftName, setDraftName] = useState<string | null>(null);
   const [draftDays, setDraftDays] = useState<number | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    },
+    [],
+  );
 
   const days = draftDays ?? item.daysLeft;
   const naming = item.segmentation === "pending" || (item.segmentation === "point" && !item.name);
@@ -106,7 +114,11 @@ export function EditCard({
             {labels.tiers[tierFor(days)]}, <span className="font-mono text-xs">{dayLabel(days, labels)}</span>
           </p>
         </div>
-        <button type="button" onClick={onClose} className="-mr-1 rounded-full px-3 py-1 text-sm text-ink-soft transition-colors hover:bg-glass hover:text-ink">
+        <button
+          type="button"
+          onClick={onClose}
+          className="-mr-1 rounded-full px-3 py-1 text-sm text-ink-soft transition-colors hover:bg-glass hover:text-ink"
+        >
           {labels.close}
         </button>
       </div>
@@ -163,9 +175,22 @@ export function EditCard({
             {duplicateCount === 1 ? labels.mergeOne : fill(labels.merge, { n: duplicateCount })}
           </button>
         )}
-        <button type="button" onClick={onRemove} className="rounded-full px-4 py-2 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass">
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded-full px-4 py-2 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass"
+        >
           {labels.remove}
         </button>
+        {onWaste && wasteLabel && (
+          <button
+            type="button"
+            onClick={onWaste}
+            className="rounded-full px-4 py-2 text-sm font-medium text-betterave ring-1 ring-betterave/40 transition-colors hover:bg-betterave/10"
+          >
+            {wasteLabel}
+          </button>
+        )}
       </div>
     </section>
   );

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KitchenView } from "@/components/recipes/RecipeCard";
 import { RecipePanel } from "@/components/recipes/RecipePanel";
 import { recipeLabels } from "@/components/recipes/shared";
+import { ImpactStrip } from "@/components/impact/ImpactStrip";
 import { OfferPanel } from "@/components/offer/OfferPanel";
 import { DateReader } from "@/components/scan/DateReader";
 import { EditCard } from "@/components/scan/EditCard";
@@ -30,6 +31,7 @@ type T = {
   offer: Dictionary["offer"];
   voice: Dictionary["voice"];
   dates: Dictionary["dates"];
+  impact: Dictionary["impact"];
 };
 type Toast = { message: string; undo: () => Promise<unknown> };
 
@@ -90,6 +92,8 @@ export function SessionWorkspace({ t }: { t: T }) {
   const receiptUploadUrl = useMutation(api.dates.uploadUrl);
   const readReceipt = useAction(api.reading.readReceipt);
   const undoVoice = useMutation(api.voice.undo);
+  const waste = useMutation(api.impact.waste);
+  const unwaste = useMutation(api.impact.unwaste);
   const presence = usePresence(session ? session._id : null);
 
   // Edits show at once; Convex replaces the guess with the stored value when the write lands.
@@ -516,6 +520,8 @@ export function SessionWorkspace({ t }: { t: T }) {
       {canTap && <p className="-mt-2 text-sm text-ink-soft">{t.scan.tapHint}</p>}
       {incoming && <IncomingPhoto photo={incoming} label={t.session.incoming} large={false} />}
 
+      {settled && <ImpactStrip sessionId={sessionId} locale={locale} t={t.impact} />}
+
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div className="flex flex-col gap-3 lg:sticky lg:top-6">
           {scans.length > 1 && (
@@ -604,6 +610,15 @@ export function SessionWorkspace({ t }: { t: T }) {
                 onRename={(name) => void attempt(() => update({ ingredientId: current._id, name }))}
                 onDays={(daysLeft) => void attempt(() => update({ ingredientId: current._id, daysLeft }))}
                 onRemove={() => removeItem(current._id)}
+                wasteLabel={t.impact.waste}
+                onWaste={() => {
+                  const ingredientId = current._id;
+                  setSelected(null);
+                  void attempt(async () => {
+                    await waste({ ingredientId });
+                    showToast({ message: fill(t.impact.wastedToast, { name: current.name }), undo: () => unwaste({ ingredientId }) });
+                  });
+                }}
                 onMerge={() => mergeInto(current._id)}
                 onClose={() => setSelected(null)}
               >

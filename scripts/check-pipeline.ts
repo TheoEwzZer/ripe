@@ -25,6 +25,7 @@ import { clock, timersIn } from "../lib/recipes/timers";
 import { downsample, encodeWav } from "../lib/client/voice";
 import { daysUntil, parsePrintedDate } from "../lib/meta/dates";
 import { parseReceipt } from "../lib/meta/receipt";
+import { factorFor, impactOf, weightKg } from "../lib/impact";
 import { cookCommand } from "../lib/voice/commands";
 import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
@@ -332,6 +333,17 @@ async function main() {
     );
     assert.equal(parseReceipt(JSON.stringify({ date: "28/10", items: [] })).date, null);
     assert.deepEqual(parseReceipt("oops").items, []);
+  });
+
+  await check("impact: weights come from the quantity, carbon from Agribalyse by name then category", () => {
+    assert.equal(weightKg({ name: "tomato", quantity: "4", category: "produce" }), 0.48);
+    assert.equal(weightKg({ name: "natural yogurt", quantity: "4 x 125 g", category: "dairy" }), 0.5);
+    assert.equal(weightKg({ name: "milk", quantity: "1 L", category: "dairy" }), 1);
+    assert.equal(weightKg({ name: "red pepper", quantity: "half", category: "produce" }), 0.09);
+    assert.equal(factorFor({ name: "mozzarella", category: "dairy" }).co2e, 5.14);
+    assert.equal(factorFor({ name: "mystery stew", category: "leftover" }).co2e, 2);
+    const beef = impactOf({ name: "beef steak", quantity: "250 g", category: "meat" }, 0.5);
+    assert.ok(Math.abs(beef.kg - 0.125) < 1e-9 && Math.abs(beef.co2e - 0.125 * 28.01) < 1e-9);
   });
 
   await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {

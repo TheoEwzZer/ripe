@@ -155,6 +155,8 @@ export default defineSchema({
   sessions: defineTable({
     code: v.string(),
     status: sessionStatus,
+    /** Anonymous id kept on the device that opened the session: its 30-day history and impact. */
+    household: v.optional(v.string()),
     locale,
     /** SHA-256 of the one-time token carried by the QR code; cleared once a phone joins. */
     joinTokenHash: v.optional(v.string()),
@@ -293,6 +295,25 @@ export default defineSchema({
     claimedAt: v.optional(v.number()),
     expiresAt: v.number(),
   }).index("by_session", ["sessionId"]),
+
+  /** Something saved (cooked, given away) or thrown away, valued in kg, € and kg CO2e (lib/impact.ts). Kept 30 days. */
+  impactEvents: defineTable({
+    household: v.optional(v.string()),
+    sessionId: v.id("sessions"),
+    /** UTC day, YYYY-MM-DD. */
+    day: v.string(),
+    kind: v.union(v.literal("cooked"), v.literal("offered"), v.literal("wasted")),
+    kg: v.number(),
+    eur: v.number(),
+    co2e: v.number(),
+    items: v.array(v.string()),
+    title: v.optional(v.string()),
+    recipeId: v.optional(v.id("recipes")),
+    offerId: v.optional(v.id("offers")),
+    ingredientId: v.optional(v.id("ingredients")),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_household_and_day", ["household", "day"]),
 
   /** Money spent on the Meta Model API per UTC day, checked before every paid call. */
   spend: defineTable({
