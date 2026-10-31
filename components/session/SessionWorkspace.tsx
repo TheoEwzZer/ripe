@@ -19,7 +19,7 @@ import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage, previewOf } from "@/lib/client/prepare-image";
-import { firstFrame } from "@/lib/client/video";
+import { UnreadableVideo, firstFrame, uploadWithProgress } from "@/lib/client/video";
 import { VideoTracks } from "@/components/scan/VideoTracks";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { AddPhoto, IncomingPhoto, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
@@ -43,6 +43,8 @@ type Toast = { message: string; undo: () => Promise<unknown> };
 
 const TOAST_MS = 5000;
 const MAX_VIDEO_SECONDS = 15;
+/** Same cap as the server (convex/scans.ts), checked before a long upload. */
+const MAX_VIDEO_MB = 60;
 
 function errorText(error: unknown, { session: t, recipes }: T): string {
   const code = error instanceof ConvexError ? (error.data as { code?: string }).code : undefined;
@@ -59,6 +61,8 @@ function errorText(error: unknown, { session: t, recipes }: T): string {
       return t.errSession;
     case "busy":
       return t.errBusy;
+    case "video":
+      return fill(t.videoInvalid, { n: MAX_VIDEO_SECONDS });
     case "recording":
       return t.errNoDemo;
     case "empty":
@@ -135,6 +139,14 @@ export function SessionWorkspace({ t }: { t: T }) {
   );
 
   const [busy, setBusy] = useState<"demo" | "upload" | "receipt" | null>(null);
+  /** Where a filmed clip is, so a slow phone upload never looks stuck. */
+  const [videoStep, setVideoStep] = useState<{ phase: "reading" | "sending"; percent: number } | null>(null);
+  const uploadLabel =
+    videoStep?.phase === "reading"
+      ? t.session.videoReading
+      : videoStep?.phase === "sending"
+        ? fill(t.session.videoSending, { n: videoStep.percent })
+        : t.session.uploading;
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -245,19 +257,32 @@ export function SessionWorkspace({ t }: { t: T }) {
     setSelected(null);
     setChosenScan(null);
     setAdding(false);
+    setVideoStep({ phase: "reading", percent: 0 });
     await attempt(async () => {
-      const clip = await firstFrame(file);
+      if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+        setError(fill(t.session.videoTooBig, { n: MAX_VIDEO_MB }));
+        return;
+      }
+      let clip: Awaited<ReturnType<typeof firstFrame>>;
+      try {
+        clip = await firstFrame(file);
+      } catch (e) {
+        if (e instanceof UnreadableVideo || (e instanceof Error && e.message === "timeout")) {
+          setError(t.session.videoUnreadable);
+          return;
+        }
+        throw e;
+      }
       if (clip.duration > MAX_VIDEO_SECONDS + 0.5) {
         setError(fill(t.session.videoTooLong, { n: MAX_VIDEO_SECONDS }));
         return;
       }
-      const upload = async (blob: Blob) => {
-        const url = await generateUploadUrl({ sessionId });
-        const response = await fetch(url, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
-        if (!response.ok) throw new Error(`Upload failed with ${response.status}`);
-        return ((await response.json()) as { storageId: Id<"_storage"> }).storageId;
-      };
-      const [frameId, videoId] = await Promise.all([upload(clip.frame), upload(file)]);
+      setVideoStep({ phase: "sending", percent: 0 });
+      const send = async (blob: Blob, onProgress: (fraction: number) => void) =>
+        (await uploadWithProgress(await generateUploadUrl({ sessionId }), blob, onProgress)) as Id<"_storage">;
+      // The clip is nearly all of the bytes: its progress is the one shown.
+      const frameId = await send(clip.frame, () => {});
+      const videoId = await send(file, (fraction) => setVideoStep({ phase: "sending", percent: Math.min(99, Math.round(fraction * 100)) }));
       await startVideo({
         sessionId,
         storageId: frameId,
@@ -267,6 +292,7 @@ export function SessionWorkspace({ t }: { t: T }) {
         video: { storageId: videoId, width: clip.videoWidth, height: clip.videoHeight, duration: clip.duration },
       });
     });
+    setVideoStep(null);
     setBusy(null);
   }
 
@@ -320,7 +346,7 @@ export function SessionWorkspace({ t }: { t: T }) {
           <div className="flex flex-wrap items-center gap-3">
             {phone && (
               <PhotoButton
-                label={busy === "upload" ? t.session.uploading : t.session.scanFridge}
+                label={busy === "upload" ? uploadLabel : t.session.scanFridge}
                 camera
                 primary
                 disabled={!live || busy !== null}
@@ -341,7 +367,7 @@ export function SessionWorkspace({ t }: { t: T }) {
             </button>
             {!phone && (
               <PhotoButton
-                label={busy === "upload" ? t.session.uploading : t.session.upload}
+                label={busy === "upload" ? uploadLabel : t.session.upload}
                 camera={false}
                 disabled={!live || busy !== null}
                 onFile={(file) => void runUpload(file, "fridge")}
@@ -349,7 +375,7 @@ export function SessionWorkspace({ t }: { t: T }) {
             )}
             {live && (
               <PhotoButton
-                label={t.session.filmFridge}
+                label={videoStep ? uploadLabel : t.session.filmFridge}
                 camera={phone}
                 accept="video/mp4,video/quicktime"
                 disabled={busy !== null}
@@ -539,7 +565,7 @@ export function SessionWorkspace({ t }: { t: T }) {
             disabled={busy !== null || running}
             className="rounded-full bg-aubergine px-4 py-2 text-sm font-medium text-porcelaine transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 dark:bg-porcelaine dark:text-aubergine"
           >
-            {busy === "upload" ? t.session.uploading : busy === "receipt" ? t.session.receiptReading : t.session.addPhoto}
+            {busy === "upload" ? uploadLabel : busy === "receipt" ? t.session.receiptReading : t.session.addPhoto}
           </button>
           <button
             type="button"
