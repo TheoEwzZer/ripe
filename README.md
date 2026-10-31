@@ -29,6 +29,9 @@ npm run fixtures:mock    # rebuild the synthetic recording (hand-placed boxes, r
 npm run probe            # with a key: one real pass, capped by META_BUDGET_USD (default $0.25)
 npm run probe -- --steps perceive        # stop after Muse Spark
 npm run record:recipes -- --locale en --plates   # real recipes and plates for the demo photo
+npm run record:recipes -- --locale fr --plan     # a real 3-day plan
+npm run record:tips                              # storage tips for the demo photo
+npm run probe:track -- --video clip.mp4 --width 960 --height 720 --boxes "x1,y1,x2,y2;…"   # one SAM video call
 ```
 
 `/lab` shows the newest recording as a freshness map.
@@ -43,6 +46,13 @@ NEXT_PUBLIC_LISTEN_URL=ws://localhost:8790 npm run dev:frontend
 ```
 
 Without the relay, hands-free cooking falls back to one recorded clip per sentence.
+
+## Reminders, impact and sharing
+
+- Reminders are Web Push notifications sent by Convex (`convex/notify.ts`, `web-push`) the evening before food goes off; `public/sw.js` shows them. Set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in the Convex environment (`npx web-push generate-vapid-keys`); without them the button stays hidden.
+- The impact counter (`lib/impact.ts`) values saved food with ADEME's Agribalyse 3.2 carbon factors (via Impact CO2) and Ripe's indicative prices; the household page keeps 30 days under an anonymous id stored on the device.
+- `app/api/story/…` draws a 1080×1920 story card of a recipe with `next/og`, no model involved.
+- A filmed fridge: the first frame goes through the photo pipeline, then SAM 3.1 tracks the boxed items through the clip (`lib/meta/track.ts`, `convex/tracking.ts`).
 
 ## Layout
 
