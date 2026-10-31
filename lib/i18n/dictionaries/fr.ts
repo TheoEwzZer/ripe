@@ -167,6 +167,13 @@ export const fr: Dictionary = {
     sourceEur: "Euros : prix indicatifs en France établis par Ripe, pas une statistique officielle.",
     waste: "Je l'ai jeté",
     wastedToast: "{name} compté comme jeté",
+    beforeAfter: "Avant / après",
+    imagining: "Muse Image dessine ton frigo sans ce que tu as sauvé…",
+    before: "Avant",
+    after: "Après",
+    afterFailed: "Muse Image n'a pas pu le dessiner cette fois.",
+    afterHint: "Glisse pour comparer",
+    close: "Fermer",
   },
   tips: {
     open: "Les garder plus longtemps",

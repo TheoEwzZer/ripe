@@ -165,6 +165,13 @@ export const en = {
     sourceEur: "Euros: Ripe's indicative French retail prices, not an official statistic.",
     waste: "I threw it away",
     wastedToast: "{name} counted as thrown away",
+    beforeAfter: "Before / after",
+    imagining: "Muse Image is drawing your fridge without what you saved…",
+    before: "Before",
+    after: "After",
+    afterFailed: "Muse Image could not draw it this time.",
+    afterHint: "Drag to compare",
+    close: "Close",
   },
   tips: {
     open: "Keep them longer",

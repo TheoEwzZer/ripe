@@ -524,7 +524,7 @@ export function SessionWorkspace({ t }: { t: T }) {
       {canTap && <p className="-mt-2 text-sm text-ink-soft">{t.scan.tapHint}</p>}
       {incoming && <IncomingPhoto photo={incoming} label={t.session.incoming} large={false} />}
 
-      {settled && <ImpactStrip sessionId={sessionId} locale={locale} t={t.impact} />}
+      {settled && <ImpactStrip sessionId={sessionId} locale={locale} live={live} t={t.impact} />}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div className="flex flex-col gap-3 lg:sticky lg:top-6">

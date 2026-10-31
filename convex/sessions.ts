@@ -144,6 +144,10 @@ export const purgeExpired = internalMutation({
       for (const event of await ctx.db.query("impactEvents").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(200)) {
         if (!event.household) await ctx.db.delete(event._id);
       }
+      for (const after of await ctx.db.query("afters").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(10)) {
+        if (after.storageId) await ctx.storage.delete(after.storageId);
+        await ctx.db.delete(after._id);
+      }
       for (const offer of await ctx.db.query("offers").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
         await ctx.db.delete(offer._id);
       }

@@ -308,6 +308,16 @@ export default defineSchema({
     costUsd: v.number(),
   }).index("by_session", ["sessionId"]),
 
+  /** Before and after: the fridge photo, and Muse Image's version of it once the saved foods are gone. */
+  afters: defineTable({
+    sessionId: v.id("sessions"),
+    scanId: v.id("scans"),
+    items: v.array(v.string()),
+    status: v.union(v.literal("imagining"), v.literal("ready"), v.literal("failed")),
+    storageId: v.optional(v.id("_storage")),
+    ms: v.optional(v.number()),
+  }).index("by_session", ["sessionId"]),
+
   /** Food offered to a neighbour through a link: names, freshness and a crop of the photo, nothing personal. */
   offers: defineTable({
     sessionId: v.id("sessions"),

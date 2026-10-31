@@ -9,10 +9,12 @@
  */
 
 import type * as advice from "../advice.js";
+import type * as afters from "../afters.js";
 import type * as cooking from "../cooking.js";
 import type * as crons from "../crons.js";
 import type * as dates from "../dates.js";
 import type * as devices from "../devices.js";
+import type * as imaging from "../imaging.js";
 import type * as impact from "../impact.js";
 import type * as ingredients from "../ingredients.js";
 import type * as listening from "../listening.js";
@@ -35,10 +37,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   advice: typeof advice;
+  afters: typeof afters;
   cooking: typeof cooking;
   crons: typeof crons;
   dates: typeof dates;
   devices: typeof devices;
+  imaging: typeof imaging;
   impact: typeof impact;
   ingredients: typeof ingredients;
   listening: typeof listening;
