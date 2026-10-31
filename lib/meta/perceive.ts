@@ -25,7 +25,7 @@ const UNKNOWN_USAGE_USD = 0.02;
 export type Place = "fridge" | "pantry" | "freezer";
 
 /** The same prompt for every photo, plus how long food keeps where it was taken. */
-const PLACE_HINTS: Record<Place, string> = {
+export const PLACE_HINTS: Record<Place, string> = {
   fridge: "This photo shows a fridge.",
   pantry: "This photo shows a pantry or a cupboard: dry and canned goods keep for weeks or months, fresh produce stored here still spoils.",
   freezer: "This photo shows a freezer: frozen food keeps for months, so give frozen items many days left (up to 60) unless they show freezer burn.",

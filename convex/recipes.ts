@@ -290,7 +290,7 @@ export const get = query({
           daysLeft: item.daysLeft,
           removed: item.removed,
           bbox: item.bbox,
-          onPhoto: item.scanId === scan._id,
+          onPhoto: item.scanId === scan._id && !item.seenAt,
         });
       }
     }

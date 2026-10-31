@@ -23,7 +23,8 @@ export type CardRecipe = {
   usesLeftover?: string;
 };
 
-export type KitchenView = Map<string, { name: string; daysLeft: number; bbox: GridBox; scanId: string }>;
+/** `offPhoto`: seen on a later frame of the video, so not drawn on the photo. */
+export type KitchenView = Map<string, { name: string; daysLeft: number; bbox: GridBox; scanId: string; offPhoto?: boolean }>;
 export type Photo = { src: string | null; width: number; height: number };
 
 const MAX_CHIPS = 3;
@@ -61,7 +62,7 @@ export function RecipeCard({
   ) : (
     <PhotoCrop
       photo={photo}
-      boxes={items.filter((i) => i.scanId === scanId).map((i) => i.bbox)}
+      boxes={items.filter((i) => i.scanId === scanId && !i.offPhoto).map((i) => i.bbox)}
       alt=""
       className={writing ? "animate-pulse" : ""}
     />

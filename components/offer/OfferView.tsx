@@ -40,7 +40,7 @@ export function OfferView({ locale, t }: { locale: "en" | "fr"; t: Dictionary["o
           const photo = photos.get(item.scanId);
           return (
             <li key={`${item.name}-${i}`} className="glass flex flex-col gap-2 overflow-hidden rounded-3xl p-2">
-              {photo && <PhotoCrop photo={photo} boxes={[item.bbox]} alt={item.name} className="rounded-2xl" />}
+              {photo && !item.offPhoto && <PhotoCrop photo={photo} boxes={[item.bbox]} alt={item.name} className="rounded-2xl" />}
               <div className="flex items-center gap-2 px-2 pb-1">
                 <Pip daysLeft={days} />
                 <div className="min-w-0 flex-1">

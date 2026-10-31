@@ -19,7 +19,7 @@ import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage, previewOf } from "@/lib/client/prepare-image";
-import { UnreadableVideo, firstFrame, uploadWithProgress } from "@/lib/client/video";
+import { UnreadableVideo, durationOf, firstFrame, stillsFor, uploadWithProgress } from "@/lib/client/video";
 import { VideoTracks } from "@/components/scan/VideoTracks";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { AddPhoto, GALLERY_ACCEPT, IncomingPhoto, isVideo, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
@@ -71,6 +71,9 @@ function errorText(error: unknown, { session: t, recipes }: T): string {
       return t.errGeneric;
   }
 }
+
+/** 4.2 → "0:04". */
+const clockOf = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 
 const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
@@ -265,7 +268,8 @@ export function SessionWorkspace({ t }: { t: T }) {
       }
       let clip: Awaited<ReturnType<typeof firstFrame>>;
       try {
-        clip = await firstFrame(file);
+        // The length is only known once the file is open: read it first, then pick the frames.
+        clip = await firstFrame(file, 1600, stillsFor(await durationOf(file)));
       } catch (e) {
         if (e instanceof UnreadableVideo || (e instanceof Error && e.message === "timeout")) {
           setError(t.session.videoUnreadable);
@@ -282,6 +286,8 @@ export function SessionWorkspace({ t }: { t: T }) {
         (await uploadWithProgress(await generateUploadUrl({ sessionId }), blob, onProgress)) as Id<"_storage">;
       // The clip is nearly all of the bytes: its progress is the one shown.
       const frameId = await send(clip.frame, () => {});
+      const stills = [];
+      for (const still of clip.stills) stills.push({ storageId: await send(still.blob, () => {}), time: still.time });
       const videoId = await send(file, (fraction) => setVideoStep({ phase: "sending", percent: Math.min(99, Math.round(fraction * 100)) }));
       await startVideo({
         sessionId,
@@ -290,6 +296,7 @@ export function SessionWorkspace({ t }: { t: T }) {
         height: clip.height,
         place,
         video: { storageId: videoId, width: clip.videoWidth, height: clip.videoHeight, duration: clip.duration },
+        stills,
       });
     });
     setVideoStep(null);
@@ -424,8 +431,9 @@ export function SessionWorkspace({ t }: { t: T }) {
 
   // The shown photo's items. A duplicate folded into an item seen on another photo stays drawn here, as that item.
   const aliasOf = new Map<string, string>();
+  // Items first seen later in the video are not on this photo.
   const ingredients: CanvasIngredient[] = all
-    .filter((i) => i.scanId === scan._id)
+    .filter((i) => i.scanId === scan._id && i.seenAt === undefined)
     .map((i) => {
       const keep = i.mergedInto ? byId.get(i.mergedInto) : undefined;
       if (keep && keep.scanId !== i.scanId && !keep.removed) {
@@ -440,8 +448,11 @@ export function SessionWorkspace({ t }: { t: T }) {
     daysLeft: i.daysLeft,
     bbox: i.bbox,
     segmentation: i.segmentation,
-    offPhoto: listOf.has(i.scanId),
-    tag: listOf.has(i.scanId)
+    offPhoto: listOf.has(i.scanId) || i.seenAt !== undefined,
+    tag:
+      i.seenAt !== undefined
+        ? fill(t.session.seenInVideo, { time: clockOf(i.seenAt) })
+        : listOf.has(i.scanId)
       ? listOf.get(i.scanId) === "voice"
         ? t.voice.spokenTag
         : t.voice.receiptTag
@@ -494,7 +505,10 @@ export function SessionWorkspace({ t }: { t: T }) {
   // Aliases light up with the item they were folded into.
   const highlight = lit ? new Set([...lit, ...[...aliasOf].filter(([, keep]) => lit.has(keep)).map(([alias]) => alias)]) : null;
   const kitchenView: KitchenView = new Map(
-    visible.map((i) => [i._id as string, { name: i.name, daysLeft: i.daysLeft, bbox: i.bbox, scanId: i.scanId as string }]),
+    visible.map((i) => [
+      i._id as string,
+      { name: i.name, daysLeft: i.daysLeft, bbox: i.bbox, scanId: i.scanId as string, offPhoto: i.seenAt !== undefined },
+    ]),
   );
   const photos = new Map(scans.map((s) => [s._id as string, { src: s.imageUrl, width: s.width, height: s.height }]));
   const canCook = settled && visible.some((i) => i.name.trim() !== "");
@@ -628,11 +642,17 @@ export function SessionWorkspace({ t }: { t: T }) {
           {scan.video && (
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <p className="text-ink-soft" aria-live="polite">
-                {scan.video.tracking === "done"
-                  ? t.session.tracked
-                  : scan.video.tracking === "failed"
-                    ? t.session.trackFailed
-                    : t.session.tracking}
+                {scan.video.tracking === "waiting" && !scan.video.sweep && scan.status !== "done"
+                  ? t.session.firstFrame
+                  : scan.video.sweep === "reading"
+                    ? t.session.sweeping
+                    : scan.video.tracking === "done"
+                      ? scan.video.found
+                        ? fill(scan.video.found === 1 ? t.session.trackedFoundOne : t.session.trackedFound, { n: scan.video.found })
+                        : t.session.tracked
+                      : scan.video.tracking === "failed"
+                        ? t.session.trackFailed
+                        : t.session.tracking}
               </p>
               {scan.video.tracking === "failed" && (
                 <button

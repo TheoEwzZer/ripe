@@ -129,6 +129,7 @@ export const purgeExpired = internalMutation({
         }
         if (scan.source.kind === "upload") await ctx.storage.delete(scan.source.storageId);
         if (scan.video) await ctx.storage.delete(scan.video.storageId);
+        for (const still of scan.video?.stills ?? []) await ctx.storage.delete(still.storageId);
         for (const track of await ctx.db.query("tracks").withIndex("by_scan", (q) => q.eq("scanId", scan._id)).take(20)) {
           await ctx.db.delete(track._id);
         }

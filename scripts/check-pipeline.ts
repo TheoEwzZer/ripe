@@ -29,6 +29,8 @@ import { factorFor, impactOf, weightKg } from "../lib/impact";
 import { parseTips, pickUrgent, tipsKey } from "../lib/meta/tips";
 import { arrangePlan, planCalendar } from "../lib/recipes/plan";
 import { parseTracks, trackPrompt } from "../lib/meta/track";
+import { parseSweep } from "../lib/meta/sweep";
+import { frameAt, readVideoInfo } from "../lib/video/mp4";
 import { cookCommand } from "../lib/voice/commands";
 import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
@@ -410,6 +412,61 @@ async function main() {
     assert.ok(ics.includes("DTSTART:20261101T190000"));
     assert.ok(ics.includes("SUMMARY:Soup\\, quick\\; good"));
     assert.ok(ics.endsWith("END:VCALENDAR\r\n"));
+  });
+
+  await check("video sweep: frame rate read from the MP4, later items prompted on their frame, known names dropped", () => {
+    // A minimal MP4: moov > trak > (tkhd, mdia > (mdhd, hdlr 'vide', minf > stbl > stts)); 144 frames at 24 fps.
+    const box = (type: string, ...parts: Uint8Array[]) => {
+      const body = Buffer.concat(parts);
+      const head = Buffer.alloc(8);
+      head.writeUInt32BE(8 + body.length);
+      head.write(type, 4, "latin1");
+      return Buffer.concat([head, body]);
+    };
+    const u32 = (...ns: number[]) => {
+      const b = Buffer.alloc(4 * ns.length);
+      ns.forEach((n, i) => b.writeUInt32BE(n, i * 4));
+      return b;
+    };
+    const tkhd = box("tkhd", Buffer.alloc(76), u32(960 * 65536, 720 * 65536));
+    const mdhd = box("mdhd", u32(0, 0, 0, 12288, 73728), Buffer.alloc(4));
+    const hdlr = box("hdlr", u32(0, 0), Buffer.from("vide"), Buffer.alloc(12));
+    const stts = box("stts", u32(0, 1, 144, 512));
+    const moov = box("moov", box("trak", tkhd, box("mdia", mdhd, hdlr, box("minf", box("stbl", stts)))));
+    const file = Buffer.concat([box("ftyp", Buffer.from("isom")), box("mdat", Buffer.alloc(16)), moov]);
+    const info = readVideoInfo(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength));
+    assert.deepEqual(info, { fps: 24, frames: 144, duration: 6, width: 960, height: 720 });
+    assert.equal(readVideoInfo(new ArrayBuffer(8)), null);
+    assert.equal(frameAt(2.5, 24, 144), 60);
+    assert.equal(frameAt(9, 24, 144), 143);
+
+    assert.equal(
+      trackPrompt([{ id: 3, frame: 60, box: { x1: 553, y1: 484, x2: 683, y2: 605 } }], { w: 960, h: 720 }),
+      "<60f>3<|box;x1=553;y1=484;x2=683;y2=605;w=960;h=720|>",
+    );
+
+    const box0 = { x_min: 1, y_min: 2, x_max: 3, y_max: 4 };
+    const item = (name: string, image: number) => ({
+      name,
+      samPrompt: name,
+      category: "dairy",
+      quantity: "1",
+      daysLeft: 4,
+      freshnessCues: "",
+      dateRead: null,
+      bbox: box0,
+      image,
+    });
+    const swept = parseSweep(
+      JSON.stringify({ ingredients: [item("Yogurts", 1), item("butter", 2), item("butter", 3), item("ham", 4), item("", 1)] }),
+      3,
+      ["yogurt", "milk"],
+    );
+    assert.deepEqual(
+      swept.map((i) => [i.name, i.image]),
+      [["butter", 2]],
+    );
+    assert.deepEqual(parseSweep("oops", 3, []), []);
   });
 
   await check("video: box prompts stay inside the frame; SAM's per-frame boxes are read by object", () => {

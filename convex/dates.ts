@@ -30,7 +30,8 @@ export const forDate = internalMutation({
     const reads = session.labelReads ?? 0;
     if (reads >= MAX_READS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many dates read in this session" });
     await ctx.db.patch(session._id, { labelReads: reads + 1 });
-    return { name: item.name, bbox: item.bbox, source: scan.source };
+    // An item seen on a later frame of the video sits on that frame, not on the photo.
+    return { name: item.name, bbox: item.bbox, source: item.seenAt ? { kind: "upload" as const, storageId: item.seenAt.storageId } : scan.source };
   },
 });
 

@@ -32,6 +32,11 @@ export const scanVideo = v.object({
   tracking: v.union(v.literal("waiting"), v.literal("tracking"), v.literal("done"), v.literal("failed")),
   /** Frames SAM read, for mapping playback time to its frame index. */
   frames: v.optional(v.number()),
+  /** Later frames picked in the browser, read by Muse Spark for what the first frame missed. */
+  stills: v.optional(v.array(v.object({ storageId: v.id("_storage"), time: v.number() }))),
+  sweep: v.optional(v.union(v.literal("reading"), v.literal("done"), v.literal("failed"))),
+  /** Items the later frames added. */
+  found: v.optional(v.number()),
 });
 
 export const deviceKind = v.union(v.literal("desktop"), v.literal("phone"));
@@ -259,6 +264,8 @@ export default defineSchema({
     cookedIn: v.optional(v.id("recipes")),
     /** What was paid for it, read on a receipt; the impact counter uses it instead of Ripe's estimate. */
     priceEur: v.optional(v.number()),
+    /** First seen on a later frame of the scan's video, not on its photo: `bbox` is on that frame. */
+    seenAt: v.optional(v.object({ time: v.number(), storageId: v.id("_storage") })),
   })
     .index("by_session", ["sessionId"])
     .index("by_scan", ["scanId"]),
@@ -377,6 +384,8 @@ export default defineSchema({
         daysLeft: v.number(),
         scanId: v.id("scans"),
         bbox: gridBox,
+        /** Seen in the video, not on the photo: no crop to show. */
+        offPhoto: v.optional(v.boolean()),
       }),
     ),
     note: v.string(),

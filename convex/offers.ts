@@ -35,6 +35,7 @@ export const create = mutation({
         daysLeft: item.daysLeft,
         scanId: item.scanId,
         bbox: item.bbox,
+        ...(item.seenAt ? { offPhoto: true } : {}),
       });
     }
     return await ctx.db.insert("offers", {
@@ -53,7 +54,9 @@ export const get = query({
   returns: v.union(
     v.null(),
     v.object({
-      items: v.array(v.object({ name: v.string(), quantity: v.string(), daysLeft: v.number(), bbox: gridBox, scanId: v.id("scans") })),
+      items: v.array(
+        v.object({ name: v.string(), quantity: v.string(), daysLeft: v.number(), bbox: gridBox, scanId: v.id("scans"), offPhoto: v.optional(v.boolean()) }),
+      ),
       photos: v.array(v.object({ scanId: v.id("scans"), src: v.union(v.string(), v.null()), width: v.number(), height: v.number() })),
       note: v.string(),
       claimed: v.boolean(),
@@ -72,7 +75,7 @@ export const get = query({
       if (src) photos.push({ scanId, src, width: scan.width, height: scan.height });
     }
     return {
-      items: offer.items.map(({ name, quantity, daysLeft, bbox, scanId }) => ({ name, quantity, daysLeft, bbox, scanId })),
+      items: offer.items.map(({ name, quantity, daysLeft, bbox, scanId, offPhoto }) => ({ name, quantity, daysLeft, bbox, scanId, offPhoto })),
       photos,
       note: offer.note,
       claimed: offer.claimedAt !== undefined,

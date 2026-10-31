@@ -112,10 +112,12 @@ export const generateUploadUrl = mutation({
 const MAX_VIDEOS_PER_SESSION = 3;
 const MAX_VIDEO_SECONDS = 15;
 const MAX_VIDEO_BYTES = 60 * 1024 * 1024;
+const MAX_STILLS = 3;
 
 /**
- * A filmed fridge: its first frame is analysed like a photo, then SAM follows
- * each item through the clip (convex/tracking.ts).
+ * A filmed fridge: its first frame is analysed like a photo, a few later
+ * frames (stills) are read for what it missed (convex/sweeping.ts), then SAM
+ * follows each item through the clip (convex/tracking.ts).
  */
 export const startVideo = mutation({
   args: {
@@ -125,16 +127,21 @@ export const startVideo = mutation({
     height: v.number(),
     place: v.optional(scanPlace),
     video: v.object({ storageId: v.id("_storage"), width: v.number(), height: v.number(), duration: v.number() }),
+    stills: v.optional(v.array(v.object({ storageId: v.id("_storage"), time: v.number() }))),
   },
   returns: v.id("scans"),
-  handler: async (ctx, { sessionId, storageId, width, height, place = "fridge", video }) => {
+  handler: async (ctx, { sessionId, storageId, width, height, place = "fridge", video, stills = [] }) => {
     if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Live analysis is not enabled" });
     await openSession(ctx, sessionId);
     const videos = (await activeScans(ctx, sessionId)).filter((s) => s.video);
     if (videos.length >= MAX_VIDEOS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many videos in this session" });
     const frame = await ctx.db.system.get(storageId);
     const clip = await ctx.db.system.get(video.storageId);
+    const stillFiles = await Promise.all(stills.map((still) => ctx.db.system.get(still.storageId)));
     const valid =
+      stills.length <= MAX_STILLS &&
+      stillFiles.every((file) => file !== null && file.size <= MAX_UPLOAD_BYTES && /^image\/(jpeg|png|webp)$/.test(file.contentType ?? "")) &&
+      stills.every((still) => still.time > 0 && still.time <= video.duration + 0.5) &&
       frame !== null &&
       clip !== null &&
       clip.size <= MAX_VIDEO_BYTES &&
@@ -143,11 +150,11 @@ export const startVideo = mutation({
       video.duration <= MAX_VIDEO_SECONDS + 0.5 &&
       [width, height, video.width, video.height].every((n) => Number.isInteger(n) && n >= 64 && n <= 4096);
     if (!valid) {
-      for (const file of [frame, clip]) if (file) await ctx.storage.delete(file._id);
+      for (const file of [frame, clip, ...stillFiles]) if (file) await ctx.storage.delete(file._id);
       throw new ConvexError({ code: "video", message: `Send an MP4 or MOV of ${MAX_VIDEO_SECONDS} seconds at most` });
     }
     const scanId = await launch(ctx, sessionId, { source: { kind: "upload", storageId }, width, height, place });
-    await ctx.db.patch(scanId, { video: { ...video, tracking: "waiting" } });
+    await ctx.db.patch(scanId, { video: { ...video, tracking: "waiting", ...(stills.length ? { stills } : {}) } });
     return scanId;
   },
 });
@@ -190,6 +197,8 @@ const scanView = v.object({
       duration: v.number(),
       tracking: v.union(v.literal("waiting"), v.literal("tracking"), v.literal("done"), v.literal("failed")),
       frames: v.optional(v.number()),
+      sweep: v.optional(v.union(v.literal("reading"), v.literal("done"), v.literal("failed"))),
+      found: v.optional(v.number()),
     }),
   ),
   /** Set on the photo-less lists of items said aloud or read from receipts. */
@@ -209,6 +218,8 @@ const ingredientView = v.object({
   segmentation,
   removed: v.boolean(),
   priceEur: v.optional(v.number()),
+  /** Seconds into the scan's video where it was first seen; not on the photo. */
+  seenAt: v.optional(v.number()),
 });
 
 /** Every photo of the session with one shared inventory; masks come from `masks` so this stays light. */
@@ -240,6 +251,8 @@ export const kitchen = query({
               duration: scan.video.duration,
               tracking: scan.video.tracking,
               frames: scan.video.frames,
+              sweep: scan.video.sweep,
+              found: scan.video.found,
             }
           : undefined,
         place: scan.place ?? "fridge",
@@ -268,6 +281,7 @@ export const kitchen = query({
           segmentation: i.segmentation,
           removed: i.removed,
           priceEur: i.priceEur,
+          seenAt: i.seenAt?.time,
         });
       }
     }
@@ -309,7 +323,7 @@ export const forTracking = internalQuery({
     v.null(),
     v.object({
       video: v.object({ storageId: v.id("_storage"), width: v.number(), height: v.number(), duration: v.number() }),
-      items: v.array(v.object({ _id: v.id("ingredients"), bbox: gridBox, daysLeft: v.number() })),
+      items: v.array(v.object({ _id: v.id("ingredients"), bbox: gridBox, daysLeft: v.number(), seenAt: v.optional(v.number()) })),
     }),
   ),
   handler: async (ctx, { scanId }) => {
@@ -325,7 +339,7 @@ export const forTracking = internalQuery({
       items: items
         .filter((i) => !i.removed && i.name)
         .sort((a, b) => a.daysLeft - b.daysLeft)
-        .map((i) => ({ _id: i._id, bbox: i.bbox, daysLeft: i.daysLeft })),
+        .map((i) => ({ _id: i._id, bbox: i.bbox, daysLeft: i.daysLeft, seenAt: i.seenAt?.time })),
     };
   },
 });
@@ -570,7 +584,89 @@ export const finish = internalMutation({
     if (!scan || scan.status === "error") return null;
     await ctx.db.patch(scanId, { status: "done", costUsd, finishedAt: Date.now() });
     await ctx.db.patch(scan.sessionId, { status: "inventory" });
-    if (scan.video) await ctx.scheduler.runAfter(0, internal.tracking.track, { scanId });
+    if (scan.video?.stills?.length && !scan.video.sweep) {
+      await ctx.db.patch(scanId, { video: { ...scan.video, sweep: "reading" } });
+      await ctx.scheduler.runAfter(0, internal.sweeping.sweep, { scanId });
+    } else if (scan.video) {
+      await ctx.scheduler.runAfter(0, internal.tracking.track, { scanId });
+    }
+    return null;
+  },
+});
+
+/** The later frames, and every name already in the session so Muse Spark adds only what is new. */
+export const forSweep = internalQuery({
+  args: { scanId: v.id("scans") },
+  returns: v.union(
+    v.null(),
+    v.object({
+      stills: v.array(v.object({ storageId: v.id("_storage"), time: v.number() })),
+      known: v.array(v.string()),
+      place: v.optional(scanPlace),
+    }),
+  ),
+  handler: async (ctx, { scanId }) => {
+    const scan = await ctx.db.get(scanId);
+    if (!scan?.video?.stills?.length || scan.video.sweep !== "reading") return null;
+    const items = await ctx.db
+      .query("ingredients")
+      .withIndex("by_session", (q) => q.eq("sessionId", scan.sessionId))
+      .take(300);
+    const known = [...new Set(items.filter((i) => !i.removed && i.name.trim()).map((i) => i.name.trim()))];
+    return { stills: scan.video.stills, known, place: scan.place };
+  },
+});
+
+/** What the later frames showed joins the scan, off its photo; then SAM tracks everything. */
+export const addSeen = internalMutation({
+  args: {
+    scanId: v.id("scans"),
+    items: v.array(v.object({ ...perceivedFields, image: v.number() })),
+    costUsd: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, { scanId, items, costUsd }) => {
+    const scan = await ctx.db.get(scanId);
+    const stills = scan?.video?.stills;
+    if (!scan?.video || !stills || scan.video.sweep !== "reading") return null;
+    const order = (
+      await ctx.db
+        .query("ingredients")
+        .withIndex("by_scan", (q) => q.eq("scanId", scanId))
+        .take(200)
+    ).length;
+    let found = 0;
+    for (const { image, ...item } of items) {
+      const still = stills[image - 1];
+      if (!still) continue;
+      await ctx.db.insert("ingredients", {
+        sessionId: scan.sessionId,
+        scanId,
+        order: order + found,
+        ...item,
+        daysLeft: Math.max(0, Math.round(item.daysLeft)),
+        segmentation: "none",
+        source: "perceived",
+        removed: false,
+        seenAt: { time: still.time, storageId: still.storageId },
+      });
+      found++;
+    }
+    await ctx.db.patch(scanId, { video: { ...scan.video, sweep: "done", found }, costUsd: scan.costUsd + costUsd });
+    await ctx.scheduler.runAfter(0, internal.tracking.track, { scanId });
+    return null;
+  },
+});
+
+/** The later frames could not be read: track what the first frame showed. */
+export const endSweep = internalMutation({
+  args: { scanId: v.id("scans") },
+  returns: v.null(),
+  handler: async (ctx, { scanId }) => {
+    const scan = await ctx.db.get(scanId);
+    if (!scan?.video || scan.video.sweep !== "reading") return null;
+    await ctx.db.patch(scanId, { video: { ...scan.video, sweep: "failed" } });
+    await ctx.scheduler.runAfter(0, internal.tracking.track, { scanId });
     return null;
   },
 });

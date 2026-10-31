@@ -7,25 +7,27 @@ export const MIN_BILLED_FRAMES = 50;
 /** SAM tracks at most 16 prompted objects. */
 export const MAX_TRACKED = 16;
 
-export type TrackPrompt = { id: number; box: { x1: number; y1: number; x2: number; y2: number } };
+/** A box drawn on one frame of the clip (0 unless the item first shows up later). */
+export type TrackPrompt = { id: number; box: { x1: number; y1: number; x2: number; y2: number }; frame?: number };
 /** Per object id: [frame, x1, y1, x2, y2] in source pixels, frame order. */
 export type Tracks = Map<number, [number, number, number, number, number][]>;
 
-/** Box prompts on frame 0, in the token grammar SAM reads and writes. */
+/** Box prompts, each on its own frame, in the token grammar SAM reads and writes. */
 export function trackPrompt(objects: readonly TrackPrompt[], size: { w: number; h: number }): string {
   // Corners are inclusive pixels: the last column is w - 1, and SAM refuses anything past it.
   const clamp = (n: number, max: number) => Math.max(0, Math.min(max - 1, Math.round(n)));
   return objects
     .slice(0, MAX_TRACKED)
-    .map(({ id, box }) => ({
+    .map(({ id, box, frame = 0 }) => ({
       id,
+      frame: Math.max(0, Math.round(frame)),
       x1: clamp(box.x1, size.w),
       y1: clamp(box.y1, size.h),
       x2: clamp(box.x2, size.w),
       y2: clamp(box.y2, size.h),
     }))
     .filter((b) => b.x2 > b.x1 && b.y2 > b.y1)
-    .map(({ id, x1, y1, x2, y2 }) => `<0f>${id}<|box;x1=${x1};y1=${y1};x2=${x2};y2=${y2};w=${size.w};h=${size.h}|>`)
+    .map(({ id, frame, x1, y1, x2, y2 }) => `<${frame}f>${id}<|box;x1=${x1};y1=${y1};x2=${x2};y2=${y2};w=${size.w};h=${size.h}|>`)
     .join("");
 }
 
@@ -92,7 +94,8 @@ export async function trackVideo(
           ],
         },
       ],
-      metadata: { propagation_direction: "forward", mask_encoding: "one_bit" },
+      // Items first seen later in the clip are followed back to the start as well.
+      metadata: { propagation_direction: objects.some((o) => (o.frame ?? 0) > 0) ? "both" : "forward", mask_encoding: "one_bit" },
     }),
   });
   if (!res.ok) throw new Error(`SAM video ${res.status}: ${(await res.text()).slice(0, 300)}`);

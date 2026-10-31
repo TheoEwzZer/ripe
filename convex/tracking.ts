@@ -2,13 +2,17 @@
 
 import { v } from "convex/values";
 import { MAX_TRACKED, MIN_BILLED_FRAMES, SAM_USD_PER_FRAME, trackVideo, uploadVideo } from "../lib/meta/track";
+import { DEFAULT_FPS, frameAt, readVideoInfo } from "../lib/video/mp4";
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 
 /** Phones film at up to 30 frames a second; the estimate reserved before SAM reads the clip. */
 const RESERVE_FPS = 30;
 
-/** SAM 3.1 follows the most urgent items, boxed on the first frame, through the whole clip. */
+/**
+ * SAM 3.1 follows the most urgent items through the whole clip, each from the
+ * frame it was boxed on: the first frame, or the later one where Muse Spark saw it.
+ */
 export const track = internalAction({
   args: { scanId: v.id("scans") },
   returns: v.null(),
@@ -26,11 +30,13 @@ export const track = internalAction({
       await ctx.runMutation(internal.spend.reserve, { label: "track", usd: reserve });
       const clip = await ctx.storage.get(video.storageId);
       if (!clip) throw new Error("The video is gone");
+      const info = readVideoInfo(await clip.arrayBuffer());
       const fileId = await uploadVideo(clip, "fridge.mp4");
-      // The first frame is the analysed photo, at the same aspect: grid boxes scale straight to video pixels.
+      // Every analysed frame keeps the video's aspect: grid boxes scale straight to video pixels.
       const items = data.items.slice(0, MAX_TRACKED);
       const prompts = items.map((item, i) => ({
         id: i + 1,
+        frame: item.seenAt ? frameAt(item.seenAt, info?.fps ?? DEFAULT_FPS, info?.frames) : 0,
         box: {
           x1: (item.bbox.x_min / 1000) * video.width,
           y1: (item.bbox.y_min / 1000) * video.height,
