@@ -105,11 +105,15 @@ export const merge = mutation({
       await ctx.db.patch(dup._id, { removed: true, mergedInto: keepId });
     }
 
-    const quantities = [keep, ...duplicates].map((i) => i.quantity.trim()).filter(Boolean);
+    const all = [keep, ...duplicates];
+    const quantities = all.map((i) => i.quantity.trim()).filter(Boolean);
+    const priced = all.every((i) => i.priceEur !== undefined);
     await ctx.db.patch(keepId, {
-      beforeMerge: keep.beforeMerge ?? { daysLeft: keep.daysLeft, quantity: keep.quantity },
+      beforeMerge: keep.beforeMerge ?? { daysLeft: keep.daysLeft, quantity: keep.quantity, priceEur: keep.priceEur },
       daysLeft: Math.min(keep.daysLeft, ...duplicates.map((d) => d.daysLeft)),
       quantity: [...new Set(quantities)].join(" + "),
+      // A price for only part of the merged lines would undercount: estimate the whole instead.
+      priceEur: priced ? Math.round(all.reduce((sum, i) => sum + (i.priceEur ?? 0), 0) * 100) / 100 : undefined,
     });
     return null;
   },

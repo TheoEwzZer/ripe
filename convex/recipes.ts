@@ -316,7 +316,7 @@ export const story = query({
       score: v.number(),
       image: v.union(v.string(), v.null()),
       items: v.array(v.string()),
-      impact: v.object({ kg: v.number(), eur: v.number(), co2e: v.number() }),
+      impact: v.object({ kg: v.number(), eur: v.number(), co2e: v.number(), paidEur: v.optional(v.number()) }),
       locale,
     }),
   ),

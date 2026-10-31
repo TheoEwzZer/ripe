@@ -254,9 +254,11 @@ export default defineSchema({
     /** Set on a duplicate folded into another item; undo reads it. */
     mergedInto: v.optional(v.id("ingredients")),
     /** The kept item's values before a merge, so undo can put them back. */
-    beforeMerge: v.optional(v.object({ daysLeft: v.number(), quantity: v.string() })),
+    beforeMerge: v.optional(v.object({ daysLeft: v.number(), quantity: v.string(), priceEur: v.optional(v.number()) })),
     /** Taken out of the inventory because this recipe was cooked; undo puts it back. */
     cookedIn: v.optional(v.id("recipes")),
+    /** What was paid for it, read on a receipt; the impact counter uses it instead of Ripe's estimate. */
+    priceEur: v.optional(v.number()),
   })
     .index("by_session", ["sessionId"])
     .index("by_scan", ["scanId"]),
@@ -393,6 +395,8 @@ export default defineSchema({
     kg: v.number(),
     eur: v.number(),
     co2e: v.number(),
+    /** The part of `eur` paid on receipts rather than estimated. */
+    paidEur: v.optional(v.number()),
     items: v.array(v.string()),
     title: v.optional(v.string()),
     recipeId: v.optional(v.id("recipes")),

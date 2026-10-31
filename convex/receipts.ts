@@ -24,7 +24,7 @@ export const begin = internalMutation({
 export const add = internalMutation({
   args: {
     sessionId: v.id("sessions"),
-    items: v.array(v.object({ name: v.string(), quantity: v.string(), category, daysLeft: v.number() })),
+    items: v.array(v.object({ name: v.string(), quantity: v.string(), category, daysLeft: v.number(), price: v.union(v.number(), v.null()) })),
   },
   returns: v.array(v.object({ id: v.id("ingredients"), name: v.string() })),
   handler: async (ctx, { sessionId, items }) => {
@@ -53,6 +53,7 @@ export const add = internalMutation({
         segmentation: "none",
         source: "manual",
         removed: false,
+        ...(item.price !== null ? { priceEur: item.price } : {}),
       });
       added.push({ id, name: item.name });
     }

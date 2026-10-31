@@ -320,9 +320,9 @@ async function main() {
         date: "2026-10-28",
         store: "Marché",
         items: [
-          { name: " tomato ", quantity: "1 kg", category: "produce", daysLeft: 5.4 },
+          { name: " tomato ", quantity: "1 kg", category: "produce", daysLeft: 5.4, price: 2.494 },
           { name: "", quantity: "1" },
-          { name: "yogurt", category: "nope", daysLeft: 99 },
+          { name: "yogurt", category: "nope", daysLeft: 99, price: 1250 },
         ],
       }),
     );
@@ -334,6 +334,14 @@ async function main() {
         ["yogurt", "other", 60],
       ],
     );
+    assert.deepEqual(
+      receipt.items.map((i) => i.price),
+      [2.49, null],
+    );
+    const paid = impactOf({ name: "tomato", quantity: "1 kg", category: "produce", priceEur: 2.49 }, 0.5);
+    assert.equal(paid.eur, 1.245);
+    assert.equal(paid.paidEur, 1.245);
+    assert.equal(impactOf({ name: "tomato", quantity: "1 kg", category: "produce" }).paidEur, undefined);
     assert.equal(parseReceipt(JSON.stringify({ date: "28/10", items: [] })).date, null);
     assert.deepEqual(parseReceipt("oops").items, []);
   });

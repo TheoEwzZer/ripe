@@ -208,6 +208,7 @@ const ingredientView = v.object({
   ...perceivedFields,
   segmentation,
   removed: v.boolean(),
+  priceEur: v.optional(v.number()),
 });
 
 /** Every photo of the session with one shared inventory; masks come from `masks` so this stays light. */
@@ -266,6 +267,7 @@ export const kitchen = query({
           bbox: i.bbox,
           segmentation: i.segmentation,
           removed: i.removed,
+          priceEur: i.priceEur,
         });
       }
     }

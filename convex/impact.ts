@@ -12,7 +12,7 @@ const isHouseholdKey = (key: string) => /^[A-Za-z0-9_-]{8,64}$/.test(key);
 
 const dayOf = (at: number) => new Date(at).toISOString().slice(0, 10);
 
-type Saved = { item: Pick<Doc<"ingredients">, "name" | "quantity" | "category">; share: number };
+type Saved = { item: Pick<Doc<"ingredients">, "name" | "quantity" | "category" | "priceEur">; share: number };
 
 /** Writes one saved (or wasted) moment, valued from lib/impact.ts. */
 export async function recordImpact(
@@ -44,10 +44,13 @@ export async function forgetImpact(ctx: MutationCtx, sessionId: Id<"sessions">, 
   for (const e of events) if (match(e)) await ctx.db.delete(e._id);
 }
 
-const totals = v.object({ kg: v.number(), eur: v.number(), co2e: v.number() });
+const totals = v.object({ kg: v.number(), eur: v.number(), co2e: v.number(), paidEur: v.optional(v.number()) });
 
 function sum(events: Doc<"impactEvents">[]): Impact {
-  return events.reduce<Impact>((s, e) => addImpact(s, { kg: e.kg, eur: e.eur, co2e: e.co2e }), noImpact);
+  return events.reduce<Impact>(
+    (s, e) => addImpact(s, { kg: e.kg, eur: e.eur, co2e: e.co2e, ...(e.paidEur ? { paidEur: e.paidEur } : {}) }),
+    noImpact,
+  );
 }
 
 /** What this session has saved so far (cooked or given away). */

@@ -17,6 +17,7 @@ export const receiptSchema = z.object({
         quantity: z.string().describe("Amount bought, e.g. '2', '1 kg', '4 x 125 g'"),
         category: z.enum(ingredientCategories),
         daysLeft: z.number().int().min(0).max(60).describe("Days left from today, given the purchase date and how long it keeps once home"),
+        price: z.number().nullable().describe("Price paid for this line after any line discount, in the receipt's currency, e.g. 2.49; null if unreadable"),
       }),
     )
     .describe("Food lines only: no bags, deposits, discounts, cleaning products or toiletries"),
@@ -34,6 +35,7 @@ const lenient = z.object({
         quantity: z.string().catch(""),
         category: z.enum(ingredientCategories).catch("other"),
         daysLeft: z.number().catch(5),
+        price: z.number().nullable().catch(null),
       }),
     )
     .catch([]),
@@ -53,6 +55,8 @@ export function parseReceipt(rawText: string): Receipt {
           quantity: i.quantity.slice(0, 40),
           category: i.category,
           daysLeft: Math.max(0, Math.min(60, Math.round(i.daysLeft))),
+          // A line above 200 is a misread total, not a grocery.
+          price: i.price !== null && i.price > 0 && i.price < 200 ? Math.round(i.price * 100) / 100 : null,
         })),
     };
   } catch {
@@ -64,6 +68,7 @@ export function receiptPrompt(today: string): string {
   return `You read supermarket receipts for a kitchen app that fights food waste. Today is ${today}.
 List every food or drink line on this receipt. Skip bags, deposits, discounts, loyalty lines, cleaning products, toiletries and anything not eaten.
 Abbreviated product names are common ("TOM GRAPPE", "YAOURT NAT 4X125"): write the plain food name in English, singular.
+For price, give what was paid for that line (the line total, not the unit price), as a number.
 For daysLeft, start from the purchase date and how long that food keeps at home (fresh fish 1–2 days, salad 3–4, yogurt about 2 weeks, eggs 3 weeks, pasta months, capped at 60), then subtract the days since purchase.`;
 }
 

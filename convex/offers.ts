@@ -94,13 +94,13 @@ export const claim = mutation({
     // Given away is saved too: the items count for the giver's household.
     const session = await ctx.db.get(offer.sessionId);
     if (session) {
-      await recordImpact(
-        ctx,
-        session,
-        "offered",
-        offer.items.map((i) => ({ item: { name: i.name, quantity: i.quantity, category: "other" }, share: 1 })),
-        { offerId },
-      );
+      // The item itself knows its category and any receipt price; the offer keeps only what the neighbour sees.
+      const saved = [];
+      for (const i of offer.items) {
+        const item = await ctx.db.get(i.ingredientId);
+        saved.push({ item: { name: i.name, quantity: i.quantity, category: item?.category ?? "other", priceEur: item?.priceEur }, share: 1 });
+      }
+      await recordImpact(ctx, session, "offered", saved, { offerId });
     }
     return true;
   },

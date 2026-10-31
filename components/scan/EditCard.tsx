@@ -13,6 +13,8 @@ export type EditableItem = {
   quantity: string;
   freshnessCues: string;
   dateRead: string | null;
+  /** Paid, as read on a receipt. */
+  priceEur?: number;
   segmentation: "pending" | "concept" | "box" | "point" | "none";
 };
 
@@ -140,7 +142,7 @@ export function EditCard({
         />
       </div>
 
-      {(item.quantity || item.freshnessCues || item.dateRead) && (
+      {(item.quantity || item.freshnessCues || item.dateRead || item.priceEur !== undefined) && (
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
           {item.quantity && (
             <>
@@ -158,6 +160,14 @@ export function EditCard({
             <>
               <dt className="text-ink-soft">{labels.dateRead}</dt>
               <dd>{item.dateRead}</dd>
+            </>
+          )}
+          {item.priceEur !== undefined && (
+            <>
+              <dt className="text-ink-soft">{labels.pricePaid}</dt>
+              <dd>{fill(labels.pricePaidValue, {
+                  price: item.priceEur.toLocaleString(labels.numberLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                })}</dd>
             </>
           )}
         </dl>

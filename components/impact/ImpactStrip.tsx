@@ -33,6 +33,9 @@ export function ImpactStrip({
               {locale === "fr" ? " : " : ": "}
             </span>
             {f.kg(impact.saved.kg)} · {f.eur(impact.saved.eur)} · {f.co2e(impact.saved.co2e)}
+            {impact.saved.paidEur ? (
+              <span className="text-ink-soft"> ({t.paidPart.replace("{eur}", f.eur(impact.saved.paidEur))})</span>
+            ) : null}
           </p>
         ) : (
           <p className="text-ink-soft">{t.stripEmpty}</p>

@@ -109,6 +109,7 @@ export function Household({ locale, t }: { locale: "en" | "fr"; t: Dictionary["i
             </li>
             <li>{t.sourceKg}</li>
             <li>{t.sourceEur}</li>
+            <li>{t.sourcePaid}</li>
             <li>
               <a
                 href="https://www.ecologie.gouv.fr/politiques-publiques/gaspillage-alimentaire"

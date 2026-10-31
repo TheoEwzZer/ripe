@@ -7,10 +7,11 @@
  * github.com/incubateur-ademe/impactco2, src/data/categories). Each value is
  * the sum of the life-cycle stages listed there, in kg CO2e per kg of food.
  * Category fallbacks are the mean of the listed items of that category.
- * Prices are Ripe's indicative French retail prices, not an official source.
+ * Prices are Ripe's indicative French retail prices, not an official source,
+ * unless the item came from a receipt: then it is the price actually paid.
  */
 
-export type ItemLike = { name: string; quantity: string; category: string };
+export type ItemLike = { name: string; quantity: string; category: string; /** Paid for the whole item, read on a receipt. */ priceEur?: number };
 
 type Factor = { match: RegExp; co2e: number; unitKg: number; eurPerKg: number };
 
@@ -111,19 +112,25 @@ export function weightKg(item: ItemLike): number {
   return (word ? word[1] : 1) * unit;
 }
 
-export type Impact = { kg: number; eur: number; co2e: number };
+export type Impact = { kg: number; eur: number; co2e: number; /** The part of `eur` that is the price paid on a receipt. */ paidEur?: number };
 
 export const noImpact: Impact = { kg: 0, eur: 0, co2e: 0 };
 
 /** What saving `share` of an item is worth. */
 export function impactOf(item: ItemLike, share = 1): Impact {
-  const kg = weightKg(item) * Math.max(0, Math.min(1, share));
+  const part = Math.max(0, Math.min(1, share));
+  const kg = weightKg(item) * part;
   const f = factorFor(item);
+  if (item.priceEur !== undefined) {
+    const paid = item.priceEur * part;
+    return { kg, eur: paid, co2e: kg * f.co2e, paidEur: paid };
+  }
   return { kg, eur: kg * f.eurPerKg, co2e: kg * f.co2e };
 }
 
 export function addImpact(a: Impact, b: Impact): Impact {
-  return { kg: a.kg + b.kg, eur: a.eur + b.eur, co2e: a.co2e + b.co2e };
+  const paid = (a.paidEur ?? 0) + (b.paidEur ?? 0);
+  return { kg: a.kg + b.kg, eur: a.eur + b.eur, co2e: a.co2e + b.co2e, ...(paid > 0 ? { paidEur: paid } : {}) };
 }
 
 /** France, 2023: edible food wasted per person and year, all stages (ecologie.gouv.fr, gaspillage alimentaire). */
