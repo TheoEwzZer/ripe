@@ -22,7 +22,11 @@ export type Issue =
   | { code: "dishes"; dishes: number; limit: number }
   | { code: "diet"; diet: Diet; ingredient: string }
   | { code: "urgent"; used: number }
-  | { code: "empty" };
+  | { code: "empty" }
+  /** Plan only: the item goes off before the day its recipe is planned. */
+  | { code: "late"; ingredient: string; day: number; daysLeft: number }
+  /** Plan only: the three recipes together use more of the item than there is. */
+  | { code: "overused"; ingredient: string; share: number };
 
 export const MAX_TO_BUY = 2;
 /** 100 means the recipe finishes the four items closest to being wasted. */
@@ -165,6 +169,10 @@ export function issueText(issue: Issue): string {
       return `"${issue.ingredient}" breaks the ${issue.diet} diet`;
     case "urgent":
       return `uses ${issue.used} of my most urgent items, it must use at least 2`;
+    case "late":
+      return `"${issue.ingredient}" is planned on day ${issue.day + 1} but only keeps ${issue.daysLeft} days`;
+    case "overused":
+      return `the plan uses ${Math.round(issue.share * 100)}% of "${issue.ingredient}"`;
     case "empty":
       return "uses nothing from my kitchen";
   }

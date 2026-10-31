@@ -18,6 +18,9 @@ export type CardRecipe = {
   uses: { ingredientId?: string; ingredient: string }[];
   plate?: { status: "imagining" } | { status: "ready"; url: string | null } | { status: "failed" };
   swap?: { status: "swapping" | "failed" };
+  day?: number;
+  makesLeftover?: string;
+  usesLeftover?: string;
 };
 
 export type KitchenView = Map<string, { name: string; daysLeft: number; bbox: GridBox; scanId: string }>;
@@ -56,11 +59,18 @@ export function RecipeCard({
     // eslint-disable-next-line @next/next/no-img-element
     <img src={plate} alt={fill(t.plateAlt, { title: recipe.title })} className="aspect-video w-full object-cover" />
   ) : (
-    <PhotoCrop photo={photo} boxes={items.filter((i) => i.scanId === scanId).map((i) => i.bbox)} alt="" className={writing ? "animate-pulse" : ""} />
+    <PhotoCrop
+      photo={photo}
+      boxes={items.filter((i) => i.scanId === scanId).map((i) => i.bbox)}
+      alt=""
+      className={writing ? "animate-pulse" : ""}
+    />
   );
 
+  const day = recipe.day === 0 ? t.day0 : recipe.day === 1 ? t.day1 : recipe.day === 2 ? t.day2 : null;
   const body = (
     <>
+      {day && <p className="font-mono text-xs tracking-wide text-kaki uppercase">{day}</p>}
       <div className="relative overflow-hidden rounded-xl">
         {thumb}
         {(writing || busy) && (
@@ -96,6 +106,12 @@ export function RecipeCard({
           ))}
           {items.length > MAX_CHIPS && <span className="text-xs text-ink-soft">+{items.length - MAX_CHIPS}</span>}
           {recipe.fixed && <span className="text-xs text-ink-soft">· {t.fixed}</span>}
+        </div>
+      )}
+      {(recipe.usesLeftover || recipe.makesLeftover) && (
+        <div className="flex flex-col gap-0.5 text-xs text-ink-soft">
+          {recipe.usesLeftover && <p>↩ {fill(t.usesLeftover, { text: recipe.usesLeftover })}</p>}
+          {recipe.makesLeftover && <p>↪ {fill(t.makesLeftover, { text: recipe.makesLeftover })}</p>}
         </div>
       )}
     </>

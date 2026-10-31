@@ -108,6 +108,7 @@ export const cookFilters = v.object({
   diet: v.array(diet),
   fewDishes: v.boolean(),
   servings: v.number(),
+  plan: v.optional(v.boolean()),
 });
 
 export const runStatus = v.union(v.literal("cooking"), v.literal("fixing"), v.literal("done"), v.literal("error"));
@@ -123,6 +124,8 @@ export const recipeIssue = v.union(
   v.object({ code: v.literal("diet"), diet, ingredient: v.string() }),
   v.object({ code: v.literal("urgent"), used: v.number() }),
   v.object({ code: v.literal("empty") }),
+  v.object({ code: v.literal("late"), ingredient: v.string(), day: v.number(), daysLeft: v.number() }),
+  v.object({ code: v.literal("overused"), ingredient: v.string(), share: v.number() }),
 );
 
 export const recipeUse = v.object({
@@ -151,6 +154,11 @@ export const recipeContent = {
   issues: v.array(recipeIssue),
   /** Rewritten by the correction round. */
   fixed: v.boolean(),
+  /** In a 3-day plan: 0 tonight, 1 tomorrow, 2 the day after, set by Ripe once all three are written. */
+  day: v.optional(v.number()),
+  /** In a plan, what this dish leaves for a later one, and what it reuses from an earlier one. */
+  makesLeftover: v.optional(v.string()),
+  usesLeftover: v.optional(v.string()),
 };
 
 export type RecipeContent = Infer<ReturnType<typeof v.object<typeof recipeContent>>>;

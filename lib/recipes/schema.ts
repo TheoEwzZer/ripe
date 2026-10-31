@@ -9,7 +9,7 @@ export type Appliance = (typeof appliances)[number];
  * from this kitchen, so the structured output can only name what is there;
  * anything else has to be declared in `toBuy`.
  */
-export function recipeSchemaFor(inventoryNames: readonly string[], pantryIds: readonly string[]) {
+export function recipeSchemaFor(inventoryNames: readonly string[], pantryIds: readonly string[], plan = false) {
   const ingredient = inventoryNames.length > 0 ? z.enum(inventoryNames as [string, ...string[]]) : z.string();
   const staple = pantryIds.length > 0 ? z.enum(pantryIds as [string, ...string[]]) : z.string();
   return z.object({
@@ -32,11 +32,19 @@ export function recipeSchemaFor(inventoryNames: readonly string[], pantryIds: re
     staples: z.array(staple).describe("Pantry staples used, from my pantry list only"),
     toBuy: z.array(z.string()).describe("Missing items to buy: at most 2, only if the dish truly needs them"),
     steps: z.array(z.string()),
+    ...(plan
+      ? {
+          makesLeftover: z
+            .string()
+            .describe("What this dish deliberately leaves for another day of the plan, e.g. 'extra roasted vegetables', or empty"),
+          usesLeftover: z.string().describe("The exact makesLeftover text of another recipe this one reuses, or empty"),
+        }
+      : {}),
   });
 }
 
-export function recipeSetSchemaFor(inventoryNames: readonly string[], pantryIds: readonly string[]) {
-  return z.object({ recipes: z.array(recipeSchemaFor(inventoryNames, pantryIds)) });
+export function recipeSetSchemaFor(inventoryNames: readonly string[], pantryIds: readonly string[], plan = false) {
+  return z.object({ recipes: z.array(recipeSchemaFor(inventoryNames, pantryIds, plan)) });
 }
 
 const strings = z.array(z.string()).catch([]);
@@ -62,6 +70,8 @@ export const cookedRecipeSchema = z.object({
   staples: strings,
   toBuy: strings,
   steps: strings,
+  makesLeftover: z.string().optional().catch(undefined),
+  usesLeftover: z.string().optional().catch(undefined),
 });
 
 export type CookedRecipe = z.infer<typeof cookedRecipeSchema>;

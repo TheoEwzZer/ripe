@@ -7,6 +7,7 @@
  *   npm run record:recipes -- --locale en
  *   npm run record:recipes -- --locale fr --plates
  *   npm run record:recipes -- --emergency --max 15     # another filter set
+ *   npm run record:recipes -- --locale fr --plan       # a 3-day plan
  *   META_BASE_URL=http://localhost:8787/v1 MODEL_API_KEY=fake npm run record:recipes -- --out /tmp/rec.json
  */
 import { config as loadEnv } from "dotenv";
@@ -32,6 +33,7 @@ const { values } = parseArgs({
     locale: { type: "string", default: "en" },
     plates: { type: "boolean", default: false },
     emergency: { type: "boolean", default: false },
+    plan: { type: "boolean", default: false },
     max: { type: "string" },
     out: { type: "string" },
   },
@@ -58,10 +60,13 @@ async function main() {
   const filters: CookFilters = {
     ...defaultFilters,
     emergency: values.emergency!,
+    ...(values.plan ? { plan: true } : {}),
     ...(values.max ? { maxMinutes: Number(values.max) as TimeLimit } : {}),
   };
   const req: CookRequest = { kitchen, pantry: defaultPantry, filters, locale };
-  console.log(`API: ${metaBaseUrl()}  ·  cap $${budget.capUsd.toFixed(2)}  ·  ${values.recording}  ·  ${locale}  ·  ${filtersKey(filters)}`);
+  console.log(
+    `API: ${metaBaseUrl()}  ·  cap $${budget.capUsd.toFixed(2)}  ·  ${values.recording}  ·  ${locale}  ·  ${filtersKey(filters)}`,
+  );
 
   const source: RecipeSource = {
     kind: "live",
@@ -89,7 +94,9 @@ async function main() {
       ),
     fixing: (indexes) => console.log(`  correcting ${indexes.map((i) => i + 1).join(", ")}…`),
   });
-  console.log(`✓ ${summary.cook.model}: ${summary.recipes.filter(Boolean).length} recipes in ${summary.cook.ms} ms, $${summary.cook.costUsd.toFixed(4)}`);
+  console.log(
+    `✓ ${summary.cook.model}: ${summary.recipes.filter(Boolean).length} recipes in ${summary.cook.ms} ms, $${summary.cook.costUsd.toFixed(4)}`,
+  );
   if (summary.fix) console.log(`✓ correction in ${summary.fix.ms} ms, $${summary.fix.costUsd.toFixed(4)}`);
 
   const plates: RecordedCooking["plates"] = [];
@@ -103,7 +110,11 @@ async function main() {
         continue;
       }
       budget.reserve("plate", IMAGE_USD_PER_IMAGE);
-      const { webp, ms } = await plate(dataUrl, checked.recipe.title, checked.recipe.uses.map((u) => u.ingredient));
+      const { webp, ms } = await plate(
+        dataUrl,
+        checked.recipe.title,
+        checked.recipe.uses.map((u) => u.ingredient),
+      );
       budget.settle("plate", IMAGE_USD_PER_IMAGE, IMAGE_USD_PER_IMAGE);
       const name = `${values.recording}.${locale}.${filtersKey(filters)}.${i}.webp`;
       await writeFile(path.join("public", "fixtures", "plates", name), webp);

@@ -1,5 +1,6 @@
 import { ConvexError, v, type Infer } from "convex/values";
 import { MAX_SERVINGS, MIN_SERVINGS, defaultFilters, type CookFilters } from "../lib/recipes/filters";
+import { arrangePlan } from "../lib/recipes/plan";
 import { cleanPantry, defaultPantry, stapleIds } from "../lib/recipes/pantry";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -64,7 +65,12 @@ async function recipeFor(ctx: MutationCtx, recipeId: Id<"recipes">) {
 // ——— Client API ———
 
 /** Starts a recipe request; also used when the filters are spoken (convex/voice.ts). */
-export async function startRun(ctx: MutationCtx, sessionId: Id<"sessions">, filters: CookFilters, locale: "en" | "fr"): Promise<Id<"recipeRuns">> {
+export async function startRun(
+  ctx: MutationCtx,
+  sessionId: Id<"sessions">,
+  filters: CookFilters,
+  locale: "en" | "fr",
+): Promise<Id<"recipeRuns">> {
   const session = await openSession(ctx, sessionId);
   if (!Number.isInteger(filters.servings) || filters.servings < MIN_SERVINGS || filters.servings > MAX_SERVINGS) {
     throw new ConvexError({ code: "invalid", message: `Servings must be ${MIN_SERVINGS} to ${MAX_SERVINGS}` });
@@ -193,6 +199,9 @@ async function viewOf(ctx: QueryCtx, r: Doc<"recipes">): Promise<Infer<typeof re
     swap: r.swap,
     canUndoSwap: r.previous !== undefined,
     cookedAt: r.cookedAt,
+    day: r.day,
+    makesLeftover: r.makesLeftover,
+    usesLeftover: r.usesLeftover,
   };
 }
 
@@ -269,7 +278,14 @@ export const get = query({
     for (const id of new Set(recipe.uses.flatMap((u) => (u.ingredientId ? [u.ingredientId] : [])))) {
       const item = await ctx.db.get(id);
       if (item) {
-        items.push({ _id: item._id, name: item.name, daysLeft: item.daysLeft, removed: item.removed, bbox: item.bbox, onPhoto: item.scanId === scan._id });
+        items.push({
+          _id: item._id,
+          name: item.name,
+          daysLeft: item.daysLeft,
+          removed: item.removed,
+          bbox: item.bbox,
+          onPhoto: item.scanId === scan._id,
+        });
       }
     }
     const src = await imageOf(ctx, scan.source);
@@ -313,7 +329,8 @@ export const swap = mutation({
   handler: async (ctx, { recipeId, ingredient }) => {
     if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Live cooking is not enabled" });
     const { recipe, run } = await recipeFor(ctx, recipeId);
-    if (recipe.status !== "ready" || recipe.swap?.status === "swapping") throw new ConvexError({ code: "busy", message: "This recipe is busy" });
+    if (recipe.status !== "ready" || recipe.swap?.status === "swapping")
+      throw new ConvexError({ code: "busy", message: "This recipe is busy" });
     if (!recipe.uses.some((u) => u.ingredient === ingredient)) throw new ConvexError({ code: "invalid", message: "Not in this recipe" });
     if (run.swaps >= MAX_SWAPS_PER_RUN) throw new ConvexError({ code: "quota", message: "Too many swaps" });
     await ctx.db.patch(run._id, { swaps: run.swaps + 1 });
@@ -451,7 +468,21 @@ async function recipeAt(ctx: MutationCtx, runId: Id<"recipeRuns">, order: number
     .then((rows) => rows.find((r) => r.order === order) ?? null);
 }
 
-const blank = { pitch: "", minutes: 0, servings: 0, equipment: [], dishes: 0, diet: [], uses: [], staples: [], toBuy: [], steps: [], score: 0, issues: [], fixed: false };
+const blank = {
+  pitch: "",
+  minutes: 0,
+  servings: 0,
+  equipment: [],
+  dishes: 0,
+  diet: [],
+  uses: [],
+  staples: [],
+  toBuy: [],
+  steps: [],
+  score: 0,
+  issues: [],
+  fixed: false,
+};
 
 /** A title is written: its card appears. */
 export const draft = internalMutation({
@@ -502,9 +533,39 @@ export const markFixing = internalMutation({
 });
 
 async function clearDrafts(ctx: MutationCtx, runId: Id<"recipeRuns">) {
-  for (const r of await ctx.db.query("recipes").withIndex("by_run", (q) => q.eq("runId", runId)).take(10)) {
+  for (const r of await ctx.db
+    .query("recipes")
+    .withIndex("by_run", (q) => q.eq("runId", runId))
+    .take(10)) {
     if (r.status === "writing") await ctx.db.delete(r._id);
     else if (r.status === "fixing") await ctx.db.patch(r._id, { status: "ready" });
+  }
+}
+
+/** A 3-day plan: Ripe, not the model, decides which dinner comes on which day (lib/recipes/plan.ts). */
+async function arrange(ctx: MutationCtx, runId: Id<"recipeRuns">) {
+  const recipes = (
+    await ctx.db
+      .query("recipes")
+      .withIndex("by_run", (q) => q.eq("runId", runId))
+      .take(10)
+  )
+    .filter((r) => r.status === "ready")
+    .sort((a, b) => a.order - b.order);
+  const planned = [];
+  for (const r of recipes) {
+    const uses = [];
+    for (const use of r.uses) {
+      const item = use.ingredientId && (await ctx.db.get(use.ingredientId));
+      uses.push({ item: item ? { id: item._id as string, name: item.name, daysLeft: item.daysLeft } : null, share: use.share });
+    }
+    planned.push({ uses, makesLeftover: r.makesLeftover ?? "", usesLeftover: r.usesLeftover ?? "" });
+  }
+  const { days, issues } = arrangePlan(planned);
+  for (const [i, r] of recipes.entries()) {
+    if (days[i] === undefined) continue;
+    const kept = r.issues.filter((issue) => issue.code !== "late" && issue.code !== "overused");
+    await ctx.db.patch(r._id, { day: days[i], issues: [...kept, ...issues[i]] });
   }
 }
 
@@ -515,6 +576,7 @@ export const finishRun = internalMutation({
     const run = await ctx.db.get(runId);
     if (!run || run.status === "error") return null;
     await clearDrafts(ctx, runId);
+    if (run.filters.plan) await arrange(ctx, runId);
     await ctx.db.patch(runId, { status: "done", costUsd, finishedAt: Date.now() });
     return null;
   },
@@ -600,7 +662,6 @@ export const failPlate = internalMutation({
   },
 });
 
-
 export const forSwap = internalQuery({
   args: { recipeId: v.id("recipes") },
   returns: v.union(
@@ -641,7 +702,23 @@ export const saveSwap = internalMutation({
     if (recipe.previous && plate?.status === "ready" && plate.storageId) await ctx.storage.delete(plate.storageId);
     await ctx.db.patch(recipeId, {
       ...content,
-      previous: recipe.previous ?? { title, pitch, minutes, servings, equipment, dishes, diet, uses, staples, toBuy, steps, score, issues, fixed, plate },
+      previous: recipe.previous ?? {
+        title,
+        pitch,
+        minutes,
+        servings,
+        equipment,
+        dishes,
+        diet,
+        uses,
+        staples,
+        toBuy,
+        steps,
+        score,
+        issues,
+        fixed,
+        plate,
+      },
       plate: undefined,
       swap: undefined,
     });

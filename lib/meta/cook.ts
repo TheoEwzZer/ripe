@@ -47,7 +47,8 @@ function rules({ kitchen, filters, locale }: CookRequest): string {
     `- toBuy: anything else the dish needs, at most 2 items. Prefer recipes that need nothing.`,
     `- minutes counts prep and cooking. dishes counts the pots, pans, trays and baking dishes used. equipment lists the appliances used. diet lists the diets the recipe fits.`,
     `- 4 to 8 short steps.`,
-    filters.emergency && `- Emergency mode: each recipe must use at least two of these most urgent items: ${[...new Set(urgent.map((i) => i.name))].join(", ")}.`,
+    filters.emergency &&
+      `- Emergency mode: each recipe must use at least two of these most urgent items: ${[...new Set(urgent.map((i) => i.name))].join(", ")}.`,
     filters.maxMinutes && `- Each recipe takes ${filters.maxMinutes} minutes or less, prep included.`,
     filters.equipment === "microwave" && `- Cook with the microwave only.`,
     filters.equipment === "air-fryer" && `- Cook with the air fryer only.`,
@@ -60,10 +61,14 @@ function rules({ kitchen, filters, locale }: CookRequest): string {
 }
 
 export function cookPrompt(req: CookRequest): string {
+  const people = `${req.filters.servings} ${req.filters.servings === 1 ? "person" : "people"}`;
+  const ask = req.filters.plan
+    ? `Plan 3 different dinners for ${people}: tonight, tomorrow and the day after, so that every item is eaten before it goes off. An item with N days left must be cooked within the first N days (0 or 1 means tonight). Across the three recipes, never use more of an item than I have: the shares of one item add up to at most 1. When it helps, make one dish deliberately leave something (makesLeftover) that a later dish reuses (usesLeftover, the exact same text).`
+    : `Suggest 3 different recipes for ${people} that use the most urgent items first.`;
   return `You are a home cook who hates waste.
 ${kitchenContext(req)}
 
-Suggest 3 different recipes for ${req.filters.servings} ${req.filters.servings === 1 ? "person" : "people"} that use the most urgent items first.
+${ask}
 ${rules(req)}`;
 }
 
@@ -75,6 +80,7 @@ async function streamRecipes(
   names: readonly string[],
   pantry: readonly string[],
   handlers: RecipeStreamHandlers,
+  plan = false,
 ): Promise<CookResult> {
   const started = Date.now();
   const request = {
@@ -83,7 +89,7 @@ async function streamRecipes(
     messages,
     response_format: {
       type: "json_schema" as const,
-      json_schema: { name: "recipes", strict: true, schema: z.toJSONSchema(recipeSetSchemaFor(names, pantry)) },
+      json_schema: { name: "recipes", strict: true, schema: z.toJSONSchema(recipeSetSchemaFor(names, pantry, plan)) },
     },
   };
 
@@ -123,7 +129,7 @@ async function streamRecipes(
 
 /** Three recipes, streamed: each card fills while Muse Wonder writes. */
 export function cook(req: CookRequest, handlers: RecipeStreamHandlers = {}): Promise<CookResult> {
-  return streamRecipes([{ role: "user", content: cookPrompt(req) }], uniqueNames(req.kitchen), req.pantry, handlers);
+  return streamRecipes([{ role: "user", content: cookPrompt(req) }], uniqueNames(req.kitchen), req.pantry, handlers, req.filters.plan);
 }
 
 /** One correction round for the recipes Ripe's checks rejected, in the same order. */
@@ -132,9 +138,7 @@ export function fixRecipes(
   broken: { recipe: CookedRecipe; issues: Issue[] }[],
   handlers: RecipeStreamHandlers = {},
 ): Promise<CookResult> {
-  const problems = broken
-    .map(({ recipe, issues }, i) => `${i + 1}. "${recipe.title}": ${issues.map(issueText).join("; ")}.`)
-    .join("\n");
+  const problems = broken.map(({ recipe, issues }, i) => `${i + 1}. "${recipe.title}": ${issues.map(issueText).join("; ")}.`).join("\n");
   return streamRecipes(
     [
       { role: "user", content: cookPrompt(req) },
@@ -149,6 +153,7 @@ Rewrite exactly these ${broken.length} recipe${broken.length === 1 ? "" : "s"}, 
     uniqueNames(req.kitchen),
     req.pantry,
     handlers,
+    req.filters.plan,
   );
 }
 

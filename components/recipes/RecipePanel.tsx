@@ -17,6 +17,7 @@ import {
   type CookFilters,
 } from "@/lib/recipes/filters";
 import { cleanPantry, defaultPantry, pantryKey, staples } from "@/lib/recipes/pantry";
+import { planCalendar } from "@/lib/recipes/plan";
 import { RecipeCard, type KitchenView, type Photo } from "./RecipeCard";
 import { fill, peopleLabel, type RecipeLabels } from "./shared";
 
@@ -80,7 +81,33 @@ export function RecipePanel({
   const changed = run !== null && (!sameFilters(filters, run.filters) || pantryKey(pantry) !== pantryKey(run.pantry));
   const recipes = data?.recipes ?? [];
   // Muse Wonder's order while it writes, Ripe's score once everything is checked.
-  const shown = run?.status === "done" ? [...recipes].sort((a, b) => b.score - a.score) : recipes;
+  const planned = run?.filters.plan === true && run.status === "done";
+  // A plan reads in day order; ideas by Ripe's score once everything is checked.
+  const shown = run?.status === "done" ? [...recipes].sort((a, b) => (planned ? (a.day ?? 9) - (b.day ?? 9) : b.score - a.score)) : recipes;
+
+  const downloadPlan = () => {
+    const start = new Date();
+    const ics = planCalendar(
+      shown.flatMap((r) =>
+        r.day === undefined
+          ? []
+          : [
+              {
+                title: r.title,
+                minutes: r.minutes,
+                day: r.day,
+                items: r.uses.map((u) => kitchen.get(u.ingredientId ?? "")?.name ?? u.ingredient),
+              },
+            ],
+      ),
+      { start, url: location.href.replace(/\/r\/.*$/, ""), uid: run?._id ?? "plan" },
+    );
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+    link.download = "ripe-plan.ics";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  };
 
   const toggle = <K extends keyof CookFilters>(key: K, value: CookFilters[K]) =>
     setFilters((f) => ({ ...f, [key]: f[key] === value ? undefined : value }));
@@ -96,6 +123,7 @@ export function RecipePanel({
   };
 
   const summary = [
+    filters.plan && t.planMode,
     filters.emergency && t.emergency,
     filters.maxMinutes && fill(t.maxMinutes, { n: filters.maxMinutes }),
     filters.equipment && (filters.equipment === "microwave" ? t.microwave : filters.equipment === "air-fryer" ? t.airFryer : t.onePan),
@@ -119,10 +147,30 @@ export function RecipePanel({
           : fill(t.fixing, { n: fixingCount })
         : run.status === "error"
           ? fill(t.failed, { message: run.error === "budget" ? t.budget : (run.error ?? "") })
-          : fill(t.done, { n: recipes.length });
+          : run.filters.plan
+            ? t.planDone
+            : fill(t.done, { n: recipes.length });
 
   const filterBar = (
     <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1 ring-1 ring-hairline" role="radiogroup" aria-label={t.planMode}>
+        {[false, true].map((plan) => (
+          <button
+            key={String(plan)}
+            type="button"
+            role="radio"
+            aria-checked={Boolean(filters.plan) === plan}
+            onClick={() => setFilters((f) => ({ ...f, plan: plan || undefined }))}
+            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              Boolean(filters.plan) === plan
+                ? "bg-aubergine text-porcelaine dark:bg-porcelaine dark:text-aubergine"
+                : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            {plan ? t.planMode : t.ideasMode}
+          </button>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-2">
         <Chip on={filters.emergency} onClick={() => setFilters((f) => ({ ...f, emergency: !f.emergency }))}>
           {t.emergency}
@@ -194,10 +242,12 @@ export function RecipePanel({
         onClick={cook}
         disabled={!canCook || running}
         className={`rounded-full px-5 py-2.5 font-medium transition-[transform,opacity] duration-150 active:scale-[0.98] disabled:opacity-50 ${
-          !run || changed ? "bg-aubergine text-porcelaine hover:opacity-90 dark:bg-porcelaine dark:text-aubergine" : "ring-1 ring-hairline hover:bg-glass"
+          !run || changed
+            ? "bg-aubergine text-porcelaine hover:opacity-90 dark:bg-porcelaine dark:text-aubergine"
+            : "ring-1 ring-hairline hover:bg-glass"
         }`}
       >
-        {!run ? t.cook : changed ? t.recookChanged : t.recook}
+        {filters.plan ? (!run || changed ? t.planCook : t.replan) : !run ? t.cook : changed ? t.recookChanged : t.recook}
       </button>
     </div>
   );
@@ -247,8 +297,23 @@ export function RecipePanel({
           {run.approximate && <p className="px-1 text-xs text-ink-soft">{t.approximate}</p>}
           <LayoutGroup>
             <div className="flex flex-col gap-3">
+              {planned && (
+                <button
+                  type="button"
+                  onClick={downloadPlan}
+                  className="self-start rounded-full px-4 py-2 text-sm font-medium ring-1 ring-hairline transition-colors hover:bg-glass"
+                >
+                  📅 {t.calendar}
+                </button>
+              )}
               {shown.map((recipe) => (
-                <motion.div key={recipe._id} layout="position" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                <motion.div
+                  key={recipe._id}
+                  layout="position"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25 }}
+                >
                   <RecipeCard
                     recipe={recipe}
                     kitchen={kitchen}
@@ -261,7 +326,11 @@ export function RecipePanel({
               ))}
               {run.status === "cooking" &&
                 Array.from({ length: Math.max(0, 3 - recipes.length) }, (_, i) => (
-                  <div key={`ghost-${i}`} className="aspect-[16/12] animate-pulse rounded-2xl bg-glass ring-1 ring-hairline" aria-hidden="true" />
+                  <div
+                    key={`ghost-${i}`}
+                    className="aspect-[16/12] animate-pulse rounded-2xl bg-glass ring-1 ring-hairline"
+                    aria-hidden="true"
+                  />
                 ))}
             </div>
           </LayoutGroup>

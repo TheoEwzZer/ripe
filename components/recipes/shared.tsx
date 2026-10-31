@@ -43,6 +43,10 @@ export function issueLabel(issue: Issue, t: RecipeLabels, staple: (id: string) =
       return fill(t.issueUrgent, { n: issue.used });
     case "empty":
       return t.issueEmpty;
+    case "late":
+      return fill(t.issueLate, { name: issue.ingredient, n: issue.daysLeft });
+    case "overused":
+      return fill(t.issueOverused, { name: issue.ingredient });
   }
 }
 

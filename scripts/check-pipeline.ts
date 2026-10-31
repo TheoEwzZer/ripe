@@ -27,6 +27,7 @@ import { daysUntil, parsePrintedDate } from "../lib/meta/dates";
 import { parseReceipt } from "../lib/meta/receipt";
 import { factorFor, impactOf, weightKg } from "../lib/impact";
 import { parseTips, pickUrgent, tipsKey } from "../lib/meta/tips";
+import { arrangePlan, planCalendar } from "../lib/recipes/plan";
 import { cookCommand } from "../lib/voice/commands";
 import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
@@ -373,6 +374,33 @@ async function main() {
     assert.deepEqual(tips, [
       { item: "spinach", where: "crisper", how: "Dry it.", extraDays: 3, tooLate: { action: "freeze", how: "Blanch." } },
     ]);
+  });
+
+  await check("plan: Ripe puts each dinner on a day before its items go off, leftovers after their maker", () => {
+    const item = (id: string, daysLeft: number) => ({ id, name: id, daysLeft });
+    const { days, issues } = arrangePlan([
+      { uses: [{ item: item("rice", 5), share: 0.5 }], makesLeftover: "", usesLeftover: "roast veg" },
+      { uses: [{ item: item("spinach", 0), share: 1 }], makesLeftover: "", usesLeftover: "" },
+      {
+        uses: [
+          { item: item("zucchini", 2), share: 0.6 },
+          { item: item("rice", 5), share: 0.7 },
+        ],
+        makesLeftover: "roast veg",
+        usesLeftover: "",
+      },
+    ]);
+    assert.equal(days[1], 0);
+    assert.ok(days[2] < days[0]);
+    assert.deepEqual(issues[2], [{ code: "overused", ingredient: "rice", share: 1.2 }]);
+    const ics = planCalendar([{ title: "Soup, quick; good", minutes: 20, day: 1, items: ["spinach"] }], {
+      start: new Date(2026, 9, 31),
+      url: "https://ripe.example/s/1",
+      uid: "run1",
+    });
+    assert.ok(ics.includes("DTSTART:20261101T190000"));
+    assert.ok(ics.includes("SUMMARY:Soup\\, quick\\; good"));
+    assert.ok(ics.endsWith("END:VCALENDAR\r\n"));
   });
 
   await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {

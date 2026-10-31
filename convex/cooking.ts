@@ -49,6 +49,8 @@ function toContent({ recipe, uses, issues, score, fixed }: CheckedRecipe): Recip
     staples: recipe.staples.slice(0, 20),
     toBuy: recipe.toBuy.slice(0, 6),
     steps: recipe.steps.slice(0, 14),
+    ...(recipe.makesLeftover ? { makesLeftover: recipe.makesLeftover.slice(0, 120) } : {}),
+    ...(recipe.usesLeftover ? { usesLeftover: recipe.usesLeftover.slice(0, 120) } : {}),
     score,
     issues,
     fixed,

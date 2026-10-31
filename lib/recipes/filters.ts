@@ -17,6 +17,8 @@ export type CookFilters = {
   /** Two pots, pans or trays at most. */
   fewDishes: boolean;
   servings: number;
+  /** Three dinners for tonight, tomorrow and the day after, arranged by Ripe so nothing goes off first. */
+  plan?: boolean;
 };
 
 export const MIN_SERVINGS = 1;
@@ -33,6 +35,7 @@ export function filtersKey(f: CookFilters): string {
     ...[...f.diet].sort(),
     f.fewDishes ? "few-dishes" : "",
     `${f.servings}p`,
+    f.plan ? "plan" : "",
   ]
     .filter(Boolean)
     .join("+");
