@@ -17,9 +17,24 @@ export type CookFilters = {
   /** Two pots, pans or trays at most. */
   fewDishes: boolean;
   servings: number;
-  /** Three dinners for tonight, tomorrow and the day after, arranged by Ripe so nothing goes off first. */
+  /** Dinners for the coming evenings, from tonight, arranged by Ripe so nothing goes off first. */
   plan?: boolean;
+  /** How many recipes, or how many days in a plan; unset means 3. */
+  count?: number;
 };
+
+export const DEFAULT_COUNT = 3;
+export const MIN_COUNT = 1;
+export const MAX_COUNT = 6;
+/** A plan needs two evenings to arrange anything, and Muse Wonder plans well up to five. */
+export const MIN_PLAN_DAYS = 2;
+export const MAX_PLAN_DAYS = 5;
+
+/** The number asked for, kept inside what the current mode allows. */
+export function countOf(f: Pick<CookFilters, "plan" | "count">): number {
+  const n = Math.round(f.count ?? DEFAULT_COUNT);
+  return f.plan ? Math.max(MIN_PLAN_DAYS, Math.min(MAX_PLAN_DAYS, n)) : Math.max(MIN_COUNT, Math.min(MAX_COUNT, n));
+}
 
 export const MIN_SERVINGS = 1;
 export const MAX_SERVINGS = 8;
@@ -36,6 +51,8 @@ export function filtersKey(f: CookFilters): string {
     f.fewDishes ? "few-dishes" : "",
     `${f.servings}p`,
     f.plan ? "plan" : "",
+    // Three is the default: recordings made before the count existed keep their key.
+    countOf(f) === DEFAULT_COUNT ? "" : `${countOf(f)}x`,
   ]
     .filter(Boolean)
     .join("+");

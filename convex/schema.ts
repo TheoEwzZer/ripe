@@ -119,6 +119,7 @@ export const cookFilters = v.object({
   fewDishes: v.boolean(),
   servings: v.number(),
   plan: v.optional(v.boolean()),
+  count: v.optional(v.number()),
 });
 
 export const runStatus = v.union(v.literal("cooking"), v.literal("fixing"), v.literal("done"), v.literal("error"));

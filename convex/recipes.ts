@@ -1,5 +1,5 @@
 import { ConvexError, v, type Infer } from "convex/values";
-import { MAX_SERVINGS, MIN_SERVINGS, defaultFilters, type CookFilters } from "../lib/recipes/filters";
+import { MAX_SERVINGS, MIN_SERVINGS, countOf, defaultFilters, type CookFilters } from "../lib/recipes/filters";
 import { addImpact, impactOf, noImpact } from "../lib/impact";
 import { arrangePlan } from "../lib/recipes/plan";
 import { cleanPantry, defaultPantry, stapleIds } from "../lib/recipes/pantry";
@@ -15,6 +15,8 @@ const MAX_PLATES_PER_SESSION = 9;
 const MAX_SWAPS_PER_RUN = 6;
 /** Scheduled actions are not retried: anything still running after this is marked failed. */
 const RUN_WATCHDOG_MS = 3 * 60 * 1000;
+/** Muse Wonder may write one more than asked; anything past this is dropped. */
+const MAX_ORDER = 8;
 const PLATE_WATCHDOG_MS = 2 * 60 * 1000;
 
 const liveEnabled = () => Boolean(process.env.MODEL_API_KEY);
@@ -76,6 +78,9 @@ export async function startRun(
   if (!Number.isInteger(filters.servings) || filters.servings < MIN_SERVINGS || filters.servings > MAX_SERVINGS) {
     throw new ConvexError({ code: "invalid", message: `Servings must be ${MIN_SERVINGS} to ${MAX_SERVINGS}` });
   }
+  if (filters.count !== undefined && (!Number.isInteger(filters.count) || countOf(filters) !== filters.count)) {
+    throw new ConvexError({ code: "invalid", message: "Unsupported number of recipes" });
+  }
   const scans = await activeScans(ctx, sessionId);
   const scan = scans.filter((s) => s.source.kind !== "list").at(-1) ?? scans.at(-1);
   if (!scan || scans.some((s) => s.status !== "done" && s.status !== "error")) {
@@ -120,7 +125,7 @@ export async function latestFilters(ctx: QueryCtx, sessionId: Id<"sessions">): P
   return run?.filters ?? defaultFilters;
 }
 
-/** Three recipes for everything the session's photos show; the cards fill in as Muse Wonder writes. */
+/** Recipes (3 unless asked otherwise) for everything the session's photos show; the cards fill in as Muse Wonder writes. */
 export const start = mutation({
   args: { sessionId: v.id("sessions"), filters: cookFilters, locale },
   returns: v.id("recipeRuns"),
@@ -535,7 +540,7 @@ export const draft = internalMutation({
   returns: v.null(),
   handler: async (ctx, { runId, order, title }) => {
     const run = await ctx.db.get(runId);
-    if (!run || run.status !== "cooking" || order >= 6 || (await recipeAt(ctx, runId, order))) return null;
+    if (!run || run.status !== "cooking" || order >= MAX_ORDER || (await recipeAt(ctx, runId, order))) return null;
     await ctx.db.insert("recipes", { runId, sessionId: run.sessionId, order, status: "writing", ...blank, title: title.slice(0, 120) });
     return null;
   },
@@ -546,7 +551,7 @@ export const saveRecipe = internalMutation({
   returns: v.null(),
   handler: async (ctx, { runId, order, content }) => {
     const run = await ctx.db.get(runId);
-    if (!run || run.status === "error" || order >= 6) return null;
+    if (!run || run.status === "error" || order >= MAX_ORDER) return null;
     const existing = await recipeAt(ctx, runId, order);
     if (existing) await ctx.db.patch(existing._id, { status: "ready", ...content });
     else await ctx.db.insert("recipes", { runId, sessionId: run.sessionId, order, status: "ready", ...content });

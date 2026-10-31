@@ -1,7 +1,7 @@
 "use node";
 
 import { ConvexError, v } from "convex/values";
-import { COOK_RESERVE_USD, FIX_RESERVE_USD, SWAP_RESERVE_USD, cook, fixRecipes, swapIngredient, type CookRequest, type CookResult } from "../lib/meta/cook";
+import { cookReserveUsd, FIX_RESERVE_USD, SWAP_RESERVE_USD, cook, fixRecipes, swapIngredient, type CookRequest, type CookResult } from "../lib/meta/cook";
 import { IMAGE_USD_PER_IMAGE } from "../lib/meta/models";
 import { plate as imaginePlate } from "../lib/meta/plate";
 import { filtersKey } from "../lib/recipes/filters";
@@ -70,7 +70,7 @@ function liveSource(ctx: ActionCtx): RecipeSource {
     kind: "live",
     cook: async (req, handlers) => {
       const result = await cook(req, handlers);
-      await ctx.runMutation(internal.spend.settle, { estimateUsd: COOK_RESERVE_USD, actualUsd: result.costUsd });
+      await ctx.runMutation(internal.spend.settle, { estimateUsd: cookReserveUsd(req.filters), actualUsd: result.costUsd });
       return result;
     },
     fix: async (req, broken, handlers) => {
@@ -120,7 +120,7 @@ export const run = internalAction({
         if (!liveEnabled() || data.liveRuns >= MAX_LIVE_RUNS_PER_SESSION) {
           throw new ConvexError({ code: "live_disabled", message: "Live cooking is not available" });
         }
-        await ctx.runMutation(internal.spend.reserve, { label: "cook", usd: COOK_RESERVE_USD });
+        await ctx.runMutation(internal.spend.reserve, { label: "cook", usd: cookReserveUsd(req.filters) });
         source = liveSource(ctx);
         begin = { source: "live", approximate: false };
       }

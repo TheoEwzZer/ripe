@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import type { CookFilters } from "../recipes/filters";
+import { countOf, type CookFilters } from "../recipes/filters";
 import { stapleLabel } from "../recipes/pantry";
 import { parseCookedSet, recipeSetSchemaFor, type CookedRecipe } from "../recipes/schema";
 import { readRecipeStream, type RecipeStreamHandlers } from "../recipes/stream";
@@ -17,9 +17,12 @@ export type CookRequest = {
 
 export type CookResult = { model: string; rawText: string; recipes: CookedRecipe[]; costUsd: number; ms: number };
 
-/** Charged when the API returns no usage; three measured recipes cost $0.032. */
+/** Charged when the API returns no usage; three measured recipes cost $0.032 to $0.10. */
 const UNKNOWN_USAGE_USD = 0.05;
 export const COOK_RESERVE_USD = 0.06;
+
+/** The estimate reserved before Muse Wonder writes: more recipes, longer answers. */
+export const cookReserveUsd = (filters: Pick<CookFilters, "plan" | "count">) => Math.max(COOK_RESERVE_USD, 0.025 * countOf(filters));
 export const FIX_RESERVE_USD = 0.05;
 export const SWAP_RESERVE_USD = 0.03;
 
@@ -62,9 +65,12 @@ function rules({ kitchen, filters, locale }: CookRequest): string {
 
 export function cookPrompt(req: CookRequest): string {
   const people = `${req.filters.servings} ${req.filters.servings === 1 ? "person" : "people"}`;
+  const n = countOf(req.filters);
   const ask = req.filters.plan
-    ? `Plan 3 different dinners for ${people}: tonight, tomorrow and the day after, so that every item is eaten before it goes off. An item with N days left must be cooked within the first N days (0 or 1 means tonight). Across the three recipes, never use more of an item than I have: the shares of one item add up to at most 1. When it helps, make one dish deliberately leave something (makesLeftover) that a later dish reuses (usesLeftover, the exact same text).`
-    : `Suggest 3 different recipes for ${people} that use the most urgent items first.`;
+    ? `Plan ${n} different dinners for ${people}, one per evening starting tonight, so that every item is eaten before it goes off. An item with N days left must be cooked within the first N days (0 or 1 means tonight). Across the ${n} recipes, never use more of an item than I have: the shares of one item add up to at most 1. When it helps, make one dish deliberately leave something (makesLeftover) that a later dish reuses (usesLeftover, the exact same text).`
+    : n === 1
+      ? `Suggest 1 recipe for ${people} that uses the most urgent items first.`
+      : `Suggest ${n} different recipes for ${people} that use the most urgent items first.`;
   return `You are a home cook who hates waste.
 ${kitchenContext(req)}
 

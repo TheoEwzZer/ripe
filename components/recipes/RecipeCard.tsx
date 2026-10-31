@@ -67,7 +67,8 @@ export function RecipeCard({
     />
   );
 
-  const day = recipe.day === 0 ? t.day0 : recipe.day === 1 ? t.day1 : recipe.day === 2 ? t.day2 : null;
+  const day =
+    recipe.day === undefined ? null : recipe.day === 0 ? t.day0 : recipe.day === 1 ? t.day1 : recipe.day === 2 ? t.day2 : fill(t.dayN, { n: recipe.day });
   const body = (
     <>
       {day && <p className="font-mono text-xs tracking-wide text-kaki uppercase">{day}</p>}

@@ -7,8 +7,13 @@ import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
+  MAX_COUNT,
+  MAX_PLAN_DAYS,
   MAX_SERVINGS,
+  MIN_COUNT,
+  MIN_PLAN_DAYS,
   MIN_SERVINGS,
+  countOf,
   defaultFilters,
   diets,
   equipmentModes,
@@ -122,8 +127,13 @@ export function RecipePanel({
     void attempt(() => start({ sessionId, filters, locale }));
   };
 
+  const count = countOf(filters);
+  const countLabel = (n: number, plan: boolean) =>
+    plan ? fill(t.dayCount, { n }) : n === 1 ? t.recipeOne : fill(t.recipeCount, { n });
+
   const summary = [
     filters.plan && t.planMode,
+    countLabel(count, Boolean(filters.plan)),
     filters.emergency && t.emergency,
     filters.maxMinutes && fill(t.maxMinutes, { n: filters.maxMinutes }),
     filters.equipment && (filters.equipment === "microwave" ? t.microwave : filters.equipment === "air-fryer" ? t.airFryer : t.onePan),
@@ -140,7 +150,7 @@ export function RecipePanel({
     : run.status === "cooking"
       ? writtenCount === 0
         ? t.thinking
-        : fill(t.writing, { n: writtenCount })
+        : fill(t.writing, { n: writtenCount, total: countOf(run.filters) })
       : run.status === "fixing"
         ? fixingCount === 1
           ? t.fixingOne
@@ -148,8 +158,10 @@ export function RecipePanel({
         : run.status === "error"
           ? fill(t.failed, { message: run.error === "budget" ? t.budget : (run.error ?? "") })
           : run.filters.plan
-            ? t.planDone
-            : fill(t.done, { n: recipes.length });
+            ? fill(t.planDone, { n: recipes.length })
+            : recipes.length === 1
+              ? t.doneOne
+              : fill(t.done, { n: recipes.length });
 
   const filterBar = (
     <div className="flex flex-col gap-3">
@@ -160,7 +172,7 @@ export function RecipePanel({
             type="button"
             role="radio"
             aria-checked={Boolean(filters.plan) === plan}
-            onClick={() => setFilters((f) => ({ ...f, plan: plan || undefined }))}
+            onClick={() => setFilters((f) => ({ ...f, plan: plan || undefined, count: countOf({ ...f, plan }) }))}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               Boolean(filters.plan) === plan
                 ? "bg-aubergine text-porcelaine dark:bg-porcelaine dark:text-aubergine"
@@ -195,6 +207,27 @@ export function RecipePanel({
         </Chip>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1 rounded-full ring-1 ring-hairline">
+          <button
+            type="button"
+            aria-label={filters.plan ? t.fewerDays : t.fewerRecipes}
+            disabled={count <= (filters.plan ? MIN_PLAN_DAYS : MIN_COUNT)}
+            onClick={() => setFilters((f) => ({ ...f, count: countOf(f) - 1 }))}
+            className="size-8 rounded-full text-lg leading-none transition-colors hover:bg-glass disabled:opacity-40"
+          >
+            −
+          </button>
+          <span className="min-w-20 text-center text-sm tabular-nums">{countLabel(count, Boolean(filters.plan))}</span>
+          <button
+            type="button"
+            aria-label={filters.plan ? t.moreDays : t.moreRecipes}
+            disabled={count >= (filters.plan ? MAX_PLAN_DAYS : MAX_COUNT)}
+            onClick={() => setFilters((f) => ({ ...f, count: countOf(f) + 1 }))}
+            className="size-8 rounded-full text-lg leading-none transition-colors hover:bg-glass disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
         <div className="flex items-center gap-1 rounded-full ring-1 ring-hairline">
           <button
             type="button"
@@ -247,7 +280,17 @@ export function RecipePanel({
             : "ring-1 ring-hairline hover:bg-glass"
         }`}
       >
-        {filters.plan ? (!run || changed ? t.planCook : t.replan) : !run ? t.cook : changed ? t.recookChanged : t.recook}
+        {filters.plan
+          ? !run || changed
+            ? fill(t.planCook, { n: count })
+            : t.replan
+          : !run
+            ? count === 1
+              ? t.cookOne
+              : fill(t.cook, { n: count })
+            : changed
+              ? t.recookChanged
+              : t.recook}
       </button>
     </div>
   );
@@ -325,7 +368,7 @@ export function RecipePanel({
                 </motion.div>
               ))}
               {run.status === "cooking" &&
-                Array.from({ length: Math.max(0, 3 - recipes.length) }, (_, i) => (
+                Array.from({ length: Math.max(0, countOf(run.filters) - recipes.length) }, (_, i) => (
                   <div
                     key={`ghost-${i}`}
                     className="aspect-[16/12] animate-pulse rounded-2xl bg-glass ring-1 ring-hairline"

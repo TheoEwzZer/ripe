@@ -25,7 +25,7 @@ export type Issue =
   | { code: "empty" }
   /** Plan only: the item goes off before the day its recipe is planned. */
   | { code: "late"; ingredient: string; day: number; daysLeft: number }
-  /** Plan only: the three recipes together use more of the item than there is. */
+  /** Plan only: the planned recipes together use more of the item than there is. */
   | { code: "overused"; ingredient: string; share: number };
 
 export const MAX_TO_BUY = 2;

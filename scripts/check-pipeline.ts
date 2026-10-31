@@ -17,7 +17,7 @@ import type { VisionProvider } from "../lib/pipeline/types";
 import { replayProvider } from "../lib/replay/provider";
 import { replayPerception, type Recording } from "../lib/replay/recording";
 import type { CookRequest, CookResult } from "../lib/meta/cook";
-import { defaultFilters } from "../lib/recipes/filters";
+import { countOf, defaultFilters, filtersKey } from "../lib/recipes/filters";
 import { defaultPantry } from "../lib/recipes/pantry";
 import { runCooking } from "../lib/recipes/run";
 import { scaleAmount } from "../lib/recipes/scale";
@@ -426,6 +426,15 @@ async function main() {
       [5, 12, 20, 32, 40],
     ]);
     assert.deepEqual(tracks.get(2), [[0, 1, 2, 3, 4]]);
+  });
+
+  await check("count: 3 keeps the recorded key, other counts get their own, each mode clamps its range", () => {
+    assert.equal(filtersKey({ ...defaultFilters, count: 3 }), filtersKey(defaultFilters));
+    assert.equal(filtersKey({ ...defaultFilters, count: 5 }), "2p+5x");
+    assert.equal(countOf({ count: 9 }), 6);
+    assert.equal(countOf({ plan: true, count: 1 }), 2);
+    assert.equal(countOf({ plan: true, count: 9 }), 5);
+    assert.equal(countOf({}), 3);
   });
 
   await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {

@@ -1,6 +1,7 @@
 import type { Issue } from "./validate";
 
-export const PLAN_DAYS = 3;
+/** Arranging more than a week by trying every order would be slow; plans stop well before. */
+export const PLAN_DAYS = 7;
 
 export type PlanRecipe = {
   uses: { item: { id: string; name: string; daysLeft: number } | null; share: number }[];
@@ -16,7 +17,7 @@ function permutations(n: number): number[][] {
 const fold = (text: string) => text.trim().toLowerCase();
 
 /**
- * Puts three recipes on tonight (0), tomorrow (1) and the day after (2):
+ * Puts each recipe on an evening, tonight (0), tomorrow (1) and so on:
  * no item planned after it goes off, the most urgent items first, and a
  * dish that leaves something for later before the dish that reuses it.
  * Returns each recipe's day and the plan-level problems that remain.
