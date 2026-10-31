@@ -128,6 +128,10 @@ export const purgeExpired = internalMutation({
           await ctx.db.delete(mask._id);
         }
         if (scan.source.kind === "upload") await ctx.storage.delete(scan.source.storageId);
+        if (scan.video) await ctx.storage.delete(scan.video.storageId);
+        for (const track of await ctx.db.query("tracks").withIndex("by_scan", (q) => q.eq("scanId", scan._id)).take(20)) {
+          await ctx.db.delete(track._id);
+        }
         await ctx.db.delete(scan._id);
       }
       for (const item of await ctx.db.query("ingredients").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(200)) {

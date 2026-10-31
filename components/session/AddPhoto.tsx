@@ -15,12 +15,15 @@ export function PhotoButton({
   disabled,
   camera,
   primary = false,
+  accept = "image/jpeg,image/png,image/webp",
   compact = false,
   onFile,
 }: {
   label: string;
   disabled: boolean;
   camera: boolean;
+  /** Leaving HEIC out makes iOS hand over a JPEG; a video button asks for MP4 or MOV. */
+  accept?: string;
   primary?: boolean;
   compact?: boolean;
   onFile: (file: File) => void;
@@ -37,7 +40,7 @@ export function PhotoButton({
         ref={input}
         type="file"
         // Leaving HEIC out makes iOS hand over a JPEG.
-        accept="image/jpeg,image/png,image/webp"
+        accept={accept}
         capture={camera ? "environment" : undefined}
         className="sr-only"
         disabled={disabled}
@@ -61,6 +64,7 @@ export function AddPhoto({
   onDemo,
   onFile,
   onReceipt,
+  onVideo,
   onClose,
 }: {
   t: Dictionary["session"];
@@ -73,6 +77,8 @@ export function AddPhoto({
   onFile: (file: File, place: Place) => void;
   /** A receipt photo: its food lines join the inventory, no outlines. */
   onReceipt: (file: File) => void;
+  /** A short clip of the open fridge: SAM follows each item through it. */
+  onVideo: (file: File, place: Place) => void;
   onClose: () => void;
 }) {
   const [place, setPlace] = useState<Place>("pantry");
@@ -107,6 +113,14 @@ export function AddPhoto({
           compact
           disabled={!live || disabled}
           onFile={(file) => onFile(file, place)}
+        />
+        <PhotoButton
+          label={t.filmFridge}
+          camera={phone}
+          compact
+          accept="video/mp4,video/quicktime"
+          disabled={!live || disabled}
+          onFile={(file) => onVideo(file, place)}
         />
         {demoLeft && (
           <button

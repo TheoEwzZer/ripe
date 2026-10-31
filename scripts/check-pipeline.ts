@@ -28,6 +28,7 @@ import { parseReceipt } from "../lib/meta/receipt";
 import { factorFor, impactOf, weightKg } from "../lib/impact";
 import { parseTips, pickUrgent, tipsKey } from "../lib/meta/tips";
 import { arrangePlan, planCalendar } from "../lib/recipes/plan";
+import { parseTracks, trackPrompt } from "../lib/meta/track";
 import { cookCommand } from "../lib/voice/commands";
 import { filtersFrom, parseKitchenIntent } from "../lib/voice/kitchen";
 import type { CookedRecipe } from "../lib/recipes/schema";
@@ -401,6 +402,30 @@ async function main() {
     assert.ok(ics.includes("DTSTART:20261101T190000"));
     assert.ok(ics.includes("SUMMARY:Soup\\, quick\\; good"));
     assert.ok(ics.endsWith("END:VCALENDAR\r\n"));
+  });
+
+  await check("video: box prompts stay inside the frame; SAM's per-frame boxes are read by object", () => {
+    assert.equal(
+      trackPrompt(
+        [
+          { id: 1, box: { x1: -5, y1: 508, x2: 434.4, y2: 720 } },
+          { id: 2, box: { x1: 10, y1: 10, x2: 10, y2: 50 } },
+        ],
+        { w: 960, h: 720 },
+      ),
+      "<0f>1<|box;x1=0;y1=508;x2=434;y2=719;w=960;h=720|>",
+    );
+    const { tracks, frames, size } = parseTracks(
+      "<0f>1<|box;x1=10;y1=20;x2=30;y2=40;w=960;h=720|><|mask;x=0;y=0;data=2,2,!ab|>,2<|box;x1=1;y1=2;x2=3;y2=4;w=960;h=720|>\n" +
+        "<5f>1<|box;x1=12;y1=20;x2=32;y2=40;w=960;h=720|>",
+    );
+    assert.equal(frames, 6);
+    assert.deepEqual(size, { w: 960, h: 720 });
+    assert.deepEqual(tracks.get(1), [
+      [0, 10, 20, 30, 40],
+      [5, 12, 20, 32, 40],
+    ]);
+    assert.deepEqual(tracks.get(2), [[0, 1, 2, 3, 4]]);
   });
 
   await check("voice: clips are 16 kHz mono 16-bit WAV", async () => {

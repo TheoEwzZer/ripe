@@ -19,6 +19,8 @@ import { ScanCanvas, displayName, type CanvasIngredient, type CanvasMask } from 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { prepareImage, previewOf } from "@/lib/client/prepare-image";
+import { firstFrame } from "@/lib/client/video";
+import { VideoTracks } from "@/components/scan/VideoTracks";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { AddPhoto, IncomingPhoto, PhotoButton, PhotoStrip, placeLabel, type Place } from "./AddPhoto";
 import { VoiceButton } from "@/components/voice/VoiceButton";
@@ -40,6 +42,7 @@ type T = {
 type Toast = { message: string; undo: () => Promise<unknown> };
 
 const TOAST_MS = 5000;
+const MAX_VIDEO_SECONDS = 15;
 
 function errorText(error: unknown, { session: t, recipes }: T): string {
   const code = error instanceof ConvexError ? (error.data as { code?: string }).code : undefined;
@@ -89,6 +92,8 @@ export function SessionWorkspace({ t }: { t: T }) {
   const startDemo = useMutation(api.scans.startDemo);
   const generateUploadUrl = useMutation(api.scans.generateUploadUrl);
   const startUpload = useMutation(api.scans.startUpload);
+  const startVideo = useMutation(api.scans.startVideo);
+  const retrack = useMutation(api.scans.retrack);
   const tap = useMutation(api.scans.tap);
   const merge = useMutation(api.ingredients.merge);
   const unmerge = useMutation(api.ingredients.unmerge);
@@ -172,6 +177,8 @@ export function SessionWorkspace({ t }: { t: T }) {
     scans.find((s) => s._id === chosenScan) ??
     scans.at(-1);
   const masks = useQuery(api.scans.masks, scan ? { scanId: scan._id } : "skip");
+  const tracks = useQuery(api.scans.tracks, scan?.video?.tracking === "done" ? { scanId: scan._id } : "skip");
+  const [watching, setWatching] = useState(false);
 
   if (session === undefined || kitchen === undefined) {
     return <div className="h-72 animate-pulse rounded-3xl bg-glass" aria-busy="true" />;
@@ -228,6 +235,36 @@ export function SessionWorkspace({ t }: { t: T }) {
       showToast({
         message: fill(t.session.receiptAdded, { n: added.length }),
         undo: () => undoVoice({ sessionId, added: added.map((a) => a.id), removed: [] }),
+      });
+    });
+    setBusy(null);
+  }
+
+  async function runVideo(file: File, place: Place) {
+    setBusy("upload");
+    setSelected(null);
+    setChosenScan(null);
+    setAdding(false);
+    await attempt(async () => {
+      const clip = await firstFrame(file);
+      if (clip.duration > MAX_VIDEO_SECONDS + 0.5) {
+        setError(fill(t.session.videoTooLong, { n: MAX_VIDEO_SECONDS }));
+        return;
+      }
+      const upload = async (blob: Blob) => {
+        const url = await generateUploadUrl({ sessionId });
+        const response = await fetch(url, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+        if (!response.ok) throw new Error(`Upload failed with ${response.status}`);
+        return ((await response.json()) as { storageId: Id<"_storage"> }).storageId;
+      };
+      const [frameId, videoId] = await Promise.all([upload(clip.frame), upload(file)]);
+      await startVideo({
+        sessionId,
+        storageId: frameId,
+        width: clip.width,
+        height: clip.height,
+        place,
+        video: { storageId: videoId, width: clip.videoWidth, height: clip.videoHeight, duration: clip.duration },
       });
     });
     setBusy(null);
@@ -308,6 +345,15 @@ export function SessionWorkspace({ t }: { t: T }) {
                 camera={false}
                 disabled={!live || busy !== null}
                 onFile={(file) => void runUpload(file, "fridge")}
+              />
+            )}
+            {live && (
+              <PhotoButton
+                label={t.session.filmFridge}
+                camera={phone}
+                accept="video/mp4,video/quicktime"
+                disabled={busy !== null}
+                onFile={(file) => void runVideo(file, "fridge")}
               />
             )}
           </div>
@@ -515,6 +561,7 @@ export function SessionWorkspace({ t }: { t: T }) {
           onDemo={() => void runDemo(false)}
           onFile={(file, place) => void runUpload(file, place)}
           onReceipt={(file) => void runReceipt(file)}
+          onVideo={(file, place) => void runVideo(file, place)}
           onClose={() => setAdding(false)}
         />
       )}
@@ -543,20 +590,59 @@ export function SessionWorkspace({ t }: { t: T }) {
               }}
             />
           )}
-          <ScanCanvas
-            key={scan._id}
-            image={{ src: scan.imageUrl, width: scan.width, height: scan.height }}
-            ingredients={ingredients}
-            masks={canvasMasks}
-            scanning={analysing(scan.status)}
-            active={active}
-            onActive={setActive}
-            labels={t.scan}
-            onTap={onTap}
-            selected={selected}
-            onSelect={select}
-            highlight={highlight}
-          />
+          {scan.video && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <p className="text-ink-soft" aria-live="polite">
+                {scan.video.tracking === "done"
+                  ? t.session.tracked
+                  : scan.video.tracking === "failed"
+                    ? t.session.trackFailed
+                    : t.session.tracking}
+              </p>
+              {scan.video.tracking === "failed" && (
+                <button
+                  type="button"
+                  onClick={() => void attempt(() => retrack({ scanId: scan._id }))}
+                  className="font-medium underline-offset-4 hover:underline"
+                >
+                  {t.session.retrack}
+                </button>
+              )}
+              {scan.video.tracking === "done" && (
+                <button type="button" onClick={() => setWatching((w) => !w)} className="font-medium underline-offset-4 hover:underline">
+                  {watching ? t.session.backToPhoto : t.session.watchScan}
+                </button>
+              )}
+            </div>
+          )}
+          {watching && scan.video?.url && scan.video.frames && tracks ? (
+            <VideoTracks
+              video={{
+                url: scan.video.url,
+                width: scan.video.width,
+                height: scan.video.height,
+                duration: scan.video.duration,
+                frames: scan.video.frames,
+              }}
+              tracks={tracks}
+              items={new Map(all.map((i) => [i._id as string, { name: i.name, daysLeft: i.daysLeft }]))}
+            />
+          ) : (
+            <ScanCanvas
+              key={scan._id}
+              image={{ src: scan.imageUrl, width: scan.width, height: scan.height }}
+              ingredients={ingredients}
+              masks={canvasMasks}
+              scanning={analysing(scan.status)}
+              active={active}
+              onActive={setActive}
+              labels={t.scan}
+              onTap={onTap}
+              selected={selected}
+              onSelect={select}
+              highlight={highlight}
+            />
+          )}
         </div>
         {visible.length > 0 && (
           <aside className="glass flex flex-col gap-3 rounded-3xl p-4">

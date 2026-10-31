@@ -24,6 +24,16 @@ export const storageTip = v.object({
   }),
 });
 
+export const scanVideo = v.object({
+  storageId: v.id("_storage"),
+  width: v.number(),
+  height: v.number(),
+  duration: v.number(),
+  tracking: v.union(v.literal("waiting"), v.literal("tracking"), v.literal("done"), v.literal("failed")),
+  /** Frames SAM read, for mapping playback time to its frame index. */
+  frames: v.optional(v.number()),
+});
+
 export const deviceKind = v.union(v.literal("desktop"), v.literal("phone"));
 
 /** Where a photo was taken: one inventory gathers the fridge, the pantry and the freezer. */
@@ -221,6 +231,8 @@ export default defineSchema({
     place: v.optional(scanPlace),
     /** Set when the demo is replayed from scratch: the photo leaves the inventory. */
     archived: v.optional(v.boolean()),
+    /** A filmed scan: the photo is its first frame; SAM then follows each item through the clip. */
+    video: v.optional(scanVideo),
     width: v.number(),
     height: v.number(),
     status: scanStatus,
@@ -247,6 +259,13 @@ export default defineSchema({
   })
     .index("by_session", ["sessionId"])
     .index("by_scan", ["scanId"]),
+
+  /** Where SAM saw an item in each frame of a filmed scan: [frame, x1, y1, x2, y2, …] on the 0–1000 grid. */
+  tracks: defineTable({
+    scanId: v.id("scans"),
+    ingredientId: v.id("ingredients"),
+    boxes: v.array(v.number()),
+  }).index("by_scan", ["scanId"]),
 
   /** SAM masks kept apart from ingredients so editing an ingredient never re-sends mask payloads. */
   masks: defineTable({

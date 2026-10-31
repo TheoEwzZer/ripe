@@ -29,6 +29,7 @@ import type * as scans from "../scans.js";
 import type * as sessions from "../sessions.js";
 import type * as spend from "../spend.js";
 import type * as tips from "../tips.js";
+import type * as tracking from "../tracking.js";
 import type * as voice from "../voice.js";
 
 import type {
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   sessions: typeof sessions;
   spend: typeof spend;
   tips: typeof tips;
+  tracking: typeof tracking;
   voice: typeof voice;
 }>;
 
