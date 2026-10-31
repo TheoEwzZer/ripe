@@ -9,6 +9,7 @@ import type { KitchenView } from "@/components/recipes/RecipeCard";
 import { RecipePanel } from "@/components/recipes/RecipePanel";
 import { recipeLabels } from "@/components/recipes/shared";
 import { ImpactStrip } from "@/components/impact/ImpactStrip";
+import { RemindMe } from "@/components/reminders/RemindMe";
 import { TipCard, TipsPanel } from "@/components/tips/TipsPanel";
 import { OfferPanel } from "@/components/offer/OfferPanel";
 import { DateReader } from "@/components/scan/DateReader";
@@ -34,6 +35,7 @@ type T = {
   dates: Dictionary["dates"];
   impact: Dictionary["impact"];
   tips: Dictionary["tips"];
+  reminders: Dictionary["reminders"];
 };
 type Toast = { message: string; undo: () => Promise<unknown> };
 
@@ -682,6 +684,7 @@ export function SessionWorkspace({ t }: { t: T }) {
                     {t.recipes.seeRecipes}
                   </button>
                 )}
+                {settled && <RemindMe sessionId={sessionId} locale={locale} t={t.reminders} />}
                 {settled && !keeping && (
                   <button
                     type="button"

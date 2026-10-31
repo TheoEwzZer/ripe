@@ -318,6 +318,32 @@ export default defineSchema({
     ms: v.optional(v.number()),
   }).index("by_session", ["sessionId"]),
 
+  /** A browser that accepted notifications, for its household's reminders (Web Push). */
+  pushSubscriptions: defineTable({
+    household: v.string(),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    locale,
+  })
+    .index("by_household", ["household"])
+    .index("by_endpoint", ["endpoint"]),
+
+  /** "Your spinach should be cooked tomorrow": item names and a time, nothing else. Outlive the session. */
+  reminders: defineTable({
+    household: v.string(),
+    sessionId: v.id("sessions"),
+    dueAt: v.number(),
+    /** today: the items keep one day at most; tomorrow: the day before their last good day. */
+    kind: v.union(v.literal("today"), v.literal("tomorrow"), v.literal("test")),
+    items: v.array(v.string()),
+    locale,
+    sent: v.boolean(),
+    jobId: v.optional(v.id("_scheduled_functions")),
+  })
+    .index("by_household", ["household"])
+    .index("by_session", ["sessionId"]),
+
   /** Food offered to a neighbour through a link: names, freshness and a crop of the photo, nothing personal. */
   offers: defineTable({
     sessionId: v.id("sessions"),
