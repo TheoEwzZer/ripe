@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -33,6 +34,7 @@ export function RecipeSheet({
   /** In the modal; the full page links back to the session instead. */
   onClose?: () => void;
 }) {
+  const tr = useFoodName();
   const data = useQuery(api.recipes.get, { sessionId, recipeId });
   const caps = useQuery(api.scans.capabilities);
   const imagine = useMutation(api.recipes.imagine);
@@ -258,7 +260,7 @@ export function RecipeSheet({
                   <span className="size-4 shrink-0 rounded-full ring-1 ring-hairline" aria-hidden="true" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item?.name ?? use.ingredient}</p>
+                  <p className="truncate font-medium">{tr(item?.name ?? use.ingredient)}</p>
                   {use.amount && <p className="text-sm text-ink-soft">{scaleAmount(use.amount, factor, locale)}</p>}
                 </div>
                 {item && <span className="font-mono text-xs text-ink-soft">{dayLabel(item.daysLeft, t.scan)}</span>}
@@ -267,8 +269,8 @@ export function RecipeSheet({
                     type="button"
                     disabled={swapping !== null || recipe.status !== "ready"}
                     onClick={() => swap({ recipeId: recipe._id, ingredient: use.ingredient }).catch(() => setError(true))}
-                    aria-label={fill(t.swapLabel, { name: item?.name ?? use.ingredient })}
-                    title={fill(t.swapLabel, { name: item?.name ?? use.ingredient })}
+                    aria-label={fill(t.swapLabel, { name: tr(item?.name ?? use.ingredient) })}
+                    title={fill(t.swapLabel, { name: tr(item?.name ?? use.ingredient) })}
                     className="rounded-full px-2.5 py-1 text-xs ring-1 ring-hairline transition-colors hover:bg-glass disabled:opacity-40"
                   >
                     {t.swap}

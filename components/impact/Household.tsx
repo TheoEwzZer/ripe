@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useQuery } from "convex/react";
 import { useSyncExternalStore } from "react";
 import { api } from "@/convex/_generated/api";
@@ -14,6 +15,7 @@ const noSubscribe = () => () => {};
 
 /** The household page: 30-day totals, the zero-waste streak, the week and the latest moments, with sources. */
 export function Household({ locale, t }: { locale: "en" | "fr"; t: Dictionary["impact"] }) {
+  const tr = useFoodName();
   const household = useSyncExternalStore(noSubscribe, householdKey, () => null);
   const today = useSyncExternalStore(
     noSubscribe,
@@ -83,7 +85,7 @@ export function Household({ locale, t }: { locale: "en" | "fr"; t: Dictionary["i
                     </span>
                     {e.title && ` · ${e.title}`}
                   </p>
-                  <p className="truncate text-ink-soft">{e.items.join(", ")}</p>
+                  <p className="truncate text-ink-soft">{e.items.map(tr).join(", ")}</p>
                 </div>
                 <p className="shrink-0 text-right font-mono text-xs text-ink-soft">
                   {f.kg(e.kg)}

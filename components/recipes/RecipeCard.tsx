@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import Link from "next/link";
 import { Pip } from "@/components/scan/Pip";
 import type { GridBox } from "@/lib/pipeline/geometry";
@@ -45,6 +46,7 @@ export function RecipeCard({
   labels: RecipeLabels;
   onHighlight: (keys: ReadonlySet<string> | null) => void;
 }) {
+  const tr = useFoodName();
   const used = [...new Set(recipe.uses.flatMap((u) => (u.ingredientId && kitchen.has(u.ingredientId) ? [u.ingredientId] : [])))];
   const items = used.map((id) => ({ id, ...kitchen.get(id)! })).sort((a, b) => a.daysLeft - b.daysLeft);
   const plate = recipe.plate?.status === "ready" ? recipe.plate.url : null;
@@ -103,7 +105,7 @@ export function RecipeCard({
           {items.slice(0, MAX_CHIPS).map((i) => (
             <span key={i.id} className="inline-flex items-center gap-1 rounded-full py-0.5 pr-2 pl-1 text-xs ring-1 ring-hairline">
               <Pip daysLeft={i.daysLeft} className="size-3" />
-              {i.name}
+              {tr(i.name)}
             </span>
           ))}
           {items.length > MAX_CHIPS && <span className="text-xs text-ink-soft">+{items.length - MAX_CHIPS}</span>}

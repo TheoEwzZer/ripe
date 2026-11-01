@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useRef, type KeyboardEvent } from "react";
 import { displayName, type CanvasIngredient } from "./ScanCanvas";
 import { Pip, dayLabel } from "./Pip";
@@ -28,6 +29,7 @@ export function IngredientList({
   onSelect?: (key: string) => void;
   onRemove?: (key: string) => void;
 }) {
+  const tr = useFoodName();
   const list = useRef<HTMLOListElement>(null);
   const ranked = ingredients.filter((i) => !i.removed).sort((a, b) => a.daysLeft - b.daysLeft);
 
@@ -64,7 +66,7 @@ export function IngredientList({
             } ${selected === item.key ? "ring-2 ring-ink/70" : ""}`}
           >
             <Pip daysLeft={item.daysLeft} />
-            <span className="min-w-0 flex-1 truncate">{displayName(item, labels)}</span>
+            <span className="min-w-0 flex-1 truncate">{displayName(item, labels, tr)}</span>
             {item.tag && <span className="shrink-0 rounded-full px-1.5 text-[11px] text-ink-soft ring-1 ring-hairline">{item.tag}</span>}
             {(item.segmentation === "pending" || (item.segmentation === "point" && !item.name)) && (
               <span className="flex items-center">

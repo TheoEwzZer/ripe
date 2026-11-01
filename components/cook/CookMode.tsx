@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -77,6 +78,7 @@ export function CookMode({
   locale: "en" | "fr";
   labels: RecipeLabels;
 }) {
+  const tr = useFoodName();
   const data = useQuery(api.recipes.get, { sessionId, recipeId });
   const caps = useQuery(api.scans.capabilities);
   const markCooked = useMutation(api.recipes.markCooked);
@@ -218,7 +220,7 @@ export function CookMode({
           <ul className="flex flex-col gap-1 rounded-2xl bg-surface p-3 text-sm ring-1 ring-hairline">
             {recipe.uses.map((use, i) => (
               <li key={`${use.ingredient}-${i}`} className="flex justify-between gap-3">
-                <span>{data.items.find((item) => item._id === use.ingredientId)?.name ?? use.ingredient}</span>
+                <span>{tr(data.items.find((item) => item._id === use.ingredientId)?.name ?? use.ingredient)}</span>
                 <span className="text-ink-soft">{use.amount}</span>
               </li>
             ))}

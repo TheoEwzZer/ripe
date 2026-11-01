@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useEffect, useRef, useState } from "react";
 import { tierColorVar, tierFor } from "@/lib/pantry/freshness";
 
@@ -26,6 +27,7 @@ export function VideoTracks({
   tracks: Track[];
   items: Map<string, { name: string; daysLeft: number }>;
 }) {
+  const tr = useFoodName();
   const player = useRef<HTMLVideoElement>(null);
   const [frame, setFrame] = useState(0);
 
@@ -75,7 +77,7 @@ export function VideoTracks({
             className="pointer-events-none absolute -translate-y-full rounded-full bg-nuit/75 px-2 py-0.5 text-xs whitespace-nowrap text-porcelaine backdrop-blur-md"
             style={{ left: `${box[0] / 10}%`, top: `${box[1] / 10}%` }}
           >
-            {item.name}
+            {tr(item.name)}
           </span>
         );
       })}

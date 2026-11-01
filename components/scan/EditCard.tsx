@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useEffect, useRef, useState } from "react";
 import { tierFor, type RipenessTier } from "@/lib/pantry/freshness";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
@@ -57,6 +58,7 @@ export function EditCard({
   /** Extra tools for this item, such as reading its printed date. */
   children?: React.ReactNode;
 }) {
+  const tr = useFoodName();
   const [draftName, setDraftName] = useState<string | null>(null);
   const [draftDays, setDraftDays] = useState<number | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -74,7 +76,7 @@ export function EditCard({
   const commitName = () => {
     if (draftName === null) return;
     const clean = draftName.trim();
-    if (clean && clean !== item.name) onRename(clean);
+    if (clean && clean !== item.name && clean !== tr(item.name)) onRename(clean);
     setDraftName(null);
   };
 
@@ -88,7 +90,7 @@ export function EditCard({
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl bg-surface p-4 ring-1 ring-hairline" aria-label={displayName(item, labels)}>
+    <section className="flex flex-col gap-4 rounded-2xl bg-surface p-4 ring-1 ring-hairline" aria-label={displayName(item, labels, tr)}>
       <div className="flex items-start gap-3">
         <Pip daysLeft={days} className="mt-1.5 size-5" />
         <div className="min-w-0 flex-1">
@@ -97,7 +99,7 @@ export function EditCard({
           </label>
           <input
             id={`name-${item.key}`}
-            value={draftName ?? (naming ? "" : item.name)}
+            value={draftName ?? (naming ? "" : tr(item.name))}
             placeholder={naming ? labels.identifying : undefined}
             disabled={naming}
             maxLength={60}

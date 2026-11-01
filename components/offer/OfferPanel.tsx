@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useMutation, useQuery } from "convex/react";
 import { useState, useSyncExternalStore } from "react";
 import { Pip, dayLabel } from "@/components/scan/Pip";
@@ -28,6 +29,7 @@ export function OfferPanel({
   scanLabels: Pick<Dictionary["scan"], "daysLeft" | "today">;
   onClose: () => void;
 }) {
+  const tr = useFoodName();
   const create = useMutation(api.offers.create);
   const offers = useQuery(api.offers.forSession, { sessionId });
   const origin = useSyncExternalStore(
@@ -77,7 +79,7 @@ export function OfferPanel({
                     className="size-4 accent-[var(--color-kaki)]"
                   />
                   <Pip daysLeft={item.daysLeft} />
-                  <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                  <span className="min-w-0 flex-1 truncate">{tr(item.name)}</span>
                   <span className="font-mono text-xs text-ink-soft">{dayLabel(item.daysLeft, scanLabels)}</span>
                 </label>
               </li>
@@ -97,7 +99,7 @@ export function OfferPanel({
               try {
                 const ids = ranked.filter((i) => picked.has(i._id)).map((i) => i._id);
                 const id = await create({ sessionId, ingredientIds: ids, note, locale });
-                setMade({ id, names: ranked.filter((i) => picked.has(i._id)).map((i) => i.name) });
+                setMade({ id, names: ranked.filter((i) => picked.has(i._id)).map((i) => tr(i.name)) });
               } catch {
                 // The list below stays as it was; the button can be pressed again.
               }

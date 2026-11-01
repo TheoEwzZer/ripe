@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import type { OptimisticLocalStore } from "convex/browser";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
@@ -88,6 +89,7 @@ const nameKey = (name: string) =>
 const analysing = (status: string) => status === "perceiving" || status === "segmenting";
 
 export function SessionWorkspace({ t }: { t: T }) {
+  const tr = useFoodName();
   const { id, lang } = useParams<{ id: string; lang: string }>();
   const locale = lang === "fr" ? "fr" : "en";
   const pathname = usePathname();
@@ -522,7 +524,7 @@ export function SessionWorkspace({ t }: { t: T }) {
     void attempt(async () => {
       await remove({ ingredientId });
       showToast({
-        message: fill(t.scan.removedToast, { name: displayName(item, t.scan) }),
+        message: fill(t.scan.removedToast, { name: displayName(item, t.scan, tr) }),
         undo: () => restore({ ingredientId }),
       });
     });

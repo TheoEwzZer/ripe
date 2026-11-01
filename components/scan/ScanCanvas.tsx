@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { MotionConfig, motion } from "motion/react";
 import Image from "next/image";
 import { memo, useEffect, useRef, useState, type MouseEvent } from "react";
@@ -37,8 +38,8 @@ export type CanvasMask = {
 type Labels = { daysLeft: string; today: string; identifying: string; unknown: string };
 
 /** A tapped item has no name until Muse Spark has looked at it. */
-export function displayName(item: Pick<CanvasIngredient, "name" | "segmentation">, labels: Pick<Labels, "identifying" | "unknown">) {
-  if (item.name) return item.name;
+export function displayName(item: Pick<CanvasIngredient, "name" | "segmentation">, labels: Pick<Labels, "identifying" | "unknown">, tr: (name: string) => string = (name) => name) {
+  if (item.name) return tr(item.name);
   return item.segmentation === "pending" || item.segmentation === "point" ? labels.identifying : labels.unknown;
 }
 
@@ -162,6 +163,7 @@ export function ScanCanvas({
   /** A recipe's ingredients: they stay lit while the rest fades to 30 %. */
   highlight?: ReadonlySet<string> | null;
 }) {
+  const tr = useFoodName();
   const { width: W, height: H } = image;
   const [ripples, setRipples] = useState<{ id: number; left: number; top: number }[]>([]);
 
@@ -228,7 +230,7 @@ export function ScanCanvas({
       const isActive = item.key === active;
       if (lit && !lit.has(item.key)) return [];
       if (!isActive && placed.length >= (lit ? 8 : maxLabels + (active ? 1 : 0))) return [];
-      const w = chipWidth(displayName(item, labels));
+      const w = chipWidth(displayName(item, labels, tr));
       const cx = Math.min(shownW - w / 2 - 6, Math.max(w / 2 + 6, ((box.left + box.right) / 2) * scale));
       const top = box.top * scale;
       const y = top < CHIP_H + 8 ? top + 6 : top - CHIP_H - 6;
@@ -301,7 +303,7 @@ export function ScanCanvas({
               style={{ left: `${left}%`, top: `${top}%` }}
             >
               <Pip daysLeft={item.daysLeft} className="size-3" />
-              <span className="max-w-32 truncate font-medium">{displayName(item, labels)}</span>
+              <span className="max-w-32 truncate font-medium">{displayName(item, labels, tr)}</span>
               <span className="font-mono text-[11px] text-porcelaine/75">{dayLabel(item.daysLeft, labels)}</span>
             </div>
           );

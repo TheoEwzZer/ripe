@@ -1,5 +1,6 @@
 "use client";
 
+import { useFoodName } from "@/lib/i18n/foods";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -15,6 +16,7 @@ const fill = (template: string, values: Record<string, string | number>) =>
 
 /** What a neighbour sees: each item cut from the giver's photo, how long it keeps, one button. */
 export function OfferView({ locale, t }: { locale: "en" | "fr"; t: Dictionary["offer"] }) {
+  const tr = useFoodName();
   const { offerId } = useParams<{ offerId: string }>();
   const offer = useQuery(api.offers.get, { offerId });
   const claim = useMutation(api.offers.claim);
@@ -39,11 +41,11 @@ export function OfferView({ locale, t }: { locale: "en" | "fr"; t: Dictionary["o
           const photo = item.photo === undefined ? undefined : offer.photos[item.photo];
           return (
             <li key={`${item.name}-${i}`} className="glass flex flex-col gap-2 overflow-hidden rounded-3xl p-2">
-              {photo && <PhotoCrop photo={photo} boxes={[item.bbox]} alt={item.name} className="rounded-2xl" />}
+              {photo && <PhotoCrop photo={photo} boxes={[item.bbox]} alt={tr(item.name)} className="rounded-2xl" />}
               <div className="flex items-center gap-2 px-2 pb-1">
                 <Pip daysLeft={days} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item.name}</p>
+                  <p className="truncate font-medium">{tr(item.name)}</p>
                   <p className="text-xs text-ink-soft">
                     {item.quantity && `${item.quantity} · `}
                     {keeps(days)}
