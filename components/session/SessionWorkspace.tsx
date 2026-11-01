@@ -191,8 +191,8 @@ export function SessionWorkspace({ t }: { t: T }) {
     scans.find((s) => s._id === recipeScan) ??
     scans.find((s) => s._id === chosenScan) ??
     scans.at(-1);
-  const masks = useQuery(api.scans.masks, scan ? { scanId: scan._id } : "skip");
-  const tracks = useQuery(api.scans.tracks, scan?.video?.tracking === "done" ? { scanId: scan._id } : "skip");
+  const masks = useQuery(api.scans.masks, scan ? { sessionId: id as Id<"sessions">, scanId: scan._id } : "skip");
+  const tracks = useQuery(api.scans.tracks, scan?.video?.tracking === "done" ? { sessionId: id as Id<"sessions">, scanId: scan._id } : "skip");
   const [watching, setWatching] = useState(false);
 
   if (session === undefined || kitchen === undefined) {
@@ -543,7 +543,7 @@ export function SessionWorkspace({ t }: { t: T }) {
 
   // Adding by touch needs the live API and a finished analysis (item order and boxes are settled).
   const canTap = live && settled;
-  const onTap = canTap ? (point: { x: number; y: number }) => void attempt(() => tap({ scanId: scan._id, ...point })) : undefined;
+  const onTap = canTap ? (point: { x: number; y: number }) => void attempt(() => tap({ sessionId, scanId: scan._id, ...point })) : undefined;
 
   const status =
     scan.status === "perceiving"
@@ -560,9 +560,9 @@ export function SessionWorkspace({ t }: { t: T }) {
     <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1" aria-live="polite">
-          <p className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>
+          <h1 className={`font-display text-2xl font-semibold tracking-tight ${scan.status === "error" ? "text-betterave" : ""}`}>
             {status}
-          </p>
+          </h1>
           <p className="font-mono text-xs text-ink-soft">
             {scans.length > 1 && settled ? `${fill(t.session.photosCount, { n: scans.length })} · ` : ""}
             {scan.live ? t.scan.liveBadge : t.scan.demoBadge}
@@ -657,7 +657,7 @@ export function SessionWorkspace({ t }: { t: T }) {
               {scan.video.tracking === "failed" && (
                 <button
                   type="button"
-                  onClick={() => void attempt(() => retrack({ scanId: scan._id }))}
+                  onClick={() => void attempt(() => retrack({ sessionId, scanId: scan._id }))}
                   className="font-medium underline-offset-4 hover:underline"
                 >
                   {t.session.retrack}
@@ -700,7 +700,7 @@ export function SessionWorkspace({ t }: { t: T }) {
           )}
         </div>
         {visible.length > 0 && (
-          <aside className="glass flex flex-col gap-3 rounded-3xl p-4">
+          <div className="glass flex flex-col gap-3 rounded-3xl p-4">
             {settled && (
               <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1 ring-1 ring-hairline" role="tablist">
                 {(["inventory", "recipes"] as const).map((key) => (
@@ -852,7 +852,7 @@ export function SessionWorkspace({ t }: { t: T }) {
                 )}
               </>
             )}
-          </aside>
+          </div>
         )}
       </div>
 

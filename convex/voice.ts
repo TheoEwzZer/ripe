@@ -14,7 +14,7 @@ export const MAX_CLIP_BYTES = 1_000_000;
 
 const liveEnabled = () => Boolean(process.env.MODEL_API_KEY);
 
-/** Where the browser sends one recorded sentence. Counted against the session's voice cap. */
+/** Where the browser sends one recorded sentence. The clip is counted when it is heard, in forHearing. */
 export const uploadUrl = mutation({
   args: { sessionId: v.id("sessions") },
   returns: v.string(),
@@ -22,16 +22,15 @@ export const uploadUrl = mutation({
     if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Voice needs the Meta API key" });
     const session = await ctx.db.get(sessionId);
     if (!session || session.expiresAt < Date.now()) throw new ConvexError({ code: "session", message: "Session expired" });
-    const clips = session.voiceClips ?? 0;
-    if (clips >= MAX_CLIPS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many voice requests in this session" });
-    await ctx.db.patch(sessionId, { voiceClips: clips + 1 });
+    if ((session.voiceClips ?? 0) >= MAX_CLIPS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many voice requests in this session" });
     return await ctx.storage.generateUploadUrl();
   },
 });
 
 /** One relay connection lasts at most this long (Vercel Hobby functions stop at 300 s); then the phone reconnects. */
 export const STREAM_SECONDS = 280;
-const MAX_STREAMS_PER_SESSION = 40;
+/** About an hour of hands-free cooking; each stream is paid up front, so this also bounds what one session can hold. */
+const MAX_STREAMS_PER_SESSION = 12;
 
 /**
  * The relay opens a realtime Muse Voice stream for a session: the audio it
@@ -53,13 +52,19 @@ export const openStream = mutation({
   },
 });
 
-/** What a sentence can refer to: the session's items still on the list. */
-export const forHearing = internalQuery({
+/**
+ * What a sentence can refer to: the session's items still on the list. Counts the clip
+ * against the session's voice cap here, where it is paid for, whatever URL uploaded it.
+ */
+export const forHearing = internalMutation({
   args: { sessionId: v.id("sessions") },
   returns: v.union(v.null(), v.array(v.object({ name: v.string(), quantity: v.string(), daysLeft: v.number() }))),
   handler: async (ctx, { sessionId }) => {
     const session = await ctx.db.get(sessionId);
     if (!session || session.expiresAt < Date.now()) return null;
+    const clips = session.voiceClips ?? 0;
+    if (clips >= MAX_CLIPS_PER_SESSION) throw new ConvexError({ code: "quota", message: "Too many voice requests in this session" });
+    await ctx.db.patch(sessionId, { voiceClips: clips + 1 });
     const scans = new Set((await activeScans(ctx, sessionId)).map((s) => s._id));
     const items = await ctx.db
       .query("ingredients")

@@ -6,8 +6,10 @@ import { DEFAULT_FPS, frameAt, readVideoInfo } from "../lib/video/mp4";
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 
-/** Phones film at up to 30 frames a second; the estimate reserved before SAM reads the clip. */
-const RESERVE_FPS = 30;
+/** Longest clip SAM may read, as in scans.startVideo, with the same half-second slack. */
+const MAX_SECONDS = 15.5;
+/** A clip whose boxes cannot be read is reserved as the longest one at 60 fps: the settle gives the rest back. */
+const WORST_FRAMES = Math.ceil(MAX_SECONDS * 60);
 
 /**
  * SAM 3.1 follows the most urgent items through the whole clip, each from the
@@ -23,14 +25,21 @@ export const track = internalAction({
       return null;
     }
     const { video } = data;
-    const reserve = Math.max(MIN_BILLED_FRAMES, Math.ceil(video.duration * RESERVE_FPS)) * SAM_USD_PER_FRAME;
     await ctx.runMutation(internal.scans.setTracking, { scanId, tracking: "tracking" });
+    // SAM bills every frame of the file, so the reserve comes from the file itself, never from the length the browser reported.
+    const clip = await ctx.storage.get(video.storageId);
+    const info = clip && readVideoInfo(await clip.arrayBuffer());
+    if (!clip || (info && info.duration > MAX_SECONDS)) {
+      console.error("tracking refused", scanId, clip ? `clip of ${info?.duration} s` : "the video is gone");
+      await ctx.runMutation(internal.scans.setTracking, { scanId, tracking: "failed" });
+      return null;
+    }
+    const reserve = Math.max(MIN_BILLED_FRAMES, info?.frames ?? WORST_FRAMES) * SAM_USD_PER_FRAME;
+    let reserved = false;
     let cost = 0;
     try {
       await ctx.runMutation(internal.spend.reserve, { label: "track", usd: reserve });
-      const clip = await ctx.storage.get(video.storageId);
-      if (!clip) throw new Error("The video is gone");
-      const info = readVideoInfo(await clip.arrayBuffer());
+      reserved = true;
       const fileId = await uploadVideo(clip, "fridge.mp4");
       // Every analysed frame keeps the video's aspect: grid boxes scale straight to video pixels.
       const items = data.items.slice(0, MAX_TRACKED);
@@ -44,6 +53,8 @@ export const track = internalAction({
           y2: (item.bbox.y_max / 1000) * video.height,
         },
       }));
+      // Once SAM has the clip, a failure may still be billed: keep the estimate unless a cost comes back.
+      cost = reserve;
       const result = await trackVideo({ fileId }, prompts, { w: video.width, h: video.height });
       cost = result.costUsd;
       const size = result.size ?? { w: video.width, h: video.height };
@@ -69,7 +80,8 @@ export const track = internalAction({
       console.error("tracking failed", scanId, error);
       await ctx.runMutation(internal.scans.setTracking, { scanId, tracking: "failed" });
     } finally {
-      await ctx.runMutation(internal.spend.settle, { estimateUsd: reserve, actualUsd: cost });
+      // A reserve refused by the daily cap was never added: nothing to settle.
+      if (reserved) await ctx.runMutation(internal.spend.settle, { estimateUsd: reserve, actualUsd: cost });
     }
     return null;
   },

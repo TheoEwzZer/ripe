@@ -18,6 +18,8 @@ import { MODELS } from "../meta/models";
 const REALTIME_URL = "wss://api.meta.ai/v1/asr/realtime";
 /** Audio that arrives before Meta acknowledges the handshake waits here, up to ~5 s. */
 const MAX_PENDING_BYTES = 16_000 * 2 * 5;
+/** 16 kHz, 16-bit mono: what one second of paid audio weighs. */
+const BYTES_PER_SECOND = 16_000 * 2;
 
 type Start = { type: "start"; sessionId: string; locale: "en" | "fr"; keywords?: string[] };
 
@@ -47,6 +49,9 @@ export function relay(client: ClientSocket, opts: { convexUrl: string; apiKey: s
   let ready = false;
   let pending: Buffer[] = [];
   let pendingBytes = 0;
+  /** Audio is paid by the second up front: never forward more than that, however fast it arrives. */
+  let paidBytes = 0;
+  let sentBytes = 0;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let closed = false;
 
@@ -77,6 +82,7 @@ export function relay(client: ClientSocket, opts: { convexUrl: string; apiKey: s
       return shutdown(1008, "refused");
     }
     if (closed) return;
+    paidBytes = seconds * BYTES_PER_SECOND;
 
     upstream = new WebSocket(opts.realtimeUrl ?? REALTIME_URL);
     upstream.binaryType = "arraybuffer";
@@ -106,6 +112,7 @@ export function relay(client: ClientSocket, opts: { convexUrl: string; apiKey: s
         // The handshake acknowledgement: audio can flow.
         ready = true;
         for (const chunk of pending) upstream?.send(chunk);
+        sentBytes += pendingBytes;
         pending = [];
         pendingBytes = 0;
         send(client, { type: "ready", seconds });
@@ -136,8 +143,14 @@ export function relay(client: ClientSocket, opts: { convexUrl: string; apiKey: s
     if (isBinary) {
       if (!started) return;
       const chunk = Buffer.isBuffer(data) ? data : Buffer.from(data as ArrayBuffer);
-      if (ready && upstream?.readyState === WebSocket.OPEN) upstream.send(chunk);
-      else if (pendingBytes + chunk.length <= MAX_PENDING_BYTES) {
+      if (ready && upstream?.readyState === WebSocket.OPEN) {
+        sentBytes += chunk.length;
+        if (sentBytes > paidBytes) {
+          send(client, { type: "closing" });
+          return shutdown(4000, "time");
+        }
+        upstream.send(chunk);
+      } else if (pendingBytes + chunk.length <= MAX_PENDING_BYTES) {
         pending.push(chunk);
         pendingBytes += chunk.length;
       }

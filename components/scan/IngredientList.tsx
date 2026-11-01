@@ -67,13 +67,19 @@ export function IngredientList({
             <span className="min-w-0 flex-1 truncate">{displayName(item, labels)}</span>
             {item.tag && <span className="shrink-0 rounded-full px-1.5 text-[11px] text-ink-soft ring-1 ring-hairline">{item.tag}</span>}
             {(item.segmentation === "pending" || (item.segmentation === "point" && !item.name)) && (
-              <span className="ghost-pulse text-xs text-ink-soft" aria-label={labels.pending}>
-                ···
+              <span className="flex items-center">
+                <span className="ghost-pulse flex gap-0.5" aria-hidden="true">
+                  {[0, 1, 2].map((dot) => (
+                    <span key={dot} className="size-1 rounded-full bg-ink-soft" />
+                  ))}
+                </span>
+                <span className="sr-only">{labels.pending}</span>
               </span>
             )}
             {item.segmentation === "none" && !item.offPhoto && (
-              <span className="text-xs text-ink-soft" title={labels.approximate} aria-label={labels.approximate}>
-                ≈
+              <span className="text-xs text-ink-soft" title={labels.approximate}>
+                <span aria-hidden="true">≈</span>
+                <span className="sr-only">{labels.approximate}</span>
               </span>
             )}
             <span className="font-mono text-xs text-ink-soft">{dayLabel(item.daysLeft, labels)}</span>

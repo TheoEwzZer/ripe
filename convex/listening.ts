@@ -48,11 +48,12 @@ export const hear = action({
   }),
   handler: async (ctx, { sessionId, storageId, locale, purpose }): Promise<Heard> => {
     const nothing = { reply: "", added: [], removed: [], filters: null, runStarted: false };
-    const inventory: { name: string; quantity: string; daysLeft: number }[] | null = await ctx.runQuery(internal.voice.forHearing, {
+    const inventory: { name: string; quantity: string; daysLeft: number }[] | null = await ctx.runMutation(internal.voice.forHearing, {
       sessionId,
     });
+    // The clip is only needed for this sentence.
     const clip = await ctx.storage.get(storageId);
-    await ctx.storage.delete(storageId);
+    if (clip) await ctx.storage.delete(storageId);
     if (!inventory) throw new ConvexError({ code: "session", message: "Session expired" });
     if (!clip || clip.size > MAX_CLIP_BYTES) throw new ConvexError({ code: "voice", message: "Send one short sentence" });
 

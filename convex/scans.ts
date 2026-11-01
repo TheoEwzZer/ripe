@@ -291,12 +291,12 @@ export const kitchen = query({
 
 /** Tracking failed (network, a refused prompt): try SAM again without analysing the first frame twice. */
 export const retrack = mutation({
-  args: { scanId: v.id("scans") },
+  args: { sessionId: v.id("sessions"), scanId: v.id("scans") },
   returns: v.null(),
-  handler: async (ctx, { scanId }) => {
+  handler: async (ctx, { sessionId, scanId }) => {
     if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Live analysis is not enabled" });
     const scan = await ctx.db.get(scanId);
-    if (!scan?.video || scan.video.tracking !== "failed") return null;
+    if (!scan?.video || scan.sessionId !== sessionId || scan.video.tracking !== "failed") return null;
     await openSession(ctx, scan.sessionId);
     await ctx.db.patch(scanId, { video: { ...scan.video, tracking: "waiting" } });
     await ctx.scheduler.runAfter(0, internal.tracking.track, { scanId });
@@ -304,11 +304,18 @@ export const retrack = mutation({
   },
 });
 
+/** Reads of a scan's detail need its session id too: a scan id seen elsewhere opens nothing. */
+async function ownScan(ctx: QueryCtx, sessionId: Id<"sessions">, scanId: Id<"scans">) {
+  const scan = await ctx.db.get(scanId);
+  return scan !== null && scan.sessionId === sessionId;
+}
+
 /** Where each item sits frame by frame in a filmed scan. */
 export const tracks = query({
-  args: { scanId: v.id("scans") },
+  args: { sessionId: v.id("sessions"), scanId: v.id("scans") },
   returns: v.array(v.object({ ingredientId: v.id("ingredients"), boxes: v.array(v.number()) })),
-  handler: async (ctx, { scanId }) => {
+  handler: async (ctx, { sessionId, scanId }) => {
+    if (!(await ownScan(ctx, sessionId, scanId))) return [];
     const rows = await ctx.db
       .query("tracks")
       .withIndex("by_scan", (q) => q.eq("scanId", scanId))
@@ -366,9 +373,10 @@ export const setTracking = internalMutation({
 });
 
 export const masks = query({
-  args: { scanId: v.id("scans") },
+  args: { sessionId: v.id("sessions"), scanId: v.id("scans") },
   returns: v.array(v.object({ _id: v.id("masks"), ingredientId: v.id("ingredients"), via: maskVia, ...maskFields })),
-  handler: async (ctx, { scanId }) => {
+  handler: async (ctx, { sessionId, scanId }) => {
+    if (!(await ownScan(ctx, sessionId, scanId))) return [];
     const rows = await ctx.db
       .query("masks")
       .withIndex("by_scan", (q) => q.eq("scanId", scanId))
@@ -397,13 +405,13 @@ const TAP_GHOST = 22;
 
 /** The user tapped something Ripe missed: show a placeholder now, outline and name it in the background. */
 export const tap = mutation({
-  args: { scanId: v.id("scans"), x: v.number(), y: v.number() },
+  args: { sessionId: v.id("sessions"), scanId: v.id("scans"), x: v.number(), y: v.number() },
   returns: v.id("ingredients"),
-  handler: async (ctx, { scanId, x, y }) => {
+  handler: async (ctx, { sessionId, scanId, x, y }) => {
     if (!liveEnabled()) throw new ConvexError({ code: "live_disabled", message: "Live analysis is not enabled" });
     const scan = await ctx.db.get(scanId);
     const session = scan && (await ctx.db.get(scan.sessionId));
-    if (!scan || !session || session.expiresAt < Date.now()) throw new ConvexError({ code: "session", message: "Session expired" });
+    if (!scan || !session || scan.sessionId !== sessionId || session.expiresAt < Date.now()) throw new ConvexError({ code: "session", message: "Session expired" });
     if (scan.status === "perceiving" || scan.status === "segmenting") {
       throw new ConvexError({ code: "busy", message: "Wait for the analysis to finish" });
     }

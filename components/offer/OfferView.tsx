@@ -24,7 +24,6 @@ export function OfferView({ locale, t }: { locale: "en" | "fr"; t: Dictionary["o
   if (offer === undefined) return <div className="h-72 animate-pulse rounded-3xl bg-glass" aria-busy="true" />;
   if (offer === null) return <p className="text-ink-soft">{t.gone}</p>;
 
-  const photos = new Map(offer.photos.map((p) => [p.scanId as string, p]));
   const keeps = (days: number) => (days <= 0 ? t.eatToday : days === 1 ? t.eatOne : fill(t.eatWithin, { n: days }));
 
   return (
@@ -37,10 +36,10 @@ export function OfferView({ locale, t }: { locale: "en" | "fr"; t: Dictionary["o
       <ul className="grid gap-3 sm:grid-cols-2">
         {offer.items.map((item, i) => {
           const days = Math.max(0, item.daysLeft - offer.ageDays);
-          const photo = photos.get(item.scanId);
+          const photo = item.photo === undefined ? undefined : offer.photos[item.photo];
           return (
             <li key={`${item.name}-${i}`} className="glass flex flex-col gap-2 overflow-hidden rounded-3xl p-2">
-              {photo && !item.offPhoto && <PhotoCrop photo={photo} boxes={[item.bbox]} alt={item.name} className="rounded-2xl" />}
+              {photo && <PhotoCrop photo={photo} boxes={[item.bbox]} alt={item.name} className="rounded-2xl" />}
               <div className="flex items-center gap-2 px-2 pb-1">
                 <Pip daysLeft={days} />
                 <div className="min-w-0 flex-1">

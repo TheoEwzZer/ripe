@@ -1,8 +1,11 @@
 import { ConvexError, v } from "convex/values";
-import { internalMutation, mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
 import { incomingPhoto, sessionStatus } from "./schema";
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+/** A phone joins within minutes; past this the 4-character code opens nothing (the session URL still works), so guessing codes has little to find. */
+const CODE_TTL_MS = 6 * 60 * 60 * 1000;
 // No 0/O, 1/I/L: the code is read aloud and typed on a phone.
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
@@ -105,11 +108,21 @@ export const findByCode = mutation({
       .withIndex("by_code", (q) => q.eq("code", clean))
       .order("desc")
       .take(5);
-    return sessions.find((s) => s.expiresAt > Date.now())?._id ?? null;
+    const now = Date.now();
+    return sessions.find((s) => s.expiresAt > now && now - s._creationTime < CODE_TTL_MS)?._id ?? null;
   },
 });
 
-/** Removes expired sessions and everything hanging off them, in small batches. */
+/** A file already gone (deleted by a failed upload, say) must not roll back the whole purge and stall it forever. */
+async function forget(ctx: MutationCtx, storageId: Id<"_storage">) {
+  try {
+    await ctx.storage.delete(storageId);
+  } catch (error) {
+    console.warn("purge: file already gone", storageId, error);
+  }
+}
+
+/** Removes expired sessions and everything hanging off them, a few per run so one transaction stays small. */
 export const purgeExpired = internalMutation({
   args: {},
   returns: v.null(),
@@ -117,7 +130,7 @@ export const purgeExpired = internalMutation({
     const expired = await ctx.db
       .query("sessions")
       .withIndex("by_expiresAt", (q) => q.lt("expiresAt", Date.now()))
-      .take(20);
+      .take(5);
     for (const session of expired) {
       const scans = await ctx.db
         .query("scans")
@@ -127,9 +140,9 @@ export const purgeExpired = internalMutation({
         for (const mask of await ctx.db.query("masks").withIndex("by_scan", (q) => q.eq("scanId", scan._id)).take(200)) {
           await ctx.db.delete(mask._id);
         }
-        if (scan.source.kind === "upload") await ctx.storage.delete(scan.source.storageId);
-        if (scan.video) await ctx.storage.delete(scan.video.storageId);
-        for (const still of scan.video?.stills ?? []) await ctx.storage.delete(still.storageId);
+        if (scan.source.kind === "upload") await forget(ctx, scan.source.storageId);
+        if (scan.video) await forget(ctx, scan.video.storageId);
+        for (const still of scan.video?.stills ?? []) await forget(ctx, still.storageId);
         for (const track of await ctx.db.query("tracks").withIndex("by_scan", (q) => q.eq("scanId", scan._id)).take(20)) {
           await ctx.db.delete(track._id);
         }
@@ -140,7 +153,7 @@ export const purgeExpired = internalMutation({
       }
       for (const run of await ctx.db.query("recipeRuns").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(50)) {
         for (const recipe of await ctx.db.query("recipes").withIndex("by_run", (q) => q.eq("runId", run._id)).take(20)) {
-          for (const p of [recipe.plate, recipe.previous?.plate]) if (p?.status === "ready" && p.storageId) await ctx.storage.delete(p.storageId);
+          for (const p of [recipe.plate, recipe.previous?.plate]) if (p?.status === "ready" && p.storageId) await forget(ctx, p.storageId);
           await ctx.db.delete(recipe._id);
         }
         await ctx.db.delete(run._id);
@@ -150,11 +163,14 @@ export const purgeExpired = internalMutation({
         if (!event.household) await ctx.db.delete(event._id);
       }
       for (const after of await ctx.db.query("afters").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(10)) {
-        if (after.storageId) await ctx.storage.delete(after.storageId);
+        if (after.storageId) await forget(ctx, after.storageId);
         await ctx.db.delete(after._id);
       }
       for (const offer of await ctx.db.query("offers").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
         await ctx.db.delete(offer._id);
+      }
+      for (const tip of await ctx.db.query("tips").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
+        await ctx.db.delete(tip._id);
       }
       for (const device of await ctx.db.query("devices").withIndex("by_session", (q) => q.eq("sessionId", session._id)).take(20)) {
         await ctx.db.delete(device._id);

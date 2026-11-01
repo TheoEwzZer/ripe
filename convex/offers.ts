@@ -48,16 +48,20 @@ export const create = mutation({
   },
 });
 
-/** The public page of an offer: what is given and a crop of the photo, never who gives it. */
+/**
+ * The public page of an offer: what is given and a crop of the photo, never who gives it.
+ * No id of the giver's kitchen leaves here (photos are referred to by position), so the
+ * link cannot be turned into access to their scans or items.
+ */
 export const get = query({
   args: { offerId: v.string() },
   returns: v.union(
     v.null(),
     v.object({
       items: v.array(
-        v.object({ name: v.string(), quantity: v.string(), daysLeft: v.number(), bbox: gridBox, scanId: v.id("scans"), offPhoto: v.optional(v.boolean()) }),
+        v.object({ name: v.string(), quantity: v.string(), daysLeft: v.number(), bbox: gridBox, photo: v.optional(v.number()) }),
       ),
-      photos: v.array(v.object({ scanId: v.id("scans"), src: v.union(v.string(), v.null()), width: v.number(), height: v.number() })),
+      photos: v.array(v.object({ src: v.string(), width: v.number(), height: v.number() })),
       note: v.string(),
       claimed: v.boolean(),
       ageDays: v.number(),
@@ -67,15 +71,17 @@ export const get = query({
     const offerId = ctx.db.normalizeId("offers", args.offerId);
     const offer = offerId && (await ctx.db.get(offerId));
     if (!offer || offer.expiresAt < Date.now()) return null;
-    const photos = [];
-    for (const scanId of new Set(offer.items.map((i) => i.scanId))) {
+    const photos: { src: string; width: number; height: number }[] = [];
+    const photoOf = new Map<string, number>();
+    for (const scanId of new Set(offer.items.filter((i) => !i.offPhoto).map((i) => i.scanId))) {
       const scan = await ctx.db.get(scanId);
-      if (!scan) continue;
-      const src = await imageOf(ctx, scan.source);
-      if (src) photos.push({ scanId, src, width: scan.width, height: scan.height });
+      const src = scan && (await imageOf(ctx, scan.source));
+      if (!scan || !src) continue;
+      photoOf.set(scanId, photos.length);
+      photos.push({ src, width: scan.width, height: scan.height });
     }
     return {
-      items: offer.items.map(({ name, quantity, daysLeft, bbox, scanId, offPhoto }) => ({ name, quantity, daysLeft, bbox, scanId, offPhoto })),
+      items: offer.items.map(({ name, quantity, daysLeft, bbox, scanId }) => ({ name, quantity, daysLeft, bbox, photo: photoOf.get(scanId) })),
       photos,
       note: offer.note,
       claimed: offer.claimedAt !== undefined,

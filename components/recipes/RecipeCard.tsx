@@ -83,7 +83,7 @@ export function RecipeCard({
       </div>
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-lg leading-tight font-semibold tracking-tight text-balance">{recipe.title}</h3>
+          <h2 className="font-display text-lg leading-tight font-semibold tracking-tight text-balance">{recipe.title}</h2>
           {!writing && (
             <p className="mt-1 text-sm text-ink-soft">
               {fill(t.minutes, { n: recipe.minutes })} · {dishesLabel(recipe.dishes, t)}
