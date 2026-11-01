@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { lang } from "next/root-params";
 import { Suspense } from "react";
 import { Logo } from "@/components/brand/Logo";
-import { Household } from "@/components/impact/Household";
+import { Household, HouseholdSkeleton } from "@/components/impact/Household";
 import { LangToggle } from "@/components/LangToggle";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -27,7 +27,7 @@ export default async function HouseholdPage() {
         <h1 className="font-display text-4xl font-extrabold tracking-tight">{t.impact.title}</h1>
         <p className="max-w-xl text-ink-soft">{t.impact.lead}</p>
       </div>
-      <Suspense fallback={<div className="h-72 animate-pulse rounded-3xl bg-glass" />}>
+      <Suspense fallback={<HouseholdSkeleton />}>
         <Household locale={locale} t={t.impact} />
       </Suspense>
     </main>

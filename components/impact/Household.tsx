@@ -24,7 +24,7 @@ export function Household({ locale, t }: { locale: "en" | "fr"; t: Dictionary["i
   const f = formatters(locale);
   const weekday = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", { weekday: "short", timeZone: "UTC" });
 
-  if (!data) return <div className="h-72 animate-pulse rounded-3xl bg-glass" aria-busy="true" />;
+  if (!data) return <HouseholdSkeleton />;
   const max = Math.max(0.1, ...data.week.map((d) => d.kg + d.wastedKg));
   const weekKg = data.week.reduce((s, d) => s + d.kg, 0);
   const weekCooked = data.week.reduce((s, d) => s + d.cooked, 0);
@@ -123,6 +123,21 @@ export function Household({ locale, t }: { locale: "en" | "fr"; t: Dictionary["i
           </ul>
         </details>
       </section>
+    </div>
+  );
+}
+
+/** Same outline as the loaded page, so nothing below it moves when the numbers arrive. */
+export function HouseholdSkeleton() {
+  return (
+    <div className="flex flex-col gap-6" aria-busy="true">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-26 animate-pulse rounded-3xl bg-glass" />
+        ))}
+      </div>
+      <div className="h-80 animate-pulse rounded-3xl bg-glass" />
+      <div className="h-40 animate-pulse rounded-3xl bg-glass" />
     </div>
   );
 }
