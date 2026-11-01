@@ -138,3 +138,7 @@ npm run probe:track -- --video clip.mp4 --width 960 --height 720 --boxes "x1,y1,
 - Demo photos: Alabama Extension (CC0) and USDA (public domain), via Wikimedia Commons. See `public/fixtures/photos/CREDITS.md`.
 - Carbon factors: ADEME Agribalyse 3.2, via the Impact CO2 open data. Household waste figure: UNEP Food Waste Index Report 2024.
 - Fonts: Funnel Display, Figtree and Geist Mono (Google Fonts, OFL).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
