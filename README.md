@@ -2,9 +2,9 @@
 
 **Snap your fridge. Ripe outlines every ingredient, reads how long each one has left, and cooks what needs eating first.**
 
-[![Watch the 3-minute demo](docs/ripe-demo-poster.jpg)](https://github.com/TheoEwzZer/ripe/raw/main/docs/ripe-demo.mp4)
+[![Watch the 3-minute demo on YouTube](https://img.youtube.com/vi/5hRNkfudT1s/maxresdefault.jpg)](https://youtu.be/5hRNkfudT1s)
 
-▶ [Watch the 3-minute demo](https://github.com/TheoEwzZer/ripe/raw/main/docs/ripe-demo.mp4): filmed on the live site with the real Meta models.
+▶ [Watch the 3-minute demo on YouTube](https://youtu.be/5hRNkfudT1s): filmed on the live site with the real Meta models.
 
 Households throw away 79 kg of food per person every year (UNEP Food Waste Index 2024), mostly because something got forgotten at the back of the fridge. Ripe turns one photo of the open fridge into a freshness map, then plans dinners around what is about to go off.
 
